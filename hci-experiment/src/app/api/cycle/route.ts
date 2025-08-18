@@ -7,7 +7,7 @@ import { runCycle } from '@/lib/orchestrator';
 const rateLimitMap = new Map<string, number>();
 
 const cycleRequestSchema = z.object({
-  participantId: z.string().uuid(),
+  participantId: z.string(),
   sessionKey: z.enum(['test', 'main1', 'main2']),
   cycle: z.number().int().min(1).max(4),
   userMessage: z.string().min(1).max(1000),
@@ -15,16 +15,44 @@ const cycleRequestSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    // Check environment variables
+    const body = await request.json();
+    const { participantId, sessionKey, cycle, userMessage } = cycleRequestSchema.parse(body);
+
+    // Check if this is test mode
+    const isTestMode = participantId.startsWith('test-');
+
+    if (isTestMode) {
+      // For test mode, simulate agent responses without database
+      console.log('Test mode cycle:', { participantId, sessionKey, cycle, userMessage });
+      
+      // Simulate agent responses
+      const mockResponses = {
+        agent1: "I understand your perspective. Let me share some thoughts on this topic.",
+        agent2: "That's an interesting point. I think we should consider the broader implications.",
+        agent3: "I see where you're coming from, but I'd like to offer a different viewpoint."
+      };
+
+      return NextResponse.json({
+        agent1: mockResponses.agent1,
+        agent2: mockResponses.agent2,
+        agent3: mockResponses.agent3,
+        meta: {
+          cycle: cycle,
+          session_key: sessionKey,
+          participant_id: participantId,
+          stances: { 1: 'support', 2: 'neutral', 3: 'oppose' },
+          latencies: { agent1: 1200, agent2: 1100, agent3: 1300 },
+        }
+      });
+    }
+
+    // Check environment variables for production mode
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
       return NextResponse.json(
         { error: 'Supabase configuration is incomplete.' },
         { status: 500 }
       );
     }
-
-    const body = await request.json();
-    const { participantId, sessionKey, cycle, userMessage } = cycleRequestSchema.parse(body);
 
     // Rate limiting check (3 seconds per request)
     const rateLimitKey = `${participantId}:${sessionKey}`;

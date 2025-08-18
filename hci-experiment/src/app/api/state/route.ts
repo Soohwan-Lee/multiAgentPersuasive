@@ -3,14 +3,6 @@ import { supabase } from '@/lib/supabase';
 
 export async function GET(request: NextRequest) {
   try {
-    // Check environment variables
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      return NextResponse.json(
-        { error: 'Supabase configuration is incomplete.' },
-        { status: 500 }
-      );
-    }
-
     const { searchParams } = new URL(request.url);
     const participantId = searchParams.get('participantId');
 
@@ -18,6 +10,77 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         { error: 'Participant ID is required.' },
         { status: 400 }
+      );
+    }
+
+    // Check if this is test mode
+    const isTestMode = participantId.startsWith('test-');
+
+    if (isTestMode) {
+      // For test mode, return mock state
+      return NextResponse.json({
+        participant: {
+          id: participantId,
+          prolific_pid: 'TEST_PID',
+          study_id: 'TEST_STUDY',
+          session_id: 'TEST_SESSION',
+          condition: 'majority',
+          created_at: new Date().toISOString(),
+          finished_at: null,
+        },
+        sessions: [
+          {
+            id: 'test-session-1',
+            participant_id: participantId,
+            key: 'test',
+            started_at: new Date().toISOString(),
+            completed_at: null,
+            current_turn: 0,
+            current_response: 0,
+            current_cycle: 0,
+          },
+          {
+            id: 'test-session-2',
+            participant_id: participantId,
+            key: 'main1',
+            started_at: null,
+            completed_at: null,
+            current_turn: 0,
+            current_response: 0,
+            current_cycle: 0,
+          },
+          {
+            id: 'test-session-3',
+            participant_id: participantId,
+            key: 'main2',
+            started_at: null,
+            completed_at: null,
+            current_turn: 0,
+            current_response: 0,
+            current_cycle: 0,
+          },
+        ],
+        current_session: {
+          id: 'test-session-1',
+          participant_id: participantId,
+          key: 'test',
+          started_at: new Date().toISOString(),
+          completed_at: null,
+          current_turn: 0,
+          current_response: 0,
+          current_cycle: 0,
+        },
+        last_completed_turn: null,
+        last_messages: [],
+        responses: [],
+      });
+    }
+
+    // Check environment variables for production mode
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json(
+        { error: 'Supabase configuration is incomplete.' },
+        { status: 500 }
       );
     }
 

@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { z } from 'zod';
 
 const responseRequestSchema = z.object({
-  participantId: z.string().uuid(),
+  participantId: z.string(),
   sessionKey: z.enum(['test', 'main1', 'main2']),
   responseIndex: z.number().int().min(0).max(4),
   opinion: z.number().int().min(-50).max(50),
@@ -13,16 +13,38 @@ const responseRequestSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    // Check environment variables
+    const body = await request.json();
+    const { participantId, sessionKey, responseIndex, opinion, confidence, rtMs } = responseRequestSchema.parse(body);
+
+    // Check if this is test mode
+    const isTestMode = participantId.startsWith('test-');
+
+    if (isTestMode) {
+      // For test mode, just return success without saving to database
+      console.log('Test mode response:', { participantId, sessionKey, responseIndex, opinion, confidence, rtMs });
+      
+      return NextResponse.json({
+        success: true,
+        response: {
+          id: `test-${Date.now()}`,
+          participant_id: participantId,
+          session_key: sessionKey,
+          response_index: responseIndex,
+          opinion: opinion,
+          confidence: confidence,
+          rt_ms: rtMs,
+          created_at: new Date().toISOString(),
+        }
+      });
+    }
+
+    // Check environment variables for production mode
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
       return NextResponse.json(
         { error: 'Supabase configuration is incomplete.' },
         { status: 500 }
       );
     }
-
-    const body = await request.json();
-    const { participantId, sessionKey, responseIndex, opinion, confidence, rtMs } = responseRequestSchema.parse(body);
 
     // Check if response already exists (idempotency)
     const { data: existingResponse } = await supabase
