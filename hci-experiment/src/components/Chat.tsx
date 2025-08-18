@@ -4,9 +4,10 @@ import { useState, useRef, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send, Loader2 } from 'lucide-react';
+import { Send, Loader2, MessageCircle } from 'lucide-react';
 import { AGENTS, getAgentColor } from '@/config/agents';
 import { Message } from '@/lib/types';
+import { getPatternDescription, CURRENT_PATTERN } from '@/config/patterns';
 
 interface ChatProps {
   messages: Message[];
@@ -44,7 +45,23 @@ export function Chat({ messages, onSendMessage, isLoading, currentTurn, sessionK
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {currentTurnMessages.length === 0 ? (
           <div className="text-center text-muted-foreground py-8">
-            <p>Send a message to start the conversation.</p>
+            <div className="mb-4">
+              <MessageCircle className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+              <p className="font-medium">Start the conversation</p>
+            </div>
+            <p className="text-sm">Send a message to begin chatting with the AI agents.</p>
+            {currentTurn >= 2 && (
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                <p className="text-sm text-blue-700">
+                  <strong>Tip:</strong> This is an ongoing conversation. Continue naturally from previous exchanges.
+                </p>
+              </div>
+            )}
+            <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+              <p className="text-sm text-gray-600">
+                <strong>Current Pattern:</strong> {getPatternDescription(CURRENT_PATTERN, currentTurn)}
+              </p>
+            </div>
           </div>
         ) : (
           <div className="space-y-4">
@@ -114,6 +131,15 @@ export function Chat({ messages, onSendMessage, isLoading, currentTurn, sessionK
                 </Card>
               </div>
             )}
+
+            {/* Pattern info for ongoing conversations */}
+            {currentTurn >= 2 && currentTurnMessages.length > 0 && !isLoading && (
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                <p className="text-sm text-blue-700">
+                  <strong>Continue the conversation:</strong> Build on the previous exchanges naturally.
+                </p>
+              </div>
+            )}
           </div>
         )}
         <div ref={messagesEndRef} />
@@ -125,7 +151,7 @@ export function Chat({ messages, onSendMessage, isLoading, currentTurn, sessionK
           <Input
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
-            placeholder="Type your message..."
+            placeholder={currentTurn >= 2 ? "Continue the conversation..." : "Type your message..."}
             disabled={isLoading}
             className="flex-1"
           />

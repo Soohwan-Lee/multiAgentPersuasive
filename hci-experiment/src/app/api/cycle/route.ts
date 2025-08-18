@@ -25,11 +25,29 @@ export async function POST(request: NextRequest) {
       // For test mode, simulate agent responses without database
       console.log('Test mode cycle:', { participantId, sessionKey, cycle, userMessage });
       
-      // Simulate agent responses
+      // Simulate agent responses with more realistic content
       const mockResponses = {
-        agent1: "I understand your perspective. Let me share some thoughts on this topic.",
-        agent2: "That's an interesting point. I think we should consider the broader implications.",
-        agent3: "I see where you're coming from, but I'd like to offer a different viewpoint."
+        agent1: {
+          content: "I understand your perspective on this issue. Let me share some thoughts that might be relevant to our discussion.",
+          latency_ms: 1200,
+          token_in: 150,
+          token_out: 45,
+          fallback_used: false
+        },
+        agent2: {
+          content: "That's an interesting point you've raised. I think we should consider the broader implications and long-term consequences.",
+          latency_ms: 1100,
+          token_in: 150,
+          token_out: 52,
+          fallback_used: false
+        },
+        agent3: {
+          content: "I see where you're coming from, but I'd like to offer a different viewpoint that might be worth considering.",
+          latency_ms: 1300,
+          token_in: 150,
+          token_out: 48,
+          fallback_used: false
+        }
       };
 
       return NextResponse.json({
@@ -86,10 +104,32 @@ export async function POST(request: NextRequest) {
         .eq('cycle', cycle)
         .order('ts', { ascending: true });
 
+      const agent1Msg = messages?.find((m: any) => m.role === 'agent1');
+      const agent2Msg = messages?.find((m: any) => m.role === 'agent2');
+      const agent3Msg = messages?.find((m: any) => m.role === 'agent3');
+
       return NextResponse.json({
-        agent1: messages?.find((m: any) => m.role === 'agent1'),
-        agent2: messages?.find((m: any) => m.role === 'agent2'),
-        agent3: messages?.find((m: any) => m.role === 'agent3'),
+        agent1: agent1Msg ? {
+          content: agent1Msg.content,
+          latency_ms: agent1Msg.latency_ms,
+          token_in: agent1Msg.token_in,
+          token_out: agent1Msg.token_out,
+          fallback_used: agent1Msg.fallback_used
+        } : null,
+        agent2: agent2Msg ? {
+          content: agent2Msg.content,
+          latency_ms: agent2Msg.latency_ms,
+          token_in: agent2Msg.token_in,
+          token_out: agent2Msg.token_out,
+          fallback_used: agent2Msg.fallback_used
+        } : null,
+        agent3: agent3Msg ? {
+          content: agent3Msg.content,
+          latency_ms: agent3Msg.latency_ms,
+          token_in: agent3Msg.token_in,
+          token_out: agent3Msg.token_out,
+          fallback_used: agent3Msg.fallback_used
+        } : null,
         meta: {
           cycle: cycle,
           session_key: sessionKey,
@@ -151,16 +191,10 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({
-      agent1: result.agents.agent1,
-      agent2: result.agents.agent2,
-      agent3: result.agents.agent3,
-      meta: {
-        cycle: cycle,
-        session_key: sessionKey,
-        participant_id: participantId,
-        stances: result.meta.stances,
-        latencies: result.meta.latencies,
-      }
+      agent1: result.agent1,
+      agent2: result.agent2,
+      agent3: result.agent3,
+      meta: result.meta
     });
 
   } catch (error) {

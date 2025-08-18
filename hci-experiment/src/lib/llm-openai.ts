@@ -5,7 +5,7 @@ const client = new OpenAI({
 });
 
 export async function callOpenAIChat({
-  system, user, model = process.env.LLM_MODEL || "gpt-4o-mini", timeoutMs = 12000, maxTokens = 180,
+  system, user, model = process.env.LLM_MODEL || "gpt-4o", timeoutMs = 12000, maxTokens = 180,
 }: { system: string; user: string; model?: string; timeoutMs?: number; maxTokens?: number; }) {
   // Check if API key is available
   if (!process.env.OPENAI_API_KEY) {
@@ -24,7 +24,7 @@ export async function callOpenAIChat({
   try {
     const res = await client.chat.completions.create({
       model,
-      temperature: 0.6,
+      temperature: 0.7, // Slightly higher for more dynamic responses
       messages: [{ role: "system", content: system }, { role: "user", content: user }],
       max_tokens: maxTokens,
     }, { signal: ac.signal });

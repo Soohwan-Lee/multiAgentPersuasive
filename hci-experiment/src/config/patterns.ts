@@ -9,6 +9,9 @@ export interface PatternConfig {
   consistency: Record<1 | 2 | 3, number>;     // 0..1
 }
 
+// EASY PATTERN CONFIGURATION - Change this to switch patterns
+export const CURRENT_PATTERN: PatternKey = "minorityDiffusion"; // Change this: "majority" | "minority" | "minorityDiffusion"
+
 export const DEFAULT_PATTERN: Record<PatternKey, PatternConfig> = {
   majority: { 
     key: "majority", 
@@ -53,7 +56,7 @@ export function resolveStances(opts: {
     return { 1: majority, 2: majority, 3: minority };
   }
   
-  // minorityDiffusion
+  // minorityDiffusion - Dynamic stance changes
   const minority = opposite(opts.initial || "neutral");
   const majority = opts.initial || "neutral";
   
@@ -61,11 +64,27 @@ export function resolveStances(opts: {
     // C1, C2: A1/A2 = majority, A3 = minority
     return { 1: majority, 2: majority, 3: minority };
   } else if (opts.chatCycle === 3) {
-    // C3 (before generating replies): Agent 1 flips to minority
+    // C3: Agent 1 flips to minority (joins Agent 3)
     return { 1: minority, 2: majority, 3: minority };
   } else {
-    // C4: Agent 2 also flips to minority
+    // C4: Agent 2 also flips to minority (all agents now minority)
     return { 1: minority, 2: minority, 3: minority };
+  }
+}
+
+/** Get pattern description for UI display */
+export function getPatternDescription(pattern: PatternKey, cycle: number): string {
+  switch (pattern) {
+    case "majority":
+      return "All agents oppose your initial stance";
+    case "minority":
+      return "Two agents support, one agent opposes your stance";
+    case "minorityDiffusion":
+      if (cycle <= 2) return "Two agents support, one agent opposes your stance";
+      if (cycle === 3) return "One agent supports, two agents oppose your stance";
+      return "All agents now oppose your stance";
+    default:
+      return "Standard pattern";
   }
 }
 

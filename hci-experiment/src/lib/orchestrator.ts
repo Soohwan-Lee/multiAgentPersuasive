@@ -1,5 +1,5 @@
 import { AGENTS, Stance } from "@/config/agents";
-import { DEFAULT_PATTERN, resolveStances, stanceFromT0, SessionKey } from "@/config/patterns";
+import { DEFAULT_PATTERN, resolveStances, stanceFromT0, SessionKey, CURRENT_PATTERN } from "@/config/patterns";
 import { buildSystemPrompt, buildUserPrompt } from "@/lib/prompts";
 import { callOpenAIChat } from "@/lib/llm-openai";
 import { FALLBACK } from "@/lib/fallbacks";
@@ -36,7 +36,8 @@ export async function runCycle(opts: {
   }
 
   const initial: Stance = stanceFromT0(t0Response.opinion);
-  const patternKey = participant?.condition as "majority" | "minority" | "minorityDiffusion" || "majority";
+  // Use CURRENT_PATTERN for easy configuration
+  const patternKey = CURRENT_PATTERN;
 
   // 2) resolve stances for this cycle
   const stances = resolveStances({ 
@@ -60,6 +61,8 @@ export async function runCycle(opts: {
       stance: stances[agent.id as 1 | 2 | 3],
       consistency: DEFAULT_PATTERN[patternKey].consistency[agent.id as 1 | 2 | 3],
       locale: "en",
+      pattern: patternKey,
+      chatCycle: opts.cycle,
     });
     
     const user = buildUserPrompt({
@@ -72,6 +75,8 @@ export async function runCycle(opts: {
       stance: stances[agent.id as 1 | 2 | 3],
       consistency: DEFAULT_PATTERN[patternKey].consistency[agent.id as 1 | 2 | 3],
       locale: "en",
+      pattern: patternKey,
+      chatCycle: opts.cycle,
     });
 
     const r = await callOpenAIChat({ system, user });
@@ -122,12 +127,13 @@ export async function runCycle(opts: {
   }
 
   return {
-    agents: {
-      agent1: results.find(r => r.agentId === 1)!.text,
-      agent2: results.find(r => r.agentId === 2)!.text,
-      agent3: results.find(r => r.agentId === 3)!.text,
-    },
+    agent1: { content: results.find(r => r.agentId === 1)!.text },
+    agent2: { content: results.find(r => r.agentId === 2)!.text },
+    agent3: { content: results.find(r => r.agentId === 3)!.text },
     meta: {
+      cycle: opts.cycle,
+      session_key: opts.sessionKey,
+      participant_id: opts.participantId,
       stances,
       latencies: {
         agent1: results.find(r => r.agentId === 1)!.latencyMs,

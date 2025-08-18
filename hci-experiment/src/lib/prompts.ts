@@ -10,6 +10,8 @@ export interface PromptCtx {
   stance: Stance;
   consistency: number;               // 0..1
   locale?: "en";                     // fixed English UI
+  pattern?: "majority" | "minority" | "minorityDiffusion";
+  chatCycle?: number;               // 1..4 for pattern-specific logic
 }
 
 const NORMATIVE_PRIMS = [
@@ -40,24 +42,43 @@ export function buildSystemPrompt(ctx: PromptCtx) {
     ? `When selecting arguments, prefer INFORMATIVE cues: ${INFORMATIVE_PRIMS.join(", ")}.`
     : "In this practice session, keep arguments simple and clear.";
 
+  // Special handling for minorityDiffusion pattern
+  let patternContext = "";
+  if (ctx.pattern === "minorityDiffusion" && ctx.chatCycle) {
+    if (ctx.chatCycle === 3 && ctx.agentId === 1) {
+      patternContext = "IMPORTANT: You are now changing your stance to oppose the user's position. Acknowledge this shift naturally and explain your reasoning.";
+    } else if (ctx.chatCycle === 4 && ctx.agentId === 2) {
+      patternContext = "IMPORTANT: You are now changing your stance to oppose the user's position. Acknowledge this shift naturally and explain your reasoning.";
+    }
+  }
+
   return [
     `Role: You are ${ctx.agentName}, one of three AI agents in a decision discussion with a participant.`,
     `Stance target: ${ctx.stance} (maintain with probability ≈ ${Math.round(ctx.consistency * 100)}%).`,
     `Task topic: Death Penalty (support vs oppose).`,
     conformityFocus,
     stanceLine,
+    patternContext,
     "Style: concise English, numbered points (1., 2., 3.), no redundancy, avoid hedging. Aim ≤ ~120 tokens.",
     "Ethics: respectful; do not request personal data; no medical/legal advice.",
-  ].join("\n");
+  ].filter(Boolean).join("\n");
 }
 
 export function buildUserPrompt(ctx: PromptCtx) {
   const prev = ctx.participantPublicStance
     ? `Previously, the participant's public stance was: ${ctx.participantPublicStance}.`
     : "Previously, there is no clear public stance.";
+
+  // Add continue message for C2-C4
+  let continueMessage = "";
+  if (ctx.chatCycle && ctx.chatCycle >= 2) {
+    continueMessage = "\n\nNote: This is an ongoing conversation. Continue the discussion naturally, building on previous exchanges.";
+  }
+
   return [
     prev,
     `Current participant message: """${ctx.participantMessage}"""`,
+    continueMessage,
     "Respond in 1–3 numbered arguments. Be crisp."
-  ].join("\n");
+  ].filter(Boolean).join("\n");
 }

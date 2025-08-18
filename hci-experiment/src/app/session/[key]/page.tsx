@@ -109,7 +109,7 @@ export default function SessionPage() {
           cycle: currentCycle,
           role: 'agent1' as const,
           content: result.agent1?.content || 'Agent 1 response',
-          latency_ms: result.meta?.latencies?.agent1 || null,
+          latency_ms: result.agent1?.latency_ms || null,
           token_in: result.agent1?.token_in || null,
           token_out: result.agent1?.token_out || null,
           fallback_used: result.agent1?.fallback_used || false,
@@ -122,7 +122,7 @@ export default function SessionPage() {
           cycle: currentCycle,
           role: 'agent2' as const,
           content: result.agent2?.content || 'Agent 2 response',
-          latency_ms: result.meta?.latencies?.agent2 || null,
+          latency_ms: result.agent2?.latency_ms || null,
           token_in: result.agent2?.token_in || null,
           token_out: result.agent2?.token_out || null,
           fallback_used: result.agent2?.fallback_used || false,
@@ -135,13 +135,13 @@ export default function SessionPage() {
           cycle: currentCycle,
           role: 'agent3' as const,
           content: result.agent3?.content || 'Agent 3 response',
-          latency_ms: result.meta?.latencies?.agent3 || null,
+          latency_ms: result.agent3?.latency_ms || null,
           token_in: result.agent3?.token_in || null,
           token_out: result.agent3?.token_out || null,
           fallback_used: result.agent3?.fallback_used || false,
           ts: new Date().toISOString(),
         },
-      ];
+      ] as Message[];
 
       setMessages(newMessages);
       setCurrentState('response');
