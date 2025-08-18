@@ -37,12 +37,13 @@ export function Chat({ messages, onSendMessage, isLoading, currentTurn, sessionK
     }
   };
 
-  const currentTurnMessages = messages.filter(m => m.cycle === currentTurn);
+  // 모든 메시지를 표시 (현재 턴만이 아닌 전체 대화 기록)
+  const allMessages = messages;
 
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {currentTurnMessages.length === 0 ? (
+        {allMessages.length === 0 ? (
           <div className="text-center text-muted-foreground py-8">
             <div className="mb-4">
               <MessageCircle className="h-8 w-8 mx-auto text-gray-400 mb-2" />
@@ -59,57 +60,59 @@ export function Chat({ messages, onSendMessage, isLoading, currentTurn, sessionK
           </div>
         ) : (
           <div className="space-y-4">
-            {/* User message */}
-            {currentTurnMessages.filter(m => m.role === 'user').map((message) => (
-              <div key={message.id} className="flex justify-end">
-                <Card className="max-w-[80%] bg-blue-100 border-blue-200">
-                  <CardContent className="p-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium">You</span>
-                      <span className="text-xs text-muted-foreground">
-                        {new Date(message.ts).toLocaleTimeString()}
-                      </span>
-                    </div>
-                    <p className="text-sm">{message.content}</p>
-                  </CardContent>
-                </Card>
-              </div>
-            ))}
-
-            {/* Agent messages */}
-            {AGENTS.map((agent) => {
-              const agentMessage = currentTurnMessages.find(m => m.role === `agent${agent.id}`);
-              if (!agentMessage) return null;
-
-              return (
-                <div key={agentMessage.id} className="flex justify-start">
-                  <Card className="max-w-[80%]" style={{ borderLeft: `4px solid ${getAgentColor(agent.id)}` }}>
-                    <CardContent className="p-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center space-x-2">
-                          <div
-                            className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: getAgentColor(agent.id) }}
-                          />
-                          <span className="text-sm font-medium">{agent.name}</span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          {agentMessage.fallback_used && (
-                            <span className="text-xs text-red-500">Fallback</span>
-                          )}
+            {/* All messages from the session */}
+            {allMessages.map((message) => {
+              if (message.role === 'user') {
+                return (
+                  <div key={message.id} className="flex justify-end">
+                    <Card className="max-w-[80%] bg-blue-100 border-blue-200">
+                      <CardContent className="p-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium">You</span>
                           <span className="text-xs text-muted-foreground">
-                            {agentMessage.latency_ms ? `${agentMessage.latency_ms}ms` : ''}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {new Date(agentMessage.ts).toLocaleTimeString()}
+                            {new Date(message.ts).toLocaleTimeString()}
                           </span>
                         </div>
-                      </div>
-                      <p className="text-sm">{agentMessage.content}</p>
-                    </CardContent>
-                  </Card>
-                </div>
-              );
+                        <p className="text-sm">{message.content}</p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                );
+              } else {
+                // Agent message
+                const agentId = parseInt(message.role.replace('agent', ''));
+                const agent = AGENTS.find(a => a.id === agentId);
+                
+                return (
+                  <div key={message.id} className="flex justify-start">
+                    <Card className="max-w-[80%]" style={{ borderLeft: `4px solid ${getAgentColor(agentId)}` }}>
+                      <CardContent className="p-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center space-x-2">
+                            <div
+                              className="w-3 h-3 rounded-full"
+                              style={{ backgroundColor: getAgentColor(agentId) }}
+                            />
+                            <span className="text-sm font-medium">{agent?.name || `Agent ${agentId}`}</span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            {message.fallback_used && (
+                              <span className="text-xs text-red-500">Fallback</span>
+                            )}
+                            <span className="text-xs text-muted-foreground">
+                              {message.latency_ms ? `${message.latency_ms}ms` : ''}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {new Date(message.ts).toLocaleTimeString()}
+                            </span>
+                          </div>
+                        </div>
+                        <p className="text-sm">{message.content}</p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                );
+              }
             })}
 
             {/* Loading state */}
@@ -127,7 +130,7 @@ export function Chat({ messages, onSendMessage, isLoading, currentTurn, sessionK
             )}
 
             {/* Continue conversation hint for ongoing conversations */}
-            {currentTurn >= 2 && currentTurnMessages.length > 0 && !isLoading && (
+            {currentTurn >= 2 && allMessages.length > 0 && !isLoading && (
               <div className="mt-4 p-3 bg-blue-50 rounded-lg">
                 <p className="text-sm text-blue-700">
                   <strong>Continue the conversation:</strong> Build on the previous exchanges naturally.

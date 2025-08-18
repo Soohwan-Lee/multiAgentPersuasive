@@ -10,7 +10,7 @@ import { SESSION_META } from '@/config/sessions';
 import { Message, Response } from '@/lib/types';
 import { Info, Lightbulb, MessageSquare } from 'lucide-react';
 
-type SessionState = 't0' | 'chat' | 'response' | 'complete';
+type SessionState = 't0' | 'chat' | 'agents-responding' | 'response' | 'complete';
 
 export default function SessionPage() {
   const params = useParams();
@@ -24,6 +24,7 @@ export default function SessionPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [responses, setResponses] = useState<Response[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [agentResponseDelay, setAgentResponseDelay] = useState(2000); // 2초 지연
 
   useEffect(() => {
     const storedParticipantId = sessionStorage.getItem('participantId');
@@ -66,8 +67,27 @@ export default function SessionPage() {
     if (!participantId) return;
 
     setIsLoading(true);
+    setCurrentState('agents-responding'); // 에이전트 응답 중 상태로 변경
+    
     try {
       console.log(`Sending message to cycle ${currentCycle}: "${message}"`);
+      
+      // 사용자 메시지 먼저 추가
+      const userMessage: Message = {
+        id: crypto.randomUUID(),
+        participant_id: participantId,
+        session_key: sessionKey,
+        cycle: currentCycle,
+        role: 'user',
+        content: message,
+        latency_ms: null,
+        token_in: null,
+        token_out: null,
+        fallback_used: false,
+        ts: new Date().toISOString(),
+      };
+      
+      setMessages(prev => [...prev, userMessage]);
       
       const response = await fetch('/api/cycle', {
         method: 'POST',
@@ -97,28 +117,14 @@ export default function SessionPage() {
         agent3Content: result.agent3?.content?.substring(0, 50) + '...',
       });
       
-      // Add new messages to the list
-      const newMessages: Message[] = [
-        ...messages,
+      // 에이전트 응답을 순차적으로 추가 (각각 지연 시간을 두고)
+      const agentMessages: Message[] = [
         {
           id: crypto.randomUUID(),
           participant_id: participantId,
           session_key: sessionKey,
           cycle: currentCycle,
-          role: 'user' as const,
-          content: message,
-          latency_ms: null,
-          token_in: null,
-          token_out: null,
-          fallback_used: false,
-          ts: new Date().toISOString(),
-        },
-        {
-          id: crypto.randomUUID(),
-          participant_id: participantId,
-          session_key: sessionKey,
-          cycle: currentCycle,
-          role: 'agent1' as const,
+          role: 'agent1',
           content: result.agent1?.content || 'Agent 1 response',
           latency_ms: result.agent1?.latency_ms || null,
           token_in: result.agent1?.token_in || null,
@@ -131,7 +137,7 @@ export default function SessionPage() {
           participant_id: participantId,
           session_key: sessionKey,
           cycle: currentCycle,
-          role: 'agent2' as const,
+          role: 'agent2',
           content: result.agent2?.content || 'Agent 2 response',
           latency_ms: result.agent2?.latency_ms || null,
           token_in: result.agent2?.token_in || null,
@@ -144,7 +150,7 @@ export default function SessionPage() {
           participant_id: participantId,
           session_key: sessionKey,
           cycle: currentCycle,
-          role: 'agent3' as const,
+          role: 'agent3',
           content: result.agent3?.content || 'Agent 3 response',
           latency_ms: result.agent3?.latency_ms || null,
           token_in: result.agent3?.token_in || null,
@@ -152,15 +158,33 @@ export default function SessionPage() {
           fallback_used: result.agent3?.fallback_used || false,
           ts: new Date().toISOString(),
         },
-      ] as Message[];
+      ];
 
-      console.log(`Added ${newMessages.length - messages.length} new messages to state`);
-      setMessages(newMessages);
-      setCurrentState('response');
+      // Agent 1 응답 즉시 추가
+      setMessages(prev => [...prev, agentMessages[0]]);
+      
+      // Agent 2 응답 1초 후 추가
+      setTimeout(() => {
+        setMessages(prev => [...prev, agentMessages[1]]);
+      }, 1000);
+      
+      // Agent 3 응답 2초 후 추가
+      setTimeout(() => {
+        setMessages(prev => [...prev, agentMessages[2]]);
+        
+        // 모든 에이전트 응답이 표시된 후 1초 더 기다린 다음 응답 패널로 이동
+        setTimeout(() => {
+          setCurrentState('response');
+          setIsLoading(false);
+        }, 1000);
+      }, 2000);
+
+      console.log(`Added ${agentMessages.length} agent messages with delays`);
+      
     } catch (error) {
       console.error('Error sending message:', error);
       alert('Failed to send message. Please try again.');
-    } finally {
+      setCurrentState('chat');
       setIsLoading(false);
     }
   };
@@ -198,80 +222,82 @@ export default function SessionPage() {
     <div className="container mx-auto px-4 py-8 max-w-6xl">
       <ProgressHeader
         currentStep={sessionMeta.label}
+        stepIndex={stepIndex}
         totalSteps={11}
-        currentStepIndex={stepIndex}
-        sessionName={sessionMeta.label}
-        turnNumber={currentResponseIndex}
       />
 
+      {/* Session Header */}
       <div className="mb-6">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              {sessionKey === 'test' && <Lightbulb className="h-5 w-5 text-yellow-500" />}
-              {sessionKey !== 'test' && <MessageSquare className="h-5 w-5 text-blue-500" />}
-              {sessionMeta.label}
+              <MessageSquare className="h-5 w-5" />
+              {sessionMeta.label} • Response T{currentResponseIndex} of 4 and Chat Cycle C{currentCycle} of 4
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground">{sessionMeta.framing}</p>
-            <p className="text-sm mt-2">
-              <strong>Topic:</strong> Death Penalty (support vs oppose)
-            </p>
-            <p className="text-sm mt-2">
-              <strong>Progress:</strong> Response T{currentResponseIndex} of 4 • Chat Cycle C{currentCycle} of 4
-            </p>
-            
-            {sessionKey === 'test' && (
-              <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                <div className="flex items-start gap-2">
-                  <Info className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                  <div className="text-sm">
-                    <p className="font-medium text-blue-800 mb-2">Practice Session Guide:</p>
-                    <ul className="text-blue-700 space-y-1">
-                      <li>• First, provide your initial opinion (T0) using the sliders</li>
-                      <li>• Then engage in 4 continuous chat cycles with the AI agents</li>
-                      <li>• After each chat cycle, update your opinion (T1-T4)</li>
-                      <li>• This is a practice session - feel free to experiment!</li>
-                      <li>• After this session, you'll complete 2 main experimental sessions</li>
-                    </ul>
+            <div className="flex items-start gap-4">
+              <Info className="h-5 w-5 text-blue-500 mt-0.5" />
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">
+                  {sessionMeta.description}
+                </p>
+                {sessionKey === 'test' && (
+                  <div className="bg-blue-50 p-3 rounded-lg">
+                    <div className="flex items-start gap-2">
+                      <Lightbulb className="h-4 w-4 text-blue-600 mt-0.5" />
+                      <div className="text-sm text-blue-800">
+                        <p className="font-medium mb-1">Practice Session Tips:</p>
+                        <ul className="space-y-1 text-xs">
+                          <li>• This is a practice session to help you understand the experiment</li>
+                          <li>• After this practice, you'll have two main sessions</li>
+                          <li>• When you provide your initial response (T0), you'll discuss with AI agents</li>
+                          <li>• The 4 chat cycles (T0-T4) are continuous conversations within one session</li>
+                          <li>• Each cycle builds on the previous one - it's not separate chats</li>
+                        </ul>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
-            )}
+            </div>
           </CardContent>
         </Card>
       </div>
 
+      {/* Main Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Chat area */}
+        {/* Chat Area */}
         <div className="lg:col-span-2">
           <Card className="h-[600px]">
             <CardHeader>
-              <CardTitle>Chat Cycle C{currentCycle} of 4</CardTitle>
+              <CardTitle className="text-lg">Discussion with AI Agents</CardTitle>
+              {currentState === 'agents-responding' && (
+                <div className="text-sm text-blue-600">
+                  Agents are responding... Please wait.
+                </div>
+              )}
             </CardHeader>
             <CardContent className="h-[500px] p-0">
-              {currentState === 'chat' && (
-                <Chat
-                  messages={messages}
-                  onSendMessage={handleSendMessage}
-                  isLoading={isLoading}
-                  currentTurn={currentCycle}
-                  sessionKey={sessionKey}
-                  participantId={participantId}
-                />
-              )}
+              <Chat
+                messages={messages}
+                onSendMessage={handleSendMessage}
+                isLoading={isLoading || currentState === 'agents-responding'}
+                currentTurn={currentCycle}
+                sessionKey={sessionKey}
+                participantId={participantId}
+              />
             </CardContent>
           </Card>
         </div>
 
-        {/* Response panel */}
+        {/* Response Panel */}
         <div className="lg:col-span-1">
           {currentState === 't0' && (
             <ResponsePanel
               responseIndex={0}
-              participantId={participantId}
               sessionKey={sessionKey}
+              participantId={participantId}
               onComplete={handleT0Complete}
             />
           )}
@@ -279,24 +305,27 @@ export default function SessionPage() {
           {currentState === 'response' && (
             <ResponsePanel
               responseIndex={currentResponseIndex}
-              participantId={participantId}
               sessionKey={sessionKey}
+              participantId={participantId}
               onComplete={handleResponseComplete}
             />
           )}
-
-          {currentState === 'complete' && (
+          
+          {currentState === 'agents-responding' && (
             <Card>
-              <CardContent className="p-6 text-center">
-                <h3 className="text-lg font-semibold mb-2">Session Complete!</h3>
-                <p className="text-muted-foreground">
-                  {sessionKey === 'test' 
-                    ? 'Practice session completed! Moving to main experiment...'
-                    : sessionKey === 'main1'
-                    ? 'First main session completed! Moving to survey...'
-                    : 'Second main session completed! Moving to survey...'
-                  }
-                </p>
+              <CardHeader>
+                <CardTitle className="text-lg">Waiting for Agents</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                  <p className="text-sm text-muted-foreground">
+                    AI agents are generating their responses...
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    This may take a few moments
+                  </p>
+                </div>
               </CardContent>
             </Card>
           )}

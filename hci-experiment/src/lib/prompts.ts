@@ -1,4 +1,5 @@
 import type { Stance } from "@/config/agents";
+import type { Message } from "@/lib/types";
 
 export interface PromptCtx {
   agentId: 1 | 2 | 3;
@@ -12,6 +13,7 @@ export interface PromptCtx {
   locale?: "en";                     // fixed English UI
   pattern?: "majority" | "minority" | "minorityDiffusion";
   chatCycle?: number;               // 1..4 for pattern-specific logic
+  previousMessages?: Message[];     // 이전 대화 기록
 }
 
 const NORMATIVE_PRIMS = [
@@ -94,6 +96,16 @@ export function buildUserPrompt(ctx: PromptCtx) {
     ? `Previously, the participant's public stance was: ${ctx.participantPublicStance}.`
     : "Previously, there is no clear public stance.";
 
+  // Build conversation history
+  let conversationHistory = "";
+  if (ctx.previousMessages && ctx.previousMessages.length > 0) {
+    const historyLines = ctx.previousMessages.map(msg => {
+      const speaker = msg.role === 'user' ? 'Participant' : `Agent ${msg.role.replace('agent', '')}`;
+      return `${speaker}: ${msg.content}`;
+    });
+    conversationHistory = `\n\nPrevious conversation:\n${historyLines.join('\n')}`;
+  }
+
   // Add continue message for C2-C4
   let continueMessage = "";
   if (ctx.chatCycle && ctx.chatCycle >= 2) {
@@ -102,6 +114,7 @@ export function buildUserPrompt(ctx: PromptCtx) {
 
   return [
     prev,
+    conversationHistory,
     `Current participant message: """${ctx.participantMessage}"""`,
     continueMessage,
     "Respond in 1–3 numbered arguments. Be crisp and engaging."

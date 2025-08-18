@@ -4,6 +4,7 @@ import { buildSystemPrompt, buildUserPrompt } from "@/lib/prompts";
 import { callOpenAIChat } from "@/lib/llm-openai";
 import { FALLBACK } from "@/lib/fallbacks";
 import { supabase } from "@/lib/supabase";
+import { Message } from "@/lib/types";
 
 export async function runCycle(opts: {
   participantId: string;
@@ -37,6 +38,18 @@ export async function runCycle(opts: {
   if (!t0Response) {
     throw new Error('T0 response not found');
   }
+
+  // Get previous messages for conversation context
+  const { data: previousMessages } = await supabase
+    .from('messages')
+    .select('*')
+    .eq('participant_id', opts.participantId)
+    .eq('session_key', opts.sessionKey)
+    .lt('cycle', opts.cycle)
+    .order('cycle', { ascending: true })
+    .order('ts', { ascending: true });
+
+  console.log(`Found ${previousMessages?.length || 0} previous messages for context`);
 
   const initial: Stance = stanceFromT0(t0Response.opinion);
   // Use CURRENT_PATTERN for easy configuration
@@ -87,6 +100,7 @@ export async function runCycle(opts: {
       locale: "en",
       pattern: patternKey,
       chatCycle: opts.cycle,
+      previousMessages: previousMessages || [], // 이전 대화 기록 추가
     });
 
     console.log(`Agent ${agent.id} stance: ${stances[agent.id as 1 | 2 | 3]}`);
