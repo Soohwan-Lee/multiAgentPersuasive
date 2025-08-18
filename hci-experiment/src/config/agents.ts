@@ -1,4 +1,4 @@
-import type { Stance } from "@/config/agents";
+export type Stance = "support" | "oppose" | "neutral";
 
 export interface Agent {
   id: 1 | 2 | 3;
@@ -28,5 +28,3 @@ export function getAgentColor(agentId: number): string {
     default: return "#6b7280"; // Gray
   }
 }
-
-export type { Stance };
