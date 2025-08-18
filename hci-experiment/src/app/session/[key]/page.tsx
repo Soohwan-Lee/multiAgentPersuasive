@@ -222,7 +222,7 @@ export default function SessionPage() {
     <div className="container mx-auto px-4 py-8 max-w-6xl">
       <ProgressHeader
         currentStep={sessionMeta.label}
-        stepIndex={stepIndex}
+        currentStepIndex={stepIndex}
         totalSteps={11}
       />
 
@@ -240,7 +240,7 @@ export default function SessionPage() {
               <Info className="h-5 w-5 text-blue-500 mt-0.5" />
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">
-                  {sessionMeta.description}
+                  {sessionMeta.framing}
                 </p>
                 {sessionKey === 'test' && (
                   <div className="bg-blue-50 p-3 rounded-lg">
