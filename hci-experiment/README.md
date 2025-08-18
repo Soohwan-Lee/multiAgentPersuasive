@@ -2,6 +2,8 @@
 
 A Next.js 14 (App Router, TypeScript) application for single-participant × multi-agent online experiments. Deployed on Vercel with Supabase for data storage and Prolific integration.
 
+<!-- Deployment trigger: Updated for T0-T4 system -->
+
 ## 🚀 Key Features
 
 - **Multi-Agent Orchestration**: 3 AI agents responding simultaneously
