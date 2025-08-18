@@ -1,50 +1,48 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ProgressHeader } from '@/components/ProgressHeader';
+import { CheckCircle, ExternalLink } from 'lucide-react';
 
 export default function FinishPage() {
   const router = useRouter();
   const [participantId, setParticipantId] = useState<string | null>(null);
-  const [completionCode, setCompletionCode] = useState<string>('');
-  const [isCompleting, setIsCompleting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    const storedParticipantId = sessionStorage.getItem('participantId');
-    if (!storedParticipantId) {
+    const id = sessionStorage.getItem('participantId');
+    if (!id) {
       router.push('/entry');
       return;
     }
-    setParticipantId(storedParticipantId);
-    setCompletionCode(process.env.NEXT_PUBLIC_PROLIFIC_COMPLETION_CODE || 'COMPLETION_CODE');
+    setParticipantId(id);
+
+    // Mark participant as finished
+    markParticipantFinished(id);
   }, [router]);
 
-  const handleComplete = async () => {
-    if (!participantId) return;
-    
-    setIsCompleting(true);
+  const markParticipantFinished = async (pid: string) => {
     try {
-      // Mark participant as finished
       await fetch('/api/prolific/commit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ participantId })
+        body: JSON.stringify({ participantId: pid }),
       });
-
-      // Clear session storage
-      sessionStorage.removeItem('participantId');
-
-      // Redirect to Prolific
-      const prolificUrl = `https://app.prolific.com/submissions/complete?cc=${completionCode}`;
-      window.location.href = prolificUrl;
     } catch (error) {
-      console.error('Completion error:', error);
-      alert('Failed to complete experiment. Please try again.');
-      setIsCompleting(false);
+      console.error('Error marking participant as finished:', error);
     }
+  };
+
+  const handleRedirectToProlific = () => {
+    const completionUrl = process.env.NEXT_PUBLIC_PROLIFIC_COMPLETION_URL || 'https://app.prolific.co/submissions/complete?cc=COMPLETION_CODE';
+    window.location.href = completionUrl;
+  };
+
+  const clearSessionData = () => {
+    sessionStorage.clear();
   };
 
   if (!participantId) {
@@ -52,49 +50,61 @@ export default function FinishPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-2xl">
+    <div className="container mx-auto px-4 py-8 max-w-4xl">
       <ProgressHeader
-        currentStep="Experiment Complete"
-        totalSteps={9}
-        currentStepIndex={9}
+        currentStep="Completion"
+        totalSteps={11}
+        currentStepIndex={10}
       />
 
-      <Card>
+      <Card className="max-w-2xl mx-auto">
         <CardHeader>
-          <CardTitle>Experiment Complete!</CardTitle>
+          <CardTitle className="text-2xl text-center flex items-center justify-center gap-2">
+            <CheckCircle className="h-6 w-6 text-green-600" />
+            Experiment Completed!
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="text-center space-y-4">
-            <p className="text-lg">
-              Thank you for participating in our experiment!
+          <div className="text-center">
+            <p className="text-muted-foreground mb-4">
+              Thank you for participating in our Multi-Agent Persuasive Experiment!
             </p>
-            <p className="text-muted-foreground">
-              Your responses have been recorded and will help us understand how people interact with AI agents in decision-making contexts.
-            </p>
-          </div>
-
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-            <h3 className="font-semibold text-green-800 mb-2">Completion Code</h3>
-            <p className="text-green-700 font-mono text-lg">
-              {completionCode}
-            </p>
-            <p className="text-sm text-green-600 mt-2">
-              Please copy this code and paste it in Prolific to receive your payment.
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            <Button 
-              onClick={handleComplete} 
-              disabled={isCompleting}
-              className="w-full"
-              size="lg"
-            >
-              {isCompleting ? 'Completing...' : 'Return to Prolific'}
-            </Button>
             
-            <p className="text-xs text-muted-foreground text-center">
-              Clicking this button will redirect you back to Prolific with your completion code.
+            <div className="bg-green-50 p-4 rounded-lg mb-6">
+              <h3 className="font-medium text-green-800 mb-2">Completion Code</h3>
+              <p className="text-lg font-mono bg-white p-2 rounded border">
+                {process.env.NEXT_PUBLIC_PROLIFIC_COMPLETION_CODE || 'COMPLETION_CODE'}
+              </p>
+              <p className="text-sm text-green-700 mt-2">
+                Please copy this code and submit it on Prolific to receive your payment.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <Button 
+                onClick={handleRedirectToProlific}
+                size="lg"
+                className="w-full"
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Return to Prolific
+              </Button>
+              
+              <Button 
+                onClick={clearSessionData}
+                variant="outline"
+                size="sm"
+                className="w-full"
+              >
+                Clear Session Data
+              </Button>
+            </div>
+          </div>
+
+          <div className="text-sm text-muted-foreground text-center">
+            <p>
+              Your responses have been recorded and will be used for research purposes.
+              All data is anonymized and handled according to our privacy policy.
             </p>
           </div>
         </CardContent>

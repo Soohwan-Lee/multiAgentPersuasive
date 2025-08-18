@@ -8,6 +8,7 @@ import { Chat } from '@/components/Chat';
 import { ResponsePanel } from '@/components/ResponsePanel';
 import { SESSION_META } from '@/config/sessions';
 import { Message, Response } from '@/lib/types';
+import { Info, Lightbulb, MessageSquare } from 'lucide-react';
 
 type SessionState = 't0' | 'chat' | 'response' | 'complete';
 
@@ -107,11 +108,11 @@ export default function SessionPage() {
           session_key: sessionKey,
           cycle: currentCycle,
           role: 'agent1' as const,
-          content: result.agent1,
-          latency_ms: result.meta.latencies.agent1,
-          token_in: null,
-          token_out: null,
-          fallback_used: false,
+          content: result.agent1?.content || 'Agent 1 response',
+          latency_ms: result.meta?.latencies?.agent1 || null,
+          token_in: result.agent1?.token_in || null,
+          token_out: result.agent1?.token_out || null,
+          fallback_used: result.agent1?.fallback_used || false,
           ts: new Date().toISOString(),
         },
         {
@@ -120,11 +121,11 @@ export default function SessionPage() {
           session_key: sessionKey,
           cycle: currentCycle,
           role: 'agent2' as const,
-          content: result.agent2,
-          latency_ms: result.meta.latencies.agent2,
-          token_in: null,
-          token_out: null,
-          fallback_used: false,
+          content: result.agent2?.content || 'Agent 2 response',
+          latency_ms: result.meta?.latencies?.agent2 || null,
+          token_in: result.agent2?.token_in || null,
+          token_out: result.agent2?.token_out || null,
+          fallback_used: result.agent2?.fallback_used || false,
           ts: new Date().toISOString(),
         },
         {
@@ -133,11 +134,11 @@ export default function SessionPage() {
           session_key: sessionKey,
           cycle: currentCycle,
           role: 'agent3' as const,
-          content: result.agent3,
-          latency_ms: result.meta.latencies.agent3,
-          token_in: null,
-          token_out: null,
-          fallback_used: false,
+          content: result.agent3?.content || 'Agent 3 response',
+          latency_ms: result.meta?.latencies?.agent3 || null,
+          token_in: result.agent3?.token_in || null,
+          token_out: result.agent3?.token_out || null,
+          fallback_used: result.agent3?.fallback_used || false,
           ts: new Date().toISOString(),
         },
       ];
@@ -153,17 +154,18 @@ export default function SessionPage() {
   };
 
   const handleResponseComplete = () => {
-    if (currentResponseIndex === 4) {
+    if (currentResponseIndex >= 4) {
       // Session complete
       setCurrentState('complete');
-      // Navigate to next session or finish
+      
+      // Navigate to next page after a delay
       setTimeout(() => {
         if (sessionKey === 'test') {
           router.push('/session/main1');
         } else if (sessionKey === 'main1') {
-          router.push('/session/main2');
-        } else {
-          router.push('/survey/post-self');
+          router.push('/survey/post-self-1');
+        } else if (sessionKey === 'main2') {
+          router.push('/survey/post-self-2');
         }
       }, 2000);
     } else {
@@ -178,13 +180,13 @@ export default function SessionPage() {
   }
 
   const sessionMeta = SESSION_META[sessionKey];
-  const stepIndex = sessionKey === 'test' ? 3 : sessionKey === 'main1' ? 4 : 5;
+  const stepIndex = sessionKey === 'test' ? 3 : sessionKey === 'main1' ? 4 : 8;
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
       <ProgressHeader
         currentStep={sessionMeta.label}
-        totalSteps={9}
+        totalSteps={11}
         currentStepIndex={stepIndex}
         sessionName={sessionMeta.label}
         turnNumber={currentResponseIndex}
@@ -193,7 +195,11 @@ export default function SessionPage() {
       <div className="mb-6">
         <Card>
           <CardHeader>
-            <CardTitle>{sessionMeta.label}</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              {sessionKey === 'test' && <Lightbulb className="h-5 w-5 text-yellow-500" />}
+              {sessionKey !== 'test' && <MessageSquare className="h-5 w-5 text-blue-500" />}
+              {sessionMeta.label}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground">{sessionMeta.framing}</p>
@@ -203,6 +209,24 @@ export default function SessionPage() {
             <p className="text-sm mt-2">
               <strong>Progress:</strong> Response T{currentResponseIndex} of 4 • Chat Cycle C{currentCycle} of 4
             </p>
+            
+            {sessionKey === 'test' && (
+              <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <Info className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div className="text-sm">
+                    <p className="font-medium text-blue-800 mb-2">Practice Session Guide:</p>
+                    <ul className="text-blue-700 space-y-1">
+                      <li>• First, provide your initial opinion (T0) using the sliders</li>
+                      <li>• Then engage in 4 continuous chat cycles with the AI agents</li>
+                      <li>• After each chat cycle, update your opinion (T1-T4)</li>
+                      <li>• This is a practice session - feel free to experiment!</li>
+                      <li>• After this session, you'll complete 2 main experimental sessions</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -254,7 +278,12 @@ export default function SessionPage() {
               <CardContent className="p-6 text-center">
                 <h3 className="text-lg font-semibold mb-2">Session Complete!</h3>
                 <p className="text-muted-foreground">
-                  Moving to next session...
+                  {sessionKey === 'test' 
+                    ? 'Practice session completed! Moving to main experiment...'
+                    : sessionKey === 'main1'
+                    ? 'First main session completed! Moving to survey...'
+                    : 'Second main session completed! Moving to survey...'
+                  }
                 </p>
               </CardContent>
             </Card>
