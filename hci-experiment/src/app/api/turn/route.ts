@@ -119,9 +119,9 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({
-      agent1: result.agents.agent1,
-      agent2: result.agents.agent2,
-      agent3: result.agents.agent3,
+      agent1: result.agent1,
+      agent2: result.agent2,
+      agent3: result.agent3,
       meta: {
         turn_index: turnIndex,
         session_key: sessionKey,
