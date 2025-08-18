@@ -2,7 +2,7 @@ import { AGENTS, Stance } from "@/config/agents";
 import { DEFAULT_PATTERN, resolveStances, stanceFromT0, SessionKey, CURRENT_PATTERN } from "@/config/patterns";
 import { buildSystemPrompt, buildUserPrompt } from "@/lib/prompts";
 import { callOpenAIChat } from "@/lib/llm-openai";
-import { FALLBACK } from "@/lib/fallbacks";
+import { FALLBACK_BY_AGENT } from "@/lib/fallbacks";
 import { supabase } from "@/lib/supabase";
 import { Message } from "@/lib/types";
 
@@ -137,7 +137,7 @@ export async function runCycle(opts: {
       user, 
       agentId: agent.id 
     });
-    const text = r.timedOut ? FALLBACK[stances[agent.id as 1 | 2 | 3]] : r.text || FALLBACK[stances[agent.id as 1 | 2 | 3]];
+    const text = r.timedOut ? FALLBACK_BY_AGENT[agent.id][stances[agent.id as 1 | 2 | 3]] : r.text || FALLBACK_BY_AGENT[agent.id][stances[agent.id as 1 | 2 | 3]];
     
     console.log(`Agent ${agent.id} response: "${text.substring(0, 100)}..."`);
     console.log(`Agent ${agent.id} fallback used: ${r.timedOut || !r.text}`);

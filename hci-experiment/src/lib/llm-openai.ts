@@ -20,12 +20,17 @@ export async function callOpenAIChat({
     return { text: "API key not configured", tokenIn: undefined, tokenOut: undefined, latencyMs: 0, timedOut: false };
   }
 
+  // API 키 길이 확인 (보안상 전체 키는 로그하지 않음)
+  const apiKeyLength = process.env.OPENAI_API_KEY.length;
+  console.log(`API Key length: ${apiKeyLength} characters`);
+  console.log(`API Key starts with: ${process.env.OPENAI_API_KEY.substring(0, 7)}...`);
+
   // 에이전트별로 다른 temperature 적용
   const getTemperature = (agentId: number): number => {
     switch (agentId) {
-      case 1: return 0.8;  // Agent 1: 높은 창의성
-      case 2: return 0.6;  // Agent 2: 중간 창의성
-      case 3: return 0.4;  // Agent 3: 낮은 창의성 (일관성 중시)
+      case 1: return 1.0;  // Agent 1: 매우 높은 창의성 (최대)
+      case 2: return 0.7;  // Agent 2: 중간 창의성
+      case 3: return 0.3;  // Agent 3: 낮은 창의성 (일관성 중시)
       default: return 0.7;
     }
   };
@@ -41,6 +46,7 @@ export async function callOpenAIChat({
     console.log(`System prompt length: ${system.length} chars`);
     console.log(`User prompt length: ${user.length} chars`);
     console.log(`Temperature: ${temperature}`);
+    console.log(`API Key exists: ${!!process.env.OPENAI_API_KEY}`);
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
@@ -69,11 +75,15 @@ export async function callOpenAIChat({
     console.log(`OpenAI response received in ${latencyMs}ms`);
     console.log(`Response length: ${text.length} chars`);
     console.log(`Tokens: ${tokenIn} in, ${tokenOut} out`);
+    console.log(`Response text: "${text.substring(0, 100)}..."`);
     return { text, tokenIn, tokenOut, latencyMs, timedOut: false };
   } catch (e: any) {
     console.error('OpenAI API error:', e?.message || e);
     console.error('Error type:', e?.name);
+    console.error('Error code:', e?.code);
+    console.error('Error status:', e?.status);
     console.error('Timed out:', timedOut);
+    console.error('Full error object:', JSON.stringify(e, null, 2));
     return { text: "", tokenIn: undefined, tokenOut: undefined, latencyMs: Date.now() - startTime, timedOut };
   }
 }

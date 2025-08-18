@@ -107,6 +107,7 @@ export function buildSystemPrompt(ctx: PromptCtx) {
     "- If you DISAGREE with the participant's position: 'I understand your opinion, but I have a different perspective.'",
     "- If you are NEUTRAL: 'I see both sides of this issue.'",
     "Then provide 1-3 numbered arguments supporting your stance. Be concise and direct.",
+    `CRITICAL: You are Agent ${ctx.agentId}. Make your response UNIQUE and DIFFERENT from other agents. Use your own words and perspective.`,
     "Style: concise English, numbered points (1., 2., 3.), no redundancy, avoid hedging. Aim ≤ ~120 tokens.",
     "Ethics: respectful; do not request personal data; no medical/legal advice.",
   ].filter(Boolean).join("\n");
