@@ -5,10 +5,9 @@ import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ProgressHeader } from '@/components/ProgressHeader';
 import { Chat } from '@/components/Chat';
-import { T0Panel } from '@/components/T0Panel';
 import { ResponsePanel } from '@/components/ResponsePanel';
 import { SESSION_META } from '@/config/sessions';
-import { Message, Turn } from '@/lib/types';
+import { Message, Response } from '@/lib/types';
 
 type SessionState = 't0' | 'chat' | 'response' | 'complete';
 
@@ -19,8 +18,10 @@ export default function SessionPage() {
   
   const [participantId, setParticipantId] = useState<string | null>(null);
   const [currentState, setCurrentState] = useState<SessionState>('t0');
-  const [currentTurn, setCurrentTurn] = useState(1);
+  const [currentResponseIndex, setCurrentResponseIndex] = useState(0);
+  const [currentCycle, setCurrentCycle] = useState(1);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [responses, setResponses] = useState<Response[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -31,46 +32,33 @@ export default function SessionPage() {
     }
     setParticipantId(storedParticipantId);
 
-    // Check if t0 already exists
-    checkT0Exists(storedParticipantId);
+    // Load initial state
+    loadSessionState(storedParticipantId);
   }, [router, sessionKey]);
 
-  const checkT0Exists = async (pid: string) => {
+  const loadSessionState = async (pid: string) => {
     try {
       const response = await fetch(`/api/state?participantId=${pid}`);
       if (response.ok) {
         const state = await response.json();
-        const session = state.sessions.find((s: any) => s.key === sessionKey);
-        if (session) {
-          // Check if t0 exists
-          const t0Turn = state.turns?.find((t: any) => t.session_key === sessionKey && t.t_idx === 0);
-          if (t0Turn) {
-            setCurrentState('chat');
-            setCurrentTurn(1);
-            loadMessages(pid);
-          }
+        setResponses(state.responses || []);
+        setMessages(state.last_messages || []);
+
+        // Check if T0 exists
+        const t0Response = state.responses?.find((r: Response) => r.session_key === sessionKey && r.response_index === 0);
+        if (t0Response) {
+          setCurrentResponseIndex(1);
+          setCurrentState('chat');
         }
       }
     } catch (error) {
-      console.error('Error checking t0:', error);
-    }
-  };
-
-  const loadMessages = async (pid: string) => {
-    try {
-      const response = await fetch(`/api/state?participantId=${pid}`);
-      if (response.ok) {
-        const state = await response.json();
-        setMessages(state.last_messages || []);
-      }
-    } catch (error) {
-      console.error('Error loading messages:', error);
+      console.error('Error loading session state:', error);
     }
   };
 
   const handleT0Complete = () => {
+    setCurrentResponseIndex(1);
     setCurrentState('chat');
-    setCurrentTurn(1);
   };
 
   const handleSendMessage = async (message: string) => {
@@ -78,7 +66,7 @@ export default function SessionPage() {
 
     setIsLoading(true);
     try {
-      const response = await fetch('/api/turn', {
+      const response = await fetch('/api/cycle', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -86,7 +74,7 @@ export default function SessionPage() {
         body: JSON.stringify({
           participantId,
           sessionKey,
-          turnIndex: currentTurn,
+          cycle: currentCycle,
           userMessage: message,
         }),
       });
@@ -104,7 +92,7 @@ export default function SessionPage() {
           id: crypto.randomUUID(),
           participant_id: participantId,
           session_key: sessionKey,
-          t_idx: currentTurn,
+          cycle: currentCycle,
           role: 'user' as const,
           content: message,
           latency_ms: null,
@@ -117,7 +105,7 @@ export default function SessionPage() {
           id: crypto.randomUUID(),
           participant_id: participantId,
           session_key: sessionKey,
-          t_idx: currentTurn,
+          cycle: currentCycle,
           role: 'agent1' as const,
           content: result.agent1,
           latency_ms: result.meta.latencies.agent1,
@@ -130,7 +118,7 @@ export default function SessionPage() {
           id: crypto.randomUUID(),
           participant_id: participantId,
           session_key: sessionKey,
-          t_idx: currentTurn,
+          cycle: currentCycle,
           role: 'agent2' as const,
           content: result.agent2,
           latency_ms: result.meta.latencies.agent2,
@@ -143,7 +131,7 @@ export default function SessionPage() {
           id: crypto.randomUUID(),
           participant_id: participantId,
           session_key: sessionKey,
-          t_idx: currentTurn,
+          cycle: currentCycle,
           role: 'agent3' as const,
           content: result.agent3,
           latency_ms: result.meta.latencies.agent3,
@@ -165,7 +153,7 @@ export default function SessionPage() {
   };
 
   const handleResponseComplete = () => {
-    if (currentTurn === 4) {
+    if (currentResponseIndex === 4) {
       // Session complete
       setCurrentState('complete');
       // Navigate to next session or finish
@@ -179,7 +167,8 @@ export default function SessionPage() {
         }
       }, 2000);
     } else {
-      setCurrentTurn(currentTurn + 1);
+      setCurrentResponseIndex(currentResponseIndex + 1);
+      setCurrentCycle(currentCycle + 1);
       setCurrentState('chat');
     }
   };
@@ -198,7 +187,7 @@ export default function SessionPage() {
         totalSteps={9}
         currentStepIndex={stepIndex}
         sessionName={sessionMeta.label}
-        turnNumber={currentTurn}
+        turnNumber={currentResponseIndex}
       />
 
       <div className="mb-6">
@@ -211,6 +200,9 @@ export default function SessionPage() {
             <p className="text-sm mt-2">
               <strong>Topic:</strong> Death Penalty (support vs oppose)
             </p>
+            <p className="text-sm mt-2">
+              <strong>Progress:</strong> Response T{currentResponseIndex} of 4 • Chat Cycle C{currentCycle} of 4
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -220,7 +212,7 @@ export default function SessionPage() {
         <div className="lg:col-span-2">
           <Card className="h-[600px]">
             <CardHeader>
-              <CardTitle>Turn {currentTurn} of 4</CardTitle>
+              <CardTitle>Chat Cycle C{currentCycle} of 4</CardTitle>
             </CardHeader>
             <CardContent className="h-[500px] p-0">
               {currentState === 'chat' && (
@@ -228,7 +220,7 @@ export default function SessionPage() {
                   messages={messages}
                   onSendMessage={handleSendMessage}
                   isLoading={isLoading}
-                  currentTurn={currentTurn}
+                  currentTurn={currentCycle}
                   sessionKey={sessionKey}
                   participantId={participantId}
                 />
@@ -240,20 +232,20 @@ export default function SessionPage() {
         {/* Response panel */}
         <div className="lg:col-span-1">
           {currentState === 't0' && (
-            <T0Panel
-              sessionKey={sessionKey}
+            <ResponsePanel
+              responseIndex={0}
               participantId={participantId}
+              sessionKey={sessionKey}
               onComplete={handleT0Complete}
             />
           )}
           
           {currentState === 'response' && (
             <ResponsePanel
-              turnIndex={currentTurn}
+              responseIndex={currentResponseIndex}
               participantId={participantId}
               sessionKey={sessionKey}
               onComplete={handleResponseComplete}
-              showPrivateBelief={currentTurn === 4}
             />
           )}
 

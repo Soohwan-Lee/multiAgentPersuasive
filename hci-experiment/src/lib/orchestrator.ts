@@ -1,23 +1,17 @@
 import { AGENTS, Stance } from "@/config/agents";
-import { DEFAULT_PATTERN, stancesForTurn, SessionKey } from "@/config/patterns";
+import { DEFAULT_PATTERN, resolveStances, stanceFromT0, SessionKey } from "@/config/patterns";
 import { buildSystemPrompt, buildUserPrompt } from "@/lib/prompts";
 import { callOpenAIChat } from "@/lib/llm-openai";
 import { FALLBACK } from "@/lib/fallbacks";
 import { supabase } from "@/lib/supabase";
 
-function stanceFromT0(x: number): Stance {
-  if (x > 0) return "support";
-  if (x < 0) return "oppose";
-  return "neutral";
-}
-
-export async function runTurn(opts: {
+export async function runCycle(opts: {
   participantId: string;
   sessionKey: SessionKey;            // 'test'|'main1'|'main2'
-  turnIndex: number;                 // 0..3 cycles after t0
+  cycle: number;                     // 1..4 (chat cycles)
   userMessage: string;
 }) {
-  // 1) load participant, t0, pattern
+  // 1) load participant and T0 response
   const { data: participant } = await supabase
     .from('participants')
     .select('*')
@@ -28,61 +22,70 @@ export async function runTurn(opts: {
     throw new Error('Participant not found');
   }
 
-  const patternKey = participant?.condition === "minority" ? "minority" : "majority";
-  const pattern = DEFAULT_PATTERN[patternKey];
-
-  // Get t0 response for this session
-  const { data: t0row } = await supabase
-    .from('turns')
+  // Get T0 response for this session
+  const { data: t0Response } = await supabase
+    .from('responses')
     .select('*')
     .eq('participant_id', opts.participantId)
     .eq('session_key', opts.sessionKey)
-    .eq('t_idx', 0)
+    .eq('response_index', 0)
     .single();
 
-  const initial: Stance = stanceFromT0(t0row?.public_choice ?? 0);
+  if (!t0Response) {
+    throw new Error('T0 response not found');
+  }
 
-  // 2) resolve stances for this turn
-  const stances = stancesForTurn({ pattern, initial, session: opts.sessionKey, turnIndex: opts.turnIndex });
+  const initial: Stance = stanceFromT0(t0Response.opinion);
+  const patternKey = participant?.condition as "majority" | "minority" | "minorityDiffusion" || "majority";
 
-  // 3) build prompts + call OpenAI in parallel
-  const calls = AGENTS.map(async (a) => {
+  // 2) resolve stances for this cycle
+  const stances = resolveStances({ 
+    pattern: patternKey, 
+    initial, 
+    session: opts.sessionKey, 
+    chatCycle: opts.cycle as 1 | 2 | 3 | 4 
+  });
+
+  // 3) build prompts + call OpenAI sequentially
+  const results = [];
+  
+  for (const agent of AGENTS) {
     const system = buildSystemPrompt({
-      agentId: a.id as 1 | 2 | 3,
-      agentName: a.name,
+      agentId: agent.id as 1 | 2 | 3,
+      agentName: agent.name,
       sessionKey: opts.sessionKey,
-      turnIndex: opts.turnIndex,
+      turnIndex: opts.cycle - 1, // Convert cycle to turn index
       participantPublicStance: undefined,
       participantMessage: opts.userMessage,
-      stance: stances[a.id as 1 | 2 | 3],
-      consistency: pattern.consistency[a.id as 1 | 2 | 3],
+      stance: stances[agent.id as 1 | 2 | 3],
+      consistency: DEFAULT_PATTERN[patternKey].consistency[agent.id as 1 | 2 | 3],
       locale: "en",
     });
+    
     const user = buildUserPrompt({
-      agentId: a.id as 1 | 2 | 3,
-      agentName: a.name,
+      agentId: agent.id as 1 | 2 | 3,
+      agentName: agent.name,
       sessionKey: opts.sessionKey,
-      turnIndex: opts.turnIndex,
+      turnIndex: opts.cycle - 1,
       participantPublicStance: undefined,
       participantMessage: opts.userMessage,
-      stance: stances[a.id as 1 | 2 | 3],
-      consistency: pattern.consistency[a.id as 1 | 2 | 3],
+      stance: stances[agent.id as 1 | 2 | 3],
+      consistency: DEFAULT_PATTERN[patternKey].consistency[agent.id as 1 | 2 | 3],
       locale: "en",
     });
 
     const r = await callOpenAIChat({ system, user });
-    const text = r.timedOut ? FALLBACK[stances[a.id as 1 | 2 | 3]] : r.text || FALLBACK[stances[a.id as 1 | 2 | 3]];
-    return { 
-      agentId: a.id, 
+    const text = r.timedOut ? FALLBACK[stances[agent.id as 1 | 2 | 3]] : r.text || FALLBACK[stances[agent.id as 1 | 2 | 3]];
+    
+    results.push({ 
+      agentId: agent.id, 
       text, 
       latencyMs: r.latencyMs, 
       tokenIn: r.tokenIn, 
       tokenOut: r.tokenOut, 
       fallback_used: r.timedOut || !r.text 
-    };
-  });
-
-  const results = await Promise.all(calls);
+    });
+  }
 
   // 4) persist: upsert turn (idempotent), insert 3 messages
   const turnId = crypto.randomUUID();
@@ -92,9 +95,9 @@ export async function runTurn(opts: {
       id: turnId,
       participant_id: opts.participantId,
       session_key: opts.sessionKey,
-      t_idx: opts.turnIndex,
+      cycle: opts.cycle,
       user_msg: opts.userMessage,
-    }, { onConflict: 'participant_id,session_key,t_idx' });
+    }, { onConflict: 'participant_id,session_key,cycle' });
 
   if (turnError) {
     console.error('Turn upsert error:', turnError);
@@ -108,7 +111,7 @@ export async function runTurn(opts: {
         id: crypto.randomUUID(),
         participant_id: opts.participantId,
         session_key: opts.sessionKey,
-        t_idx: opts.turnIndex,
+        cycle: opts.cycle,
         role: `agent${r.agentId}`,
         content: r.text,
         latency_ms: r.latencyMs,
@@ -133,4 +136,19 @@ export async function runTurn(opts: {
       }
     }
   };
+}
+
+// Legacy function for backward compatibility
+export async function runTurn(opts: {
+  participantId: string;
+  sessionKey: SessionKey;
+  turnIndex: number;
+  userMessage: string;
+}) {
+  return runCycle({
+    participantId: opts.participantId,
+    sessionKey: opts.sessionKey,
+    cycle: opts.turnIndex + 1,
+    userMessage: opts.userMessage,
+  });
 }

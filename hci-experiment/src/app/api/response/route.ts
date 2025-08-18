@@ -5,58 +5,96 @@ import { z } from 'zod';
 const responseRequestSchema = z.object({
   participantId: z.string().uuid(),
   sessionKey: z.enum(['test', 'main1', 'main2']),
-  turnIndex: z.number().int().min(1).max(4),
-  publicChoice: z.number().int().min(-50).max(50),
-  publicConf: z.number().int().min(0).max(100),
-  privateBelief: z.number().int().min(-50).max(50).optional(),
-  privateConf: z.number().int().min(0).max(100).optional(),
+  responseIndex: z.number().int().min(0).max(4),
+  opinion: z.number().int().min(-50).max(50),
+  confidence: z.number().int().min(0).max(100),
   rtMs: z.number().int().min(0),
 });
 
 export async function POST(request: NextRequest) {
   try {
-    // 환경 변수 체크
+    // Check environment variables
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
       return NextResponse.json(
-        { error: 'Supabase 설정이 완료되지 않았습니다.' },
+        { error: 'Supabase configuration is incomplete.' },
         { status: 500 }
       );
     }
 
     const body = await request.json();
-    const { participantId, sessionKey, turnIndex, publicChoice, publicConf, privateBelief, privateConf, rtMs } = responseRequestSchema.parse(body);
+    const { participantId, sessionKey, responseIndex, opinion, confidence, rtMs } = responseRequestSchema.parse(body);
 
-    // Update the turn with response data
-    const { error: updateError } = await supabase
-      .from('turns')
-      .update({
-        public_choice: publicChoice,
-        public_conf: publicConf,
-        private_belief: privateBelief || null,
-        private_conf: privateConf || null,
-        rt_ms: rtMs,
-      })
+    // Check if response already exists (idempotency)
+    const { data: existingResponse } = await supabase
+      .from('responses')
+      .select('*')
       .eq('participant_id', participantId)
       .eq('session_key', sessionKey)
-      .eq('t_idx', turnIndex);
+      .eq('response_index', responseIndex)
+      .single();
 
-    if (updateError) {
-      console.error('Response update error:', updateError);
+    if (existingResponse) {
+      return NextResponse.json({
+        success: true,
+        message: 'Response already exists',
+        response: existingResponse
+      });
+    }
+
+    // Create new response
+    const responseId = crypto.randomUUID();
+    const { data: newResponse, error: responseError } = await supabase
+      .from('responses')
+      .insert({
+        id: responseId,
+        participant_id: participantId,
+        session_key: sessionKey,
+        response_index: responseIndex,
+        opinion: opinion,
+        confidence: confidence,
+        rt_ms: rtMs,
+      })
+      .select()
+      .single();
+
+    if (responseError) {
+      console.error('Response creation error:', responseError);
       return NextResponse.json(
-        { error: '응답 저장 중 오류가 발생했습니다.' },
+        { error: 'Failed to save response.' },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({ 
+    // Update session current_response
+    const { error: sessionError } = await supabase
+      .from('sessions')
+      .update({ current_response: responseIndex + 1 })
+      .eq('participant_id', participantId)
+      .eq('key', sessionKey);
+
+    if (sessionError) {
+      console.error('Session update error:', sessionError);
+    }
+
+    // If this is T0, update session started_at
+    if (responseIndex === 0) {
+      await supabase
+        .from('sessions')
+        .update({ started_at: new Date().toISOString() })
+        .eq('participant_id', participantId)
+        .eq('key', sessionKey)
+        .is('started_at', null);
+    }
+
+    return NextResponse.json({
       success: true,
-      message: 'Response saved successfully'
+      response: newResponse
     });
 
   } catch (error) {
     console.error('Response API error:', error);
     return NextResponse.json(
-      { error: '서버 오류가 발생했습니다.' },
+      { error: 'Server error occurred.' },
       { status: 500 }
     );
   }

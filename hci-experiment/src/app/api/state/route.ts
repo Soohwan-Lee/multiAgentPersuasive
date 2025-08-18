@@ -1,29 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import { stateRequestSchema } from '@/lib/validations';
-import { ParticipantState } from '@/lib/types';
 
 export async function GET(request: NextRequest) {
   try {
-    // 환경 변수 체크
+    // Check environment variables
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
       return NextResponse.json(
-        { error: 'Supabase 설정이 완료되지 않았습니다.' },
+        { error: 'Supabase configuration is incomplete.' },
         { status: 500 }
       );
     }
 
     const { searchParams } = new URL(request.url);
     const participantId = searchParams.get('participantId');
-    
+
     if (!participantId) {
       return NextResponse.json(
-        { error: 'participantId가 필요합니다.' },
+        { error: 'Participant ID is required.' },
         { status: 400 }
       );
     }
 
-    // 참가자 정보 가져오기
+    // Get participant
     const { data: participant, error: participantError } = await supabase
       .from('participants')
       .select('*')
@@ -32,30 +30,45 @@ export async function GET(request: NextRequest) {
 
     if (participantError || !participant) {
       return NextResponse.json(
-        { error: '참가자를 찾을 수 없습니다.' },
+        { error: 'Participant not found.' },
         { status: 404 }
       );
     }
 
-    // 세션 정보 가져오기
+    // Get sessions
     const { data: sessions, error: sessionsError } = await supabase
       .from('sessions')
       .select('*')
       .eq('participant_id', participantId)
-      .order('key', { ascending: true });
+      .order('key');
 
     if (sessionsError) {
       console.error('Sessions fetch error:', sessionsError);
       return NextResponse.json(
-        { error: '세션 정보를 가져오는 중 오류가 발생했습니다.' },
+        { error: 'Failed to fetch sessions.' },
         { status: 500 }
       );
     }
 
-    // 현재 진행 중인 세션 찾기
-    const currentSession = sessions?.find((s: any) => !s.completed_at) || null;
+    // Get responses
+    const { data: responses, error: responsesError } = await supabase
+      .from('responses')
+      .select('*')
+      .eq('participant_id', participantId)
+      .order('session_key, response_index');
 
-    // 마지막 완료된 턴 찾기
+    if (responsesError) {
+      console.error('Responses fetch error:', responsesError);
+      return NextResponse.json(
+        { error: 'Failed to fetch responses.' },
+        { status: 500 }
+      );
+    }
+
+    // Get current session
+    const currentSession = sessions?.find((s: any) => !s.completed_at);
+
+    // Get last completed turn
     let lastCompletedTurn = null;
     if (currentSession) {
       const { data: lastTurn } = await supabase
@@ -63,41 +76,39 @@ export async function GET(request: NextRequest) {
         .select('*')
         .eq('participant_id', participantId)
         .eq('session_key', currentSession.key)
-        .order('t_idx', { ascending: false })
+        .order('cycle', { ascending: false })
         .limit(1)
         .single();
       
       lastCompletedTurn = lastTurn;
     }
 
-    // 마지막 메시지들 가져오기 (현재 세션의 경우)
-    let lastMessages = [];
-    if (currentSession && lastCompletedTurn) {
+    // Get last messages
+    let lastMessages: any[] = [];
+    if (currentSession) {
       const { data: messages } = await supabase
         .from('messages')
         .select('*')
         .eq('participant_id', participantId)
         .eq('session_key', currentSession.key)
-        .eq('t_idx', lastCompletedTurn.t_idx)
-        .order('ts', { ascending: true });
+        .order('cycle, ts', { ascending: true });
       
       lastMessages = messages || [];
     }
 
-    const state: ParticipantState = {
+    return NextResponse.json({
       participant,
       sessions: sessions || [],
       current_session: currentSession,
       last_completed_turn: lastCompletedTurn,
       last_messages: lastMessages,
-    };
-
-    return NextResponse.json(state);
+      responses: responses || [],
+    });
 
   } catch (error) {
     console.error('State API error:', error);
     return NextResponse.json(
-      { error: '서버 오류가 발생했습니다.' },
+      { error: 'Server error occurred.' },
       { status: 500 }
     );
   }

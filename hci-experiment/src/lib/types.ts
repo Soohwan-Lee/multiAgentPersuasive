@@ -15,13 +15,26 @@ export interface Session {
   started_at: string;
   completed_at: string | null;
   current_turn: number;
+  current_response: number;
+  current_cycle: number;
+}
+
+export interface Response {
+  id: string;
+  participant_id: string;
+  session_key: string;
+  response_index: number;
+  opinion: number;
+  confidence: number;
+  rt_ms: number;
+  created_at: string;
 }
 
 export interface Turn {
   id: string;
   participant_id: string;
   session_key: string;
-  t_idx: number;
+  cycle: number;
   user_msg: string | null;
   public_choice: number | null;
   public_conf: number | null;
@@ -35,7 +48,7 @@ export interface Message {
   id: string;
   participant_id: string;
   session_key: string;
-  t_idx: number;
+  cycle: number;
   role: 'user' | 'agent1' | 'agent2' | 'agent3';
   content: string;
   latency_ms: number | null;
@@ -78,6 +91,7 @@ export interface ParticipantState {
   current_session: Session | null;
   last_completed_turn: Turn | null;
   last_messages: Message[];
+  responses: Response[];
 }
 
 export interface SurveyBackground {

@@ -1,144 +1,146 @@
-# 다중 에이전트 설득 실험 (Multi-Agent Persuasive Experiment)
+# Multi-Agent Persuasive Experiment
 
-Next.js 14 (App Router, TypeScript)를 사용한 단일 참가자 × 다중 에이전트 온라인 실험 웹 애플리케이션입니다. Vercel에 배포되며, Supabase를 데이터 저장소로 사용합니다.
+A Next.js 14 (App Router, TypeScript) application for single-participant × multi-agent online experiments. Deployed on Vercel with Supabase for data storage and Prolific integration.
 
-## 🚀 주요 기능
+## 🚀 Key Features
 
-- **다중 에이전트 오케스트레이션**: 3개의 AI 에이전트가 동시에 응답
-- **패턴 기반 에이전트 배치**: Majority/Minority 패턴에 따른 에이전트 스탠스 결정
-- **세션별 프레이밍**: Normative vs Informative 설득 프레이밍
-- **t0 초기 응답**: 각 세션 시작 시 참가자의 초기 의견 및 확신도 측정
-- **멱등성 보장**: 중복 요청 방지 및 안정적인 상태 관리
-- **타임아웃 및 폴백**: 12초 타임아웃 시 자동 폴백 응답
-- **Prolific 통합**: 완전한 Prolific 워크플로우 지원
-- **실시간 진행 추적**: 세션별 진행 상황 및 턴 관리
-- **반응형 UI**: Tailwind CSS를 사용한 모던한 인터페이스
+- **Multi-Agent Orchestration**: 3 AI agents responding simultaneously
+- **Pattern-Based Agent Placement**: Majority/Minority/MinorityDiffusion patterns
+- **Session-Specific Framing**: Normative vs Informative persuasion framing
+- **T0-T4 Response System**: Initial response + 4 chat cycles with slider responses
+- **Idempotency Guarantee**: Duplicate request prevention and stable state management
+- **Timeout & Fallback**: 12-second timeout with automatic fallback responses
+- **Prolific Integration**: Complete Prolific workflow support
+- **Real-time Progress Tracking**: Session-by-session progress and cycle management
+- **Responsive UI**: Modern interface using Tailwind CSS
 
-## 📋 실험 플로우
+## 📋 Experiment Flow
 
-1. **입장** (`/entry`) - Prolific 파라미터 캡처 및 패턴 할당
-2. **소개** (`/introduction`) - 실험 설명
-3. **배경 설문** (`/survey/background`) - 인구통계학적 정보
-4. **테스트 세션** (`/session/test`) - t0 + 4턴 실험 (연습)
-5. **메인 세션 1** (`/session/main1`) - t0 + 4턴 실험 (Normative)
-6. **메인 세션 2** (`/session/main2`) - t0 + 4턴 실험 (Informative)
-7. **자기보고 설문** (`/survey/post-self`) - 설득 효과 측정
-8. **개방형 설문** (`/survey/post-open`) - 자유 응답
-9. **완료** (`/finish`) - Prolific 완료 리다이렉트
+1. **Entry** (`/entry`) - Capture Prolific parameters and assign patterns
+2. **Introduction** (`/introduction`) - Experiment explanation
+3. **Background Survey** (`/survey/background`) - Demographic information
+4. **Test Session** (`/session/test`) - T0 + 4 cycles (practice)
+5. **Main Session 1** (`/session/main1`) - T0 + 4 cycles (Normative)
+6. **Main Session 2** (`/session/main2`) - T0 + 4 cycles (Informative)
+7. **Post-Self Survey** (`/survey/post-self`) - Persuasion effectiveness measurement
+8. **Post-Open Survey** (`/survey/post-open`) - Free response
+9. **Finish** (`/finish`) - Prolific completion redirect
 
-### 세션별 구조
-- **t0**: 초기 의견 (-50 ~ +50) 및 확신도 (0 ~ 100) 측정
-- **턴 1-4**: 메시지 교환 → 에이전트 응답 → 공개 응답 (턴 4에서는 개인 신념도 추가)
+### Session Structure
+- **T0**: Initial opinion (-50 ~ +50) and confidence (0 ~ 100) measurement
+- **Cycles 1-4**: Message exchange → Agent responses → Response panel (sliders + RT)
+- **Each cycle**: User message → Agent 1 → Agent 2 → Agent 3 → Response panel
 
-## 🛠 기술 스택
+## 🛠 Tech Stack
 
 - **Frontend**: Next.js 14 (App Router), TypeScript, Tailwind CSS
 - **Backend**: Next.js API Routes, Supabase
 - **Database**: PostgreSQL (Supabase)
 - **AI**: OpenAI GPT-4
-- **State Management**: Zustand
+- **State Management**: React hooks
 - **Validation**: Zod
 - **UI Components**: ShadCN UI
 - **Icons**: Lucide React
 
-## 📦 설치 및 설정
+## 📦 Installation & Setup
 
-### 1. 의존성 설치
+### 1. Install Dependencies
 
 ```bash
 npm install
 ```
 
-### 2. 환경 변수 설정
+### 2. Environment Variables
 
-`.env.local` 파일을 생성하고 다음 변수들을 설정하세요:
+Create `.env.local` file with the following variables:
 
 ```env
-# Supabase 설정
+# Supabase Configuration
 NEXT_PUBLIC_SUPABASE_URL=your-supabase-project-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
 
-# OpenAI API 설정
+# OpenAI Configuration
 OPENAI_API_KEY=your-openai-api-key
 LLM_MODEL=gpt-4o-mini
 
-# Prolific 설정
+# Prolific Configuration
 PROLIFIC_COMPLETION_CODE=your-prolific-completion-code
 
-# 선택적 에이전트 프롬프트 (설정하지 않으면 기본값 사용)
+# Optional Agent System Prompts (if not set, default prompts will be used)
 AGENT_SYSTEM_PROMPT_1=your_custom_agent1_prompt
 AGENT_SYSTEM_PROMPT_2=your_custom_agent2_prompt
 AGENT_SYSTEM_PROMPT_3=your_custom_agent3_prompt
 ```
 
-### 3. Supabase 데이터베이스 설정
+### 3. Supabase Database Setup
 
-1. Supabase 프로젝트 생성
-2. SQL 편집기에서 `migrations/001_create_tables.sql` 실행
-3. 또는 마이그레이션 스크립트 실행:
+1. Create a Supabase project
+2. Run the SQL scripts in the SQL editor:
+   - `migrations/001_create_tables.sql`
+   - `migrations/002_update_schema.sql`
 
-```bash
-npm run db:migrate
-```
-
-### 4. 개발 서버 실행
+### 4. Development Server
 
 ```bash
 npm run dev
 ```
 
-## 🗄 데이터베이스 스키마
+## 🗄 Database Schema
 
 ### participants
-- 참가자 기본 정보 (Prolific ID, Study ID, Session ID)
-- 실험 조건 및 완료 시간
+- Basic participant information (Prolific ID, Study ID, Session ID)
+- Experiment condition and completion time
 
 ### sessions
-- 세션별 진행 상황 (test, main1, main2)
-- 현재 턴 및 완료 상태
+- Session progress (test, main1, main2)
+- Current response index and cycle
+
+### responses
+- T0-T4 responses with opinion, confidence, and response time
+- Each response: opinion (-50 to +50), confidence (0 to 100), RT_ms
 
 ### turns
-- 턴별 사용자 메시지 및 선택
-- 공개/개인 신념 및 확신도
+- Chat cycle information (cycles 1-4)
+- User messages and metadata
 
 ### messages
-- 모든 메시지 기록 (사용자 + 3개 에이전트)
-- 응답 시간, 토큰 사용량, 폴백 사용 여부
+- All message records (user + 3 agents)
+- Response time, token usage, fallback usage
 
 ### events
-- 실험 진행 중 이벤트 로깅
-- 설문 응답 및 시스템 이벤트
+- Experiment progress event logging
+- Survey responses and system events
 
-## 🔧 개발 도구
+## 🔧 Development Tools
 
-### 시드 데이터 생성
+### Seed Data Generation
 
 ```bash
 npm run db:seed
 ```
 
-더미 참가자를 생성하고 테스트 세션으로 진행할 수 있는 URL을 제공합니다.
+Creates a dummy participant and provides a URL to advance to the test session.
 
-### 마이그레이션 실행
+### Migration Execution
 
 ```bash
 npm run db:migrate
 ```
 
-데이터베이스 스키마를 생성합니다.
+Creates the database schema.
 
-## 🚀 배포 (Vercel)
+## 🚀 Deployment (Vercel)
 
-### 1. Vercel 프로젝트 생성
+### 1. Create Vercel Project
 
 ```bash
 vercel
 ```
 
-### 2. 환경 변수 설정
+### 2. Environment Variables
 
-Vercel 대시보드에서 다음 환경 변수들을 설정하세요:
+Set the following environment variables in Vercel dashboard:
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
@@ -146,85 +148,82 @@ Vercel 대시보드에서 다음 환경 변수들을 설정하세요:
 - `OPENAI_API_KEY`
 - `PROLIFIC_COMPLETION_CODE`
 
-### 3. 빌드 설정
+### 3. Build Settings
 
 - **Framework Preset**: Next.js
 - **Build Command**: `npm run build`
 - **Output Directory**: `.next`
 
-## 📊 Prolific 설정
+## 📊 Prolific Setup
 
-### URL 파라미터
+### URL Parameters
 
-실험 URL에 다음 파라미터들이 포함되어야 합니다:
+The experiment URL should include these parameters:
 
 ```
 https://your-app.vercel.app/entry?PROLIFIC_PID={{%PROLIFIC_PID%}}&STUDY_ID={{%STUDY_ID%}}&SESSION_ID={{%SESSION_ID%}}
 ```
 
-### 완료 리다이렉트
+### Completion Redirect
 
-실험 완료 시 다음 URL로 리다이렉트됩니다:
+Upon experiment completion, participants are redirected to:
 
 ```
 https://app.prolific.com/submissions/complete?cc={PROLIFIC_COMPLETION_CODE}
 ```
 
-## 🔍 API 엔드포인트
-
-### POST `/api/t0`
-t0 초기 응답 처리 (의견 및 확신도)
-
-### POST `/api/turn`
-턴 처리 및 에이전트 오케스트레이션 (턴 1-4)
+## 🔍 API Endpoints
 
 ### POST `/api/response`
-턴별 응답 제출 (공개/개인 의견 및 확신도)
+Handle T0-T4 responses (opinion, confidence, RT_ms)
+
+### POST `/api/cycle`
+Process chat cycles and agent orchestration (cycles 1-4)
 
 ### GET `/api/state?participantId=...`
-참가자 현재 상태 조회
+Get participant current state
 
 ### POST `/api/participants/upsert`
-참가자 생성/업데이트 (패턴 할당 포함)
+Create/update participants (pattern assignment included)
 
 ### POST `/api/prolific/commit`
-Prolific 완료 처리
+Handle Prolific completion
 
-## 🧪 테스트
+## 🧪 Testing
 
-### 단위 테스트
+### Unit Tests
 
 ```bash
 npm test
 ```
 
-### 통합 테스트
+### Integration Tests
 
 ```bash
 npm run test:integration
 ```
 
-## 📝 개발 가이드
+## 📝 Development Guide
 
-### 새로운 페이지 추가
+### Adding New Pages
 
-1. `src/app/` 디렉토리에 새 폴더 생성
-2. `page.tsx` 파일 생성
-3. `ProgressHeader` 컴포넌트 사용하여 진행 상황 표시
+1. Create new folder in `src/app/` directory
+2. Create `page.tsx` file
+3. Use `ProgressHeader` component to show progress
 
-### 새로운 API 엔드포인트 추가
+### Adding New API Endpoints
 
-1. `src/app/api/` 디렉토리에 새 폴더 생성
-2. `route.ts` 파일 생성
-3. Zod 스키마로 입력 검증
+1. Create new folder in `src/app/api/` directory
+2. Create `route.ts` file
+3. Use Zod schema for input validation
 
-### 컴포넌트 추가
+### Adding Components
 
-1. `src/components/` 디렉토리에 새 컴포넌트 생성
-2. TypeScript 타입 정의
-3. ShadCN UI 컴포넌트 활용
+1. Create new component in `src/components/` directory
+2. Define TypeScript types
+3. Use ShadCN UI components
 
-## 🤝 기여하기
+## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch
@@ -232,27 +231,39 @@ npm run test:integration
 4. Add tests if applicable
 5. Submit a pull request
 
-## 🎯 실험 설계
+## 🎯 Experiment Design
 
-### 패턴 할당
-- **Majority**: 모든 에이전트가 참가자의 초기 의견과 반대 입장
-- **Minority**: 2개 에이전트는 참가자와 같은 입장, 1개 에이전트는 반대 입장
-- 참가자별로 랜덤 할당되며 모든 세션에 동일하게 적용
+### Pattern Assignment
+- **Majority**: All agents take opposite stance to T0 across C1..C4
+- **Minority**: A1/A2 match T0 stance; A3 opposite across C1..C4
+- **MinorityDiffusion**: A1 flips before C3, A2 flips before C4
+- Randomly assigned per participant and applied consistently across all sessions
 
-### 세션별 프레이밍
-- **Test**: 연습 세션, 단순한 논리적 논증
-- **Main1 (Normative)**: 사회적 규범, 승인, 평판에 초점
-- **Main2 (Informative)**: 증거, 정확성, 불확실성 감소에 초점
+### Session-Specific Framing
+- **Test**: Practice session, simple logical arguments
+- **Main1 (Normative)**: Focus on social norms, approval, reputation
+- **Main2 (Informative)**: Focus on evidence, accuracy, uncertainty reduction
 
-### 에이전트 구성
-- **Agent 1 (Red)**: 기본적으로 Minority 패턴에서 소수 의견 담당
-- **Agent 2 (Green)**: Majority 패턴에서 다수 의견 담당
-- **Agent 3 (Blue)**: Majority 패턴에서 다수 의견 담당
+### Agent Configuration
+- **Agent 1 (Red)**: Default minority agent in minority patterns
+- **Agent 2 (Green)**: Majority agent in majority patterns
+- **Agent 3 (Blue)**: Minority agent in minority patterns
 
-## 📄 라이선스
+### Response-Chat Cycle Flow
+- **T0**: Initial opinion and confidence measurement
+- **C1**: Chat between T0 and T1
+- **T1**: Response after C1
+- **C2**: Chat between T1 and T2
+- **T2**: Response after C2
+- **C3**: Chat between T2 and T3
+- **T3**: Response after C3
+- **C4**: Chat between T3 and T4
+- **T4**: Final response
+
+## 📄 License
 
 MIT License
 
-## 📞 지원
+## 📞 Support
 
-문제가 발생하거나 질문이 있으시면 이슈를 생성해주세요.
+If you encounter issues or have questions, please create an issue.

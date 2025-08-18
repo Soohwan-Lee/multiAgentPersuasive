@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,11 +37,10 @@ export function Chat({ messages, onSendMessage, isLoading, currentTurn, sessionK
     }
   };
 
-  const currentTurnMessages = messages.filter(m => m.t_idx === currentTurn);
+  const currentTurnMessages = messages.filter(m => m.cycle === currentTurn);
 
   return (
     <div className="flex flex-col h-full">
-      {/* Chat area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {currentTurnMessages.length === 0 ? (
           <div className="text-center text-muted-foreground py-8">
@@ -77,8 +76,8 @@ export function Chat({ messages, onSendMessage, isLoading, currentTurn, sessionK
                     <CardContent className="p-3">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center space-x-2">
-                          <div 
-                            className="w-3 h-3 rounded-full" 
+                          <div
+                            className="w-3 h-3 rounded-full"
                             style={{ backgroundColor: getAgentColor(agent.id) }}
                           />
                           <span className="text-sm font-medium">{agent.name}</span>
@@ -130,12 +129,8 @@ export function Chat({ messages, onSendMessage, isLoading, currentTurn, sessionK
             disabled={isLoading}
             className="flex-1"
           />
-          <Button type="submit" disabled={isLoading || !inputMessage.trim()}>
-            {isLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Send className="h-4 w-4" />
-            )}
+          <Button type="submit" disabled={isLoading}>
+            <Send className="h-4 w-4" />
           </Button>
         </form>
       </div>

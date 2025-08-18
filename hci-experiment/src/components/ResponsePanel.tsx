@@ -6,24 +6,20 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 
 interface ResponsePanelProps {
-  turnIndex: number;
+  responseIndex: number;
   participantId: string;
   sessionKey: 'test' | 'main1' | 'main2';
   onComplete: () => void;
-  showPrivateBelief?: boolean;
 }
 
 export function ResponsePanel({ 
-  turnIndex, 
+  responseIndex, 
   participantId, 
   sessionKey, 
-  onComplete, 
-  showPrivateBelief = false 
+  onComplete 
 }: ResponsePanelProps) {
-  const [publicChoice, setPublicChoice] = useState(0);
-  const [publicConf, setPublicConf] = useState(50);
-  const [privateBelief, setPrivateBelief] = useState(0);
-  const [privateConf, setPrivateConf] = useState(50);
+  const [opinion, setOpinion] = useState(0);
+  const [confidence, setConfidence] = useState(50);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [startTime] = useState(Date.now());
 
@@ -40,11 +36,9 @@ export function ResponsePanel({
         body: JSON.stringify({
           participantId,
           sessionKey,
-          turnIndex,
-          publicChoice,
-          publicConf,
-          privateBelief: showPrivateBelief ? privateBelief : undefined,
-          privateConf: showPrivateBelief ? privateConf : undefined,
+          responseIndex,
+          opinion,
+          confidence,
           rtMs,
         }),
       });
@@ -62,23 +56,34 @@ export function ResponsePanel({
     }
   };
 
+  const getResponseTitle = () => {
+    if (responseIndex === 0) return 'Initial Response (T0)';
+    return `Response T${responseIndex}`;
+  };
+
+  const getOpinionLabel = () => {
+    if (opinion > 0) return `Support (${opinion})`;
+    if (opinion < 0) return `Oppose (${opinion})`;
+    return `Neutral (${opinion})`;
+  };
+
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
-        <CardTitle className="text-center">Turn {turnIndex} Response</CardTitle>
+        <CardTitle className="text-center">{getResponseTitle()}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-2">
-          <Label htmlFor="public-choice">
-            Public opinion: {publicChoice > 0 ? 'Support' : publicChoice < 0 ? 'Oppose' : 'Neutral'} ({publicChoice})
+          <Label htmlFor="opinion">
+            Your opinion on Death Penalty: {getOpinionLabel()}
           </Label>
           <input
-            id="public-choice"
+            id="opinion"
             type="range"
             min="-50"
             max="50"
-            value={publicChoice}
-            onChange={(e) => setPublicChoice(Number(e.target.value))}
+            value={opinion}
+            onChange={(e) => setOpinion(Number(e.target.value))}
             className="w-full"
           />
           <div className="flex justify-between text-xs text-muted-foreground">
@@ -89,16 +94,16 @@ export function ResponsePanel({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="public-conf">
-            Public confidence: {publicConf}%
+          <Label htmlFor="confidence">
+            Confidence in your opinion: {confidence}%
           </Label>
           <input
-            id="public-conf"
+            id="confidence"
             type="range"
             min="0"
             max="100"
-            value={publicConf}
-            onChange={(e) => setPublicConf(Number(e.target.value))}
+            value={confidence}
+            onChange={(e) => setConfidence(Number(e.target.value))}
             className="w-full"
           />
           <div className="flex justify-between text-xs text-muted-foreground">
@@ -106,49 +111,6 @@ export function ResponsePanel({
             <span>Very confident</span>
           </div>
         </div>
-
-        {showPrivateBelief && (
-          <>
-            <div className="space-y-2">
-              <Label htmlFor="private-belief">
-                Private belief: {privateBelief > 0 ? 'Support' : privateBelief < 0 ? 'Oppose' : 'Neutral'} ({privateBelief})
-              </Label>
-              <input
-                id="private-belief"
-                type="range"
-                min="-50"
-                max="50"
-                value={privateBelief}
-                onChange={(e) => setPrivateBelief(Number(e.target.value))}
-                className="w-full"
-              />
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Strongly Oppose</span>
-                <span>Neutral</span>
-                <span>Strongly Support</span>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="private-conf">
-                Private confidence: {privateConf}%
-              </Label>
-              <input
-                id="private-conf"
-                type="range"
-                min="0"
-                max="100"
-                value={privateConf}
-                onChange={(e) => setPrivateConf(Number(e.target.value))}
-                className="w-full"
-              />
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Not at all confident</span>
-                <span>Very confident</span>
-              </div>
-            </div>
-          </>
-        )}
 
         <Button 
           onClick={handleSubmit} 
