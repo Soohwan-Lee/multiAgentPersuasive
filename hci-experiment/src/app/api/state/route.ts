@@ -5,6 +5,14 @@ import { ParticipantState } from '@/lib/types';
 
 export async function GET(request: NextRequest) {
   try {
+    // 환경 변수 체크
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json(
+        { error: 'Supabase 설정이 완료되지 않았습니다.' },
+        { status: 500 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const participantId = searchParams.get('participantId');
     
@@ -45,7 +53,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 현재 진행 중인 세션 찾기
-    const currentSession = sessions?.find(s => !s.completed_at) || null;
+    const currentSession = sessions?.find((s: any) => !s.completed_at) || null;
 
     // 마지막 완료된 턴 찾기
     let lastCompletedTurn = null;

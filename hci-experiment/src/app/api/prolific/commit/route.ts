@@ -3,6 +3,14 @@ import { supabase } from '@/lib/supabase';
 
 export async function POST(request: NextRequest) {
   try {
+    // 환경 변수 체크
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json(
+        { error: 'Supabase 설정이 완료되지 않았습니다.' },
+        { status: 500 }
+      );
+    }
+
     const body = await request.json();
     const { participantId } = body;
 

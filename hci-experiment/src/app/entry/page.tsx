@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ProgressHeader } from '@/components/ProgressHeader';
 import { Loader2, CheckCircle } from 'lucide-react';
 
-export default function EntryPage() {
+function EntryPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
@@ -129,5 +129,20 @@ export default function EntryPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function EntryPage() {
+  return (
+    <Suspense fallback={
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="text-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p>페이지를 로딩하고 있습니다...</p>
+        </div>
+      </div>
+    }>
+      <EntryPageContent />
+    </Suspense>
   );
 }

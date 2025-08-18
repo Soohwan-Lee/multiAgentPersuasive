@@ -8,6 +8,14 @@ const rateLimitMap = new Map<string, number>();
 
 export async function POST(request: NextRequest) {
   try {
+    // 환경 변수 체크
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json(
+        { error: 'Supabase 설정이 완료되지 않았습니다.' },
+        { status: 500 }
+      );
+    }
+
     const body = await request.json();
     const { participantId, sessionKey, turnIndex, userMessage } = turnRequestSchema.parse(body);
 
@@ -44,9 +52,9 @@ export async function POST(request: NextRequest) {
         .order('ts', { ascending: true });
 
       return NextResponse.json({
-        agent1: messages?.find(m => m.role === 'agent1'),
-        agent2: messages?.find(m => m.role === 'agent2'),
-        agent3: messages?.find(m => m.role === 'agent3'),
+        agent1: messages?.find((m: any) => m.role === 'agent1'),
+        agent2: messages?.find((m: any) => m.role === 'agent2'),
+        agent3: messages?.find((m: any) => m.role === 'agent3'),
         meta: {
           turn_index: turnIndex,
           session_key: sessionKey,

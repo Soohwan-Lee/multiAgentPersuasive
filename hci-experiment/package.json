@@ -11,6 +11,8 @@
     "db:migrate": "tsx scripts/migrate.ts"
   },
   "dependencies": {
+    "@radix-ui/react-label": "^2.1.7",
+    "@radix-ui/react-progress": "^1.1.7",
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-toast": "^1.2.15",
     "@supabase/supabase-js": "^2.45.4",
