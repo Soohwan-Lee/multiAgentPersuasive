@@ -1,36 +1,227 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 다중 에이전트 설득 실험 (Multi-Agent Persuasive Experiment)
 
-## Getting Started
+Next.js 14 (App Router, TypeScript)를 사용한 단일 참가자 × 다중 에이전트 온라인 실험 웹 애플리케이션입니다. Vercel에 배포되며, Supabase를 데이터 저장소로 사용합니다.
 
-First, run the development server:
+## 🚀 주요 기능
+
+- **다중 에이전트 오케스트레이션**: 3개의 AI 에이전트가 동시에 응답
+- **멱등성 보장**: 중복 요청 방지 및 안정적인 상태 관리
+- **타임아웃 및 폴백**: 12초 타임아웃 시 자동 폴백 응답
+- **Prolific 통합**: 완전한 Prolific 워크플로우 지원
+- **실시간 진행 추적**: 세션별 진행 상황 및 턴 관리
+- **반응형 UI**: Tailwind CSS를 사용한 모던한 인터페이스
+
+## 📋 실험 플로우
+
+1. **입장** (`/entry`) - Prolific 파라미터 캡처
+2. **소개** (`/introduction`) - 실험 설명
+3. **배경 설문** (`/survey/background`) - 인구통계학적 정보
+4. **테스트 세션** (`/session/test`) - 4턴 실험
+5. **메인 세션 1** (`/session/main1`) - 4턴 실험
+6. **메인 세션 2** (`/session/main2`) - 4턴 실험
+7. **자기보고 설문** (`/survey/post-self`) - 설득 효과 측정
+8. **개방형 설문** (`/survey/post-open`) - 자유 응답
+9. **완료** (`/finish`) - Prolific 완료 리다이렉트
+
+## 🛠 기술 스택
+
+- **Frontend**: Next.js 14 (App Router), TypeScript, Tailwind CSS
+- **Backend**: Next.js API Routes, Supabase
+- **Database**: PostgreSQL (Supabase)
+- **AI**: OpenAI GPT-4
+- **State Management**: Zustand
+- **Validation**: Zod
+- **UI Components**: ShadCN UI
+- **Icons**: Lucide React
+
+## 📦 설치 및 설정
+
+### 1. 의존성 설치
+
+```bash
+npm install
+```
+
+### 2. 환경 변수 설정
+
+`.env.local` 파일을 생성하고 다음 변수들을 설정하세요:
+
+```env
+# Supabase 설정
+NEXT_PUBLIC_SUPABASE_URL=your-supabase-project-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
+
+# OpenAI API 설정
+OPENAI_API_KEY=your-openai-api-key
+
+# Prolific 설정
+PROLIFIC_COMPLETION_CODE=your-prolific-completion-code
+
+# 에이전트 시스템 프롬프트 (선택사항)
+AGENT_SYSTEM_PROMPT_1=당신은 다수 의견을 대표하는 에이전트입니다...
+AGENT_SYSTEM_PROMPT_2=당신은 소수 의견을 대표하는 에이전트입니다...
+AGENT_SYSTEM_PROMPT_3=당신은 중립적이고 균형잡힌 관점을 대표하는 에이전트입니다...
+```
+
+### 3. Supabase 데이터베이스 설정
+
+1. Supabase 프로젝트 생성
+2. SQL 편집기에서 `migrations/001_create_tables.sql` 실행
+3. 또는 마이그레이션 스크립트 실행:
+
+```bash
+npm run db:migrate
+```
+
+### 4. 개발 서버 실행
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🗄 데이터베이스 스키마
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### participants
+- 참가자 기본 정보 (Prolific ID, Study ID, Session ID)
+- 실험 조건 및 완료 시간
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### sessions
+- 세션별 진행 상황 (test, main1, main2)
+- 현재 턴 및 완료 상태
 
-## Learn More
+### turns
+- 턴별 사용자 메시지 및 선택
+- 공개/개인 신념 및 확신도
 
-To learn more about Next.js, take a look at the following resources:
+### messages
+- 모든 메시지 기록 (사용자 + 3개 에이전트)
+- 응답 시간, 토큰 사용량, 폴백 사용 여부
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### events
+- 실험 진행 중 이벤트 로깅
+- 설문 응답 및 시스템 이벤트
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🔧 개발 도구
 
-## Deploy on Vercel
+### 시드 데이터 생성
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+npm run db:seed
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+더미 참가자를 생성하고 테스트 세션으로 진행할 수 있는 URL을 제공합니다.
+
+### 마이그레이션 실행
+
+```bash
+npm run db:migrate
+```
+
+데이터베이스 스키마를 생성합니다.
+
+## 🚀 배포 (Vercel)
+
+### 1. Vercel 프로젝트 생성
+
+```bash
+vercel
+```
+
+### 2. 환경 변수 설정
+
+Vercel 대시보드에서 다음 환경 변수들을 설정하세요:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `OPENAI_API_KEY`
+- `PROLIFIC_COMPLETION_CODE`
+
+### 3. 빌드 설정
+
+- **Framework Preset**: Next.js
+- **Build Command**: `npm run build`
+- **Output Directory**: `.next`
+
+## 📊 Prolific 설정
+
+### URL 파라미터
+
+실험 URL에 다음 파라미터들이 포함되어야 합니다:
+
+```
+https://your-app.vercel.app/entry?PROLIFIC_PID={{%PROLIFIC_PID%}}&STUDY_ID={{%STUDY_ID%}}&SESSION_ID={{%SESSION_ID%}}
+```
+
+### 완료 리다이렉트
+
+실험 완료 시 다음 URL로 리다이렉트됩니다:
+
+```
+https://app.prolific.com/submissions/complete?cc={PROLIFIC_COMPLETION_CODE}
+```
+
+## 🔍 API 엔드포인트
+
+### POST `/api/turn`
+턴 처리 및 에이전트 오케스트레이션
+
+### GET `/api/state?participantId=...`
+참가자 현재 상태 조회
+
+### POST `/api/participants/upsert`
+참가자 생성/업데이트
+
+### POST `/api/prolific/commit`
+Prolific 완료 처리
+
+## 🧪 테스트
+
+### 단위 테스트
+
+```bash
+npm test
+```
+
+### 통합 테스트
+
+```bash
+npm run test:integration
+```
+
+## 📝 개발 가이드
+
+### 새로운 페이지 추가
+
+1. `src/app/` 디렉토리에 새 폴더 생성
+2. `page.tsx` 파일 생성
+3. `ProgressHeader` 컴포넌트 사용하여 진행 상황 표시
+
+### 새로운 API 엔드포인트 추가
+
+1. `src/app/api/` 디렉토리에 새 폴더 생성
+2. `route.ts` 파일 생성
+3. Zod 스키마로 입력 검증
+
+### 컴포넌트 추가
+
+1. `src/components/` 디렉토리에 새 컴포넌트 생성
+2. TypeScript 타입 정의
+3. ShadCN UI 컴포넌트 활용
+
+## 🤝 기여하기
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## 📄 라이선스
+
+MIT License
+
+## 📞 지원
+
+문제가 발생하거나 질문이 있으시면 이슈를 생성해주세요.
