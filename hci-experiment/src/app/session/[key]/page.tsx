@@ -67,6 +67,8 @@ export default function SessionPage() {
 
     setIsLoading(true);
     try {
+      console.log(`Sending message to cycle ${currentCycle}: "${message}"`);
+      
       const response = await fetch('/api/cycle', {
         method: 'POST',
         headers: {
@@ -85,6 +87,15 @@ export default function SessionPage() {
       }
 
       const result = await response.json();
+      
+      console.log('Received API response:', {
+        agent1Exists: !!result.agent1,
+        agent2Exists: !!result.agent2,
+        agent3Exists: !!result.agent3,
+        agent1Content: result.agent1?.content?.substring(0, 50) + '...',
+        agent2Content: result.agent2?.content?.substring(0, 50) + '...',
+        agent3Content: result.agent3?.content?.substring(0, 50) + '...',
+      });
       
       // Add new messages to the list
       const newMessages: Message[] = [
@@ -143,6 +154,7 @@ export default function SessionPage() {
         },
       ] as Message[];
 
+      console.log(`Added ${newMessages.length - messages.length} new messages to state`);
       setMessages(newMessages);
       setCurrentState('response');
     } catch (error) {

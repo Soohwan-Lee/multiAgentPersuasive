@@ -29,6 +29,7 @@ const INFORMATIVE_PRIMS = [
 ];
 
 export function buildSystemPrompt(ctx: PromptCtx) {
+  // Base stance instruction
   const stanceLine =
     ctx.stance === "oppose"
       ? "You consistently oppose the user's position. You may soften tone only if the user provides multiple concrete pieces of evidence; however, keep the conclusion opposed."
@@ -36,20 +37,43 @@ export function buildSystemPrompt(ctx: PromptCtx) {
       ? "You consistently support the user's position. Emphasize pragmatic benefits and reasonable trade-offs."
       : "You remain neutral, clarifying criteria and highlighting uncertainties.";
 
+  // Session-specific framing
   const conformityFocus = ctx.sessionKey === "main1"
     ? `When selecting arguments, prefer NORMATIVE cues: ${NORMATIVE_PRIMS.join(", ")}.`
     : ctx.sessionKey === "main2"
     ? `When selecting arguments, prefer INFORMATIVE cues: ${INFORMATIVE_PRIMS.join(", ")}.`
     : "In this practice session, keep arguments simple and clear.";
 
-  // Special handling for minorityDiffusion pattern
+  // Pattern-specific instructions
   let patternContext = "";
-  if (ctx.pattern === "minorityDiffusion" && ctx.chatCycle) {
-    if (ctx.chatCycle === 3 && ctx.agentId === 1) {
-      patternContext = "IMPORTANT: You are now changing your stance to oppose the user's position. Acknowledge this shift naturally and explain your reasoning.";
-    } else if (ctx.chatCycle === 4 && ctx.agentId === 2) {
-      patternContext = "IMPORTANT: You are now changing your stance to oppose the user's position. Acknowledge this shift naturally and explain your reasoning.";
+  if (ctx.pattern === "majority") {
+    patternContext = "All agents take the same stance. Be consistent and confident in your position.";
+  } else if (ctx.pattern === "minority") {
+    if (ctx.agentId === 3) {
+      patternContext = "You are the minority agent. Maintain your opposing stance with high consistency.";
+    } else {
+      patternContext = "You are part of the majority. Support the user's position consistently.";
     }
+  } else if (ctx.pattern === "minorityDiffusion" && ctx.chatCycle) {
+    if (ctx.chatCycle <= 2) {
+      if (ctx.agentId === 3) {
+        patternContext = "You are currently the minority agent. Maintain your opposing stance.";
+      } else {
+        patternContext = "You are part of the majority supporting the user's position.";
+      }
+    } else if (ctx.chatCycle === 3 && ctx.agentId === 1) {
+      patternContext = "IMPORTANT: You are now changing your stance to oppose the user's position. Acknowledge this shift naturally and explain your reasoning for changing your mind.";
+    } else if (ctx.chatCycle === 4 && ctx.agentId === 2) {
+      patternContext = "IMPORTANT: You are now changing your stance to oppose the user's position. Acknowledge this shift naturally and explain your reasoning for changing your mind.";
+    } else if (ctx.chatCycle >= 3) {
+      patternContext = "You are now part of the majority opposing the user's position.";
+    }
+  }
+
+  // Conversation flow context
+  let conversationContext = "";
+  if (ctx.chatCycle && ctx.chatCycle >= 2) {
+    conversationContext = "This is an ongoing conversation. Build naturally on previous exchanges and acknowledge the conversation flow.";
   }
 
   return [
@@ -59,6 +83,7 @@ export function buildSystemPrompt(ctx: PromptCtx) {
     conformityFocus,
     stanceLine,
     patternContext,
+    conversationContext,
     "Style: concise English, numbered points (1., 2., 3.), no redundancy, avoid hedging. Aim ≤ ~120 tokens.",
     "Ethics: respectful; do not request personal data; no medical/legal advice.",
   ].filter(Boolean).join("\n");
@@ -79,6 +104,6 @@ export function buildUserPrompt(ctx: PromptCtx) {
     prev,
     `Current participant message: """${ctx.participantMessage}"""`,
     continueMessage,
-    "Respond in 1–3 numbered arguments. Be crisp."
+    "Respond in 1–3 numbered arguments. Be crisp and engaging."
   ].filter(Boolean).join("\n");
 }

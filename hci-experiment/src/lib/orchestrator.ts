@@ -11,6 +11,9 @@ export async function runCycle(opts: {
   cycle: number;                     // 1..4 (chat cycles)
   userMessage: string;
 }) {
+  console.log(`=== Starting cycle ${opts.cycle} for session ${opts.sessionKey} ===`);
+  console.log(`User message: "${opts.userMessage}"`);
+  
   // 1) load participant and T0 response
   const { data: participant } = await supabase
     .from('participants')
@@ -38,6 +41,9 @@ export async function runCycle(opts: {
   const initial: Stance = stanceFromT0(t0Response.opinion);
   // Use CURRENT_PATTERN for easy configuration
   const patternKey = CURRENT_PATTERN;
+  
+  console.log(`T0 opinion: ${t0Response.opinion} -> Initial stance: ${initial}`);
+  console.log(`Current pattern: ${patternKey}`);
 
   // 2) resolve stances for this cycle
   const stances = resolveStances({ 
@@ -46,11 +52,15 @@ export async function runCycle(opts: {
     session: opts.sessionKey, 
     chatCycle: opts.cycle as 1 | 2 | 3 | 4 
   });
+  
+  console.log(`Resolved stances for cycle ${opts.cycle}:`, stances);
 
   // 3) build prompts + call OpenAI sequentially
   const results = [];
   
   for (const agent of AGENTS) {
+    console.log(`\n--- Generating response for ${agent.name} (Agent ${agent.id}) ---`);
+    
     const system = buildSystemPrompt({
       agentId: agent.id as 1 | 2 | 3,
       agentName: agent.name,
@@ -79,8 +89,14 @@ export async function runCycle(opts: {
       chatCycle: opts.cycle,
     });
 
+    console.log(`Agent ${agent.id} stance: ${stances[agent.id as 1 | 2 | 3]}`);
+    console.log(`Agent ${agent.id} consistency: ${DEFAULT_PATTERN[patternKey].consistency[agent.id as 1 | 2 | 3]}`);
+
     const r = await callOpenAIChat({ system, user });
     const text = r.timedOut ? FALLBACK[stances[agent.id as 1 | 2 | 3]] : r.text || FALLBACK[stances[agent.id as 1 | 2 | 3]];
+    
+    console.log(`Agent ${agent.id} response: "${text.substring(0, 100)}..."`);
+    console.log(`Agent ${agent.id} fallback used: ${r.timedOut || !r.text}`);
     
     results.push({ 
       agentId: agent.id, 
@@ -125,6 +141,8 @@ export async function runCycle(opts: {
         fallback_used: r.fallback_used,
       });
   }
+
+  console.log(`=== Cycle ${opts.cycle} completed successfully ===\n`);
 
   return {
     agent1: { content: results.find(r => r.agentId === 1)!.text },

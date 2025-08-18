@@ -179,6 +179,13 @@ export async function POST(request: NextRequest) {
       userMessage,
     });
 
+    console.log('Cycle result:', {
+      agent1Content: result.agent1?.content?.substring(0, 50) + '...',
+      agent2Content: result.agent2?.content?.substring(0, 50) + '...',
+      agent3Content: result.agent3?.content?.substring(0, 50) + '...',
+      meta: result.meta
+    });
+
     // Update session current_cycle
     const { error: sessionError } = await supabase
       .from('sessions')
@@ -190,12 +197,23 @@ export async function POST(request: NextRequest) {
       console.error('Session update error:', sessionError);
     }
 
-    return NextResponse.json({
+    const response = {
       agent1: result.agent1,
       agent2: result.agent2,
       agent3: result.agent3,
       meta: result.meta
+    };
+
+    console.log('Sending response to client:', {
+      agent1Exists: !!response.agent1,
+      agent2Exists: !!response.agent2,
+      agent3Exists: !!response.agent3,
+      agent1ContentLength: response.agent1?.content?.length || 0,
+      agent2ContentLength: response.agent2?.content?.length || 0,
+      agent3ContentLength: response.agent3?.content?.length || 0,
     });
+
+    return NextResponse.json(response);
 
   } catch (error) {
     console.error('Cycle API error:', error);

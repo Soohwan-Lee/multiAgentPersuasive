@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Send, Loader2, MessageCircle } from 'lucide-react';
 import { AGENTS, getAgentColor } from '@/config/agents';
 import { Message } from '@/lib/types';
-import { getPatternDescription, CURRENT_PATTERN } from '@/config/patterns';
 
 interface ChatProps {
   messages: Message[];
@@ -57,11 +56,6 @@ export function Chat({ messages, onSendMessage, isLoading, currentTurn, sessionK
                 </p>
               </div>
             )}
-            <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-600">
-                <strong>Current Pattern:</strong> {getPatternDescription(CURRENT_PATTERN, currentTurn)}
-              </p>
-            </div>
           </div>
         ) : (
           <div className="space-y-4">
@@ -132,7 +126,7 @@ export function Chat({ messages, onSendMessage, isLoading, currentTurn, sessionK
               </div>
             )}
 
-            {/* Pattern info for ongoing conversations */}
+            {/* Continue conversation hint for ongoing conversations */}
             {currentTurn >= 2 && currentTurnMessages.length > 0 && !isLoading && (
               <div className="mt-4 p-3 bg-blue-50 rounded-lg">
                 <p className="text-sm text-blue-700">
