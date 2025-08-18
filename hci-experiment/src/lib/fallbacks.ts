@@ -1,7 +1,7 @@
 import type { Stance } from "@/config/agents";
 
 export const FALLBACK: Record<Stance, string> = {
-  support: "I broadly support your position. 1) Practical benefits. 2) Feasible safeguards. 3) Gradual evaluation.",
-  oppose: "I take an opposing stance. 1) Key risks. 2) Evidence gaps. 3) Safer alternatives.",
-  neutral: "Considering both sides: 1) Criteria. 2) Trade-offs. 3) Open questions.",
+  support: "I support the death penalty. 1) Deterrent effect on violent crime. 2) Justice for victims and families. 3) Cost-effective compared to life imprisonment.",
+  oppose: "I oppose the death penalty. 1) Risk of executing innocent people. 2) No clear deterrent effect. 3) More expensive than life imprisonment.",
+  neutral: "The death penalty is complex. 1) Need for strong evidence standards. 2) Consider alternatives like life without parole. 3) Balance justice with human rights.",
 };

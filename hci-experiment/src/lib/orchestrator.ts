@@ -86,6 +86,8 @@ export async function runCycle(opts: {
       locale: "en",
       pattern: patternKey,
       chatCycle: opts.cycle,
+      previousMessages: previousMessages || [], // 이전 대화 기록 추가
+      t0Opinion: t0Response.opinion, // T0 의견 추가
     });
     
     const user = buildUserPrompt({
@@ -101,6 +103,7 @@ export async function runCycle(opts: {
       pattern: patternKey,
       chatCycle: opts.cycle,
       previousMessages: previousMessages || [], // 이전 대화 기록 추가
+      t0Opinion: t0Response.opinion, // T0 의견 추가
     });
 
     console.log(`Agent ${agent.id} stance: ${stances[agent.id as 1 | 2 | 3]}`);
