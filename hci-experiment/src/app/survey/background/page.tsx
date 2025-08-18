@@ -7,6 +7,17 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+// Simple checkbox component
+const Checkbox = ({ id, checked, onCheckedChange }: { id: string; checked: boolean; onCheckedChange: (checked: any) => void }) => (
+  <input
+    type="checkbox"
+    id={id}
+    checked={checked}
+    onChange={(e) => onCheckedChange(e.target.checked)}
+    className="h-4 w-4 rounded border border-gray-300 text-blue-600 focus:ring-blue-500"
+  />
+);
+import { Textarea } from '@/components/ui/textarea';
 import { ProgressHeader } from '@/components/ProgressHeader';
 
 export default function BackgroundSurveyPage() {
@@ -14,18 +25,78 @@ export default function BackgroundSurveyPage() {
   const [participantId, setParticipantId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Survey responses
+  // Basic Demographics
   const [age, setAge] = useState('');
   const [gender, setGender] = useState('');
   const [education, setEducation] = useState('');
   const [occupation, setOccupation] = useState('');
-  const [politicalViews, setPoliticalViews] = useState('');
-  const [socialMediaUsage, setSocialMediaUsage] = useState('');
+  const [country, setCountry] = useState('');
+  const [languages, setLanguages] = useState<string[]>([]);
+  const [raceEthnicity, setRaceEthnicity] = useState<string[]>([]);
+  const [raceOther, setRaceOther] = useState('');
+
+  // AI / Multi-Agent Experience
+  const [llmUsage, setLlmUsage] = useState(4);
+  const [toolsUsed, setToolsUsed] = useState<string[]>([]);
+  const [toolsOther, setToolsOther] = useState('');
+  const [multiAgentExperience, setMultiAgentExperience] = useState('');
+  const [multiAgentTypes, setMultiAgentTypes] = useState<string[]>([]);
+  const [multiAgentOther, setMultiAgentOther] = useState('');
+  const [multiAgentOpenEnded, setMultiAgentOpenEnded] = useState('');
+
+  // Individual Difference Measures
+  const [sii1, setSii1] = useState(4);
+  const [sii2, setSii2] = useState(4);
+  const [sii3, setSii3] = useState(4);
+  const [sii4, setSii4] = useState(4);
+  const [nfc1, setNfc1] = useState(4);
+  const [nfc2, setNfc2] = useState(4);
+  const [nfc3, setNfc3] = useState(4);
+  const [nfc4, setNfc4] = useState(4);
+  const [nfc5, setNfc5] = useState(4);
+  const [nfc6, setNfc6] = useState(4);
+  const [aiAcceptance1, setAiAcceptance1] = useState(4);
+  const [aiAcceptance2, setAiAcceptance2] = useState(4);
+  const [aiAcceptance3, setAiAcceptance3] = useState(4);
+  const [aiAcceptance4, setAiAcceptance4] = useState(4);
+  const [aiAcceptance5, setAiAcceptance5] = useState(4);
 
   useEffect(() => {
     const id = sessionStorage.getItem('participantId');
     setParticipantId(id);
   }, []);
+
+  const handleLanguageChange = (language: string, checked: any) => {
+    if (checked) {
+      setLanguages([...languages, language]);
+    } else {
+      setLanguages(languages.filter(l => l !== language));
+    }
+  };
+
+  const handleRaceEthnicityChange = (race: string, checked: any) => {
+    if (checked) {
+      setRaceEthnicity([...raceEthnicity, race]);
+    } else {
+      setRaceEthnicity(raceEthnicity.filter(r => r !== race));
+    }
+  };
+
+  const handleToolsChange = (tool: string, checked: any) => {
+    if (checked) {
+      setToolsUsed([...toolsUsed, tool]);
+    } else {
+      setToolsUsed(toolsUsed.filter(t => t !== tool));
+    }
+  };
+
+  const handleMultiAgentTypesChange = (type: string, checked: any) => {
+    if (checked) {
+      setMultiAgentTypes([...multiAgentTypes, type]);
+    } else {
+      setMultiAgentTypes(multiAgentTypes.filter(t => t !== type));
+    }
+  };
 
   const handleSubmit = async () => {
     if (!participantId) return;
@@ -41,12 +112,29 @@ export default function BackgroundSurveyPage() {
           participantId,
           type: 'background_survey',
           payload: {
+            // Basic Demographics
             age,
             gender,
             education,
             occupation,
-            politicalViews,
-            socialMediaUsage,
+            country,
+            languages,
+            raceEthnicity,
+            raceOther,
+            
+            // AI / Multi-Agent Experience
+            llmUsage,
+            toolsUsed,
+            toolsOther,
+            multiAgentExperience,
+            multiAgentTypes,
+            multiAgentOther,
+            multiAgentOpenEnded,
+            
+            // Individual Difference Measures
+            sii: [sii1, sii2, sii3, sii4],
+            nfc: [nfc1, nfc2, nfc3, nfc4, nfc5, nfc6],
+            aiAcceptance: [aiAcceptance1, aiAcceptance2, aiAcceptance3, aiAcceptance4, aiAcceptance5],
           }
         })
       });
@@ -65,6 +153,29 @@ export default function BackgroundSurveyPage() {
     return <div>Loading...</div>;
   }
 
+  const render7PointScale = (value: number, onChange: (value: number) => void, label: string) => (
+    <div className="space-y-2">
+      <Label>{label} ({value})</Label>
+      <input
+        type="range"
+        min="1"
+        max="7"
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="w-full"
+      />
+      <div className="flex justify-between text-xs text-muted-foreground">
+        <span>1</span>
+        <span>2</span>
+        <span>3</span>
+        <span>4</span>
+        <span>5</span>
+        <span>6</span>
+        <span>7</span>
+      </div>
+    </div>
+  );
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <ProgressHeader
@@ -73,101 +184,261 @@ export default function BackgroundSurveyPage() {
         currentStepIndex={2}
       />
 
-      <Card className="max-w-3xl mx-auto">
+      <Card className="max-w-4xl mx-auto">
         <CardHeader>
           <CardTitle className="text-2xl text-center">
             Background Information Survey
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-8">
           <div className="text-center mb-6">
             <p className="text-muted-foreground">
-              Please provide some basic information about yourself. This helps us understand our participants better.
+              Please provide some information about yourself and your experience with AI systems.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* 1. Basic Demographics */}
+          <div className="space-y-6">
+            <h3 className="text-lg font-semibold border-b pb-2">1. Basic Demographics</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="age">Age</Label>
+                <Input
+                  id="age"
+                  type="number"
+                  placeholder="Please enter your age in years"
+                  value={age}
+                  onChange={(e) => setAge(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Gender</Label>
+                <Select value={gender} onValueChange={setGender}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="What is your gender?" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                    <SelectItem value="non-binary">Non-binary/Genderqueer</SelectItem>
+                    <SelectItem value="prefer-not-to-answer">Prefer not to answer</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Education Level</Label>
+                <Select value={education} onValueChange={setEducation}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Please select your highest level of education" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="high-school-or-below">High school or below</SelectItem>
+                    <SelectItem value="undergraduate">Undergraduate (in progress or completed)</SelectItem>
+                    <SelectItem value="masters">Master's (in progress or completed)</SelectItem>
+                    <SelectItem value="doctorate">Doctorate (in progress or completed)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="occupation">Occupation</Label>
+                <Input
+                  id="occupation"
+                  placeholder="Please write your current main occupation or activity"
+                  value={occupation}
+                  onChange={(e) => setOccupation(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Country of Residence</Label>
+                <Select value={country} onValueChange={setCountry}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Please select your current country of residence" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="united-states">United States</SelectItem>
+                    <SelectItem value="canada">Canada</SelectItem>
+                    <SelectItem value="united-kingdom">United Kingdom</SelectItem>
+                    <SelectItem value="germany">Germany</SelectItem>
+                    <SelectItem value="france">France</SelectItem>
+                    <SelectItem value="japan">Japan</SelectItem>
+                    <SelectItem value="south-korea">South Korea</SelectItem>
+                    <SelectItem value="china">China</SelectItem>
+                    <SelectItem value="india">India</SelectItem>
+                    <SelectItem value="australia">Australia</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <Label>Primary Language(s)</Label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {['English', 'Spanish', 'French', 'German', 'Chinese', 'Japanese', 'Korean', 'Arabic', 'Hindi', 'Portuguese', 'Russian', 'Other'].map((lang) => (
+                  <div key={lang} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`lang-${lang}`}
+                      checked={languages.includes(lang)}
+                      onCheckedChange={(checked) => handleLanguageChange(lang, checked as boolean)}
+                    />
+                    <Label htmlFor={`lang-${lang}`} className="text-sm">{lang}</Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <Label>Race/Ethnicity (Optional)</Label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {['Asian', 'White', 'Black/African', 'Hispanic/Latinx', 'Middle Eastern/North African', 'Indigenous/Mixed', 'Other', 'Prefer not to answer'].map((race) => (
+                  <div key={race} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`race-${race}`}
+                      checked={raceEthnicity.includes(race)}
+                      onCheckedChange={(checked) => handleRaceEthnicityChange(race, checked as boolean)}
+                    />
+                    <Label htmlFor={`race-${race}`} className="text-sm">{race}</Label>
+                  </div>
+                ))}
+              </div>
+              {raceEthnicity.includes('Other') && (
+                <Input
+                  placeholder="Please specify"
+                  value={raceOther}
+                  onChange={(e) => setRaceOther(e.target.value)}
+                />
+              )}
+            </div>
+          </div>
+
+          {/* 2. AI / Multi-Agent Experience */}
+          <div className="space-y-6">
+            <h3 className="text-lg font-semibold border-b pb-2">2. AI / Multi-Agent Experience</h3>
+            
+            {render7PointScale(llmUsage, setLlmUsage, "How often have you used LLM chatbots (e.g., ChatGPT, Claude, Gemini) in the past 6 months? (1 = Never – 7 = Almost daily)")}
+
+            <div className="space-y-4">
+              <Label>Which tools have you used?</Label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {['ChatGPT', 'Claude', 'Gemini', 'Grok', 'Other', 'None'].map((tool) => (
+                  <div key={tool} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`tool-${tool}`}
+                      checked={toolsUsed.includes(tool)}
+                      onCheckedChange={(checked) => handleToolsChange(tool, checked as boolean)}
+                    />
+                    <Label htmlFor={`tool-${tool}`} className="text-sm">{tool}</Label>
+                  </div>
+                ))}
+              </div>
+              {toolsUsed.includes('Other') && (
+                <Input
+                  placeholder="Please specify"
+                  value={toolsOther}
+                  onChange={(e) => setToolsOther(e.target.value)}
+                />
+              )}
+            </div>
+
             <div className="space-y-2">
-              <Label htmlFor="age">Age</Label>
-              <Input
-                id="age"
-                type="number"
-                placeholder="Enter your age"
-                value={age}
-                onChange={(e) => setAge(e.target.value)}
+              <Label>Have you ever interacted with two or more AI/chatbots at the same time?</Label>
+              <Select value={multiAgentExperience} onValueChange={setMultiAgentExperience}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select your experience level" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="never">Never</SelectItem>
+                  <SelectItem value="only-heard">Only heard of it</SelectItem>
+                  <SelectItem value="tried-briefly">Tried briefly</SelectItem>
+                  <SelectItem value="frequently-used">Frequently used / Research experience</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-4">
+              <Label>Types of Multi-Agent Experience</Label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {[
+                  'Role-divided chatbots (e.g., expert/novice)',
+                  'Debate/Collaboration simulation agents',
+                  'Emotional support multi-characters',
+                  'Coding/Learning/Productivity assistants',
+                  'Self-developed for research/production',
+                  'Other'
+                ].map((type) => (
+                  <div key={type} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`type-${type}`}
+                      checked={multiAgentTypes.includes(type)}
+                      onCheckedChange={(checked) => handleMultiAgentTypesChange(type, checked as boolean)}
+                    />
+                    <Label htmlFor={`type-${type}`} className="text-sm">{type}</Label>
+                  </div>
+                ))}
+              </div>
+              {multiAgentTypes.includes('Other') && (
+                <Input
+                  placeholder="Please specify"
+                  value={multiAgentOther}
+                  onChange={(e) => setMultiAgentOther(e.target.value)}
+                />
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="multi-agent-open">If you had any memorable experiences with multi-agent systems, please describe briefly. (Optional)</Label>
+              <Textarea
+                id="multi-agent-open"
+                placeholder="Please describe your experiences..."
+                value={multiAgentOpenEnded}
+                onChange={(e) => setMultiAgentOpenEnded(e.target.value)}
+                className="min-h-[100px]"
               />
             </div>
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="gender">Gender</Label>
-              <Select value={gender} onValueChange={setGender}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select gender" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="male">Male</SelectItem>
-                  <SelectItem value="female">Female</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                  <SelectItem value="prefer-not-to-say">Prefer not to say</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          {/* 3. Individual Difference Measures */}
+          <div className="space-y-6">
+            <h3 className="text-lg font-semibold border-b pb-2">3. Individual Difference Measures</h3>
+            
+            <div className="space-y-6">
+              <div>
+                <h4 className="font-medium mb-4">Susceptibility to Interpersonal Influence (SII-4)</h4>
+                <div className="space-y-4">
+                  {render7PointScale(sii1, setSii1, "I often buy products recommended by my friends.")}
+                  {render7PointScale(sii2, setSii2, "If others say something is good, I tend to see it positively.")}
+                  {render7PointScale(sii3, setSii3, "My choices are often influenced by others' opinions.")}
+                  {render7PointScale(sii4, setSii4, "I am rarely swayed by others' opinions. (reverse-scored)")}
+                </div>
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="education">Education Level</Label>
-              <Select value={education} onValueChange={setEducation}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select education level" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="high-school">High School</SelectItem>
-                  <SelectItem value="bachelors">Bachelor's Degree</SelectItem>
-                  <SelectItem value="masters">Master's Degree</SelectItem>
-                  <SelectItem value="phd">PhD</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+              <div>
+                <h4 className="font-medium mb-4">Need for Cognition (NFC-6)</h4>
+                <div className="space-y-4">
+                  {render7PointScale(nfc1, setNfc1, "I enjoy solving complex problems.")}
+                  {render7PointScale(nfc2, setNfc2, "I find reading challenging books interesting.")}
+                  {render7PointScale(nfc3, setNfc3, "I try to avoid tasks that require a lot of thinking. (reverse-scored)")}
+                  {render7PointScale(nfc4, setNfc4, "I prefer decisions that are based on thorough analysis.")}
+                  {render7PointScale(nfc5, setNfc5, "I like to think deeply about new ideas.")}
+                  {render7PointScale(nfc6, setNfc6, "I find complex discussions boring. (reverse-scored)")}
+                </div>
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="occupation">Occupation</Label>
-              <Input
-                id="occupation"
-                placeholder="Enter your occupation"
-                value={occupation}
-                onChange={(e) => setOccupation(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="political">Political Views</Label>
-              <Select value={politicalViews} onValueChange={setPoliticalViews}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select political views" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="liberal">Liberal</SelectItem>
-                  <SelectItem value="moderate">Moderate</SelectItem>
-                  <SelectItem value="conservative">Conservative</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                  <SelectItem value="prefer-not-to-say">Prefer not to say</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="social-media">Social Media Usage</Label>
-              <Select value={socialMediaUsage} onValueChange={setSocialMediaUsage}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select usage level" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="rarely">Rarely</SelectItem>
-                  <SelectItem value="sometimes">Sometimes</SelectItem>
-                  <SelectItem value="often">Often</SelectItem>
-                  <SelectItem value="very-often">Very Often</SelectItem>
-                </SelectContent>
-              </Select>
+              <div>
+                <h4 className="font-medium mb-4">AI Acceptance (Short Scale, 5 items)</h4>
+                <div className="space-y-4">
+                  {render7PointScale(aiAcceptance1, setAiAcceptance1, "AI has many beneficial applications.")}
+                  {render7PointScale(aiAcceptance2, setAiAcceptance2, "AI is helpful in daily life.")}
+                  {render7PointScale(aiAcceptance3, setAiAcceptance3, "I want to interact with AI in my everyday life.")}
+                  {render7PointScale(aiAcceptance4, setAiAcceptance4, "Society will benefit from AI.")}
+                  {render7PointScale(aiAcceptance5, setAiAcceptance5, "I am willing to delegate part of complex decisions to AI.")}
+                </div>
+              </div>
             </div>
           </div>
 
