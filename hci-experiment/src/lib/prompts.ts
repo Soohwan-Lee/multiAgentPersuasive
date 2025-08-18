@@ -141,12 +141,22 @@ export function buildUserPrompt(ctx: PromptCtx) {
     continueMessage = "\n\nNote: This is an ongoing conversation. Continue the discussion naturally, building on previous exchanges.";
   }
 
+  // Add specific instruction for sequential responses
+  let sequentialInstruction = "";
+  if (ctx.previousMessages && ctx.previousMessages.length > 0) {
+    const lastMessage = ctx.previousMessages[ctx.previousMessages.length - 1];
+    if (lastMessage.role.startsWith('agent')) {
+      sequentialInstruction = `\n\nIMPORTANT: The previous agent (${lastMessage.role.replace('agent', 'Agent ')}) just said: "${lastMessage.content}". Consider their response when formulating your reply.`;
+    }
+  }
+
   return [
     `Task: "${currentTask}"`,
     prev,
     conversationHistory,
     `Current participant message: """${ctx.participantMessage}"""`,
     continueMessage,
+    sequentialInstruction,
     `Respond to the current topic with 1–3 numbered arguments supporting your ${ctx.stance} stance. Start with an interaction phrase as instructed.`
   ].filter(Boolean).join("\n");
 }

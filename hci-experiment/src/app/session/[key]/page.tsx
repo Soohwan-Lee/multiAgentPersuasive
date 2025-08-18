@@ -164,12 +164,12 @@ export default function SessionPage() {
       // Agent 1 응답 즉시 추가
       setMessages(prev => [...prev, agentMessages[0]]);
       
-      // Agent 2 응답 1초 후 추가
+      // Agent 2 응답 2초 후 추가 (Agent 1의 응답을 고려한 후)
       setTimeout(() => {
         setMessages(prev => [...prev, agentMessages[1]]);
-      }, 1000);
+      }, 2000);
       
-      // Agent 3 응답 2초 후 추가
+      // Agent 3 응답 4초 후 추가 (Agent 1, 2의 응답을 고려한 후)
       setTimeout(() => {
         setMessages(prev => [...prev, agentMessages[2]]);
         
@@ -178,7 +178,7 @@ export default function SessionPage() {
           setCurrentState('response');
           setIsLoading(false);
         }, 1000);
-      }, 2000);
+      }, 4000);
 
       console.log(`Added ${agentMessages.length} agent messages with delays`);
       

@@ -89,9 +89,11 @@ export async function runCycle(opts: {
 
   // 3) build prompts + call OpenAI sequentially
   const results = [];
+  let conversationHistory = [...previousMessages]; // 대화 이력 초기화
   
   for (const agent of AGENTS) {
     console.log(`\n--- Generating response for ${agent.name} (Agent ${agent.id}) ---`);
+    console.log(`Current conversation history length: ${conversationHistory.length}`);
     
     const system = buildSystemPrompt({
       agentId: agent.id as 1 | 2 | 3,
@@ -105,7 +107,7 @@ export async function runCycle(opts: {
       locale: "en",
       pattern: patternKey,
       chatCycle: opts.cycle,
-      previousMessages: previousMessages || [], // 이전 대화 기록 추가
+      previousMessages: conversationHistory, // 현재까지의 대화 이력 전달
       t0Opinion: t0Response.opinion, // T0 의견 추가
       currentTask: opts.currentTask, // 현재 논의할 주제 추가
     });
@@ -122,7 +124,7 @@ export async function runCycle(opts: {
       locale: "en",
       pattern: patternKey,
       chatCycle: opts.cycle,
-      previousMessages: previousMessages || [], // 이전 대화 기록 추가
+      previousMessages: conversationHistory, // 현재까지의 대화 이력 전달
       t0Opinion: t0Response.opinion, // T0 의견 추가
       currentTask: opts.currentTask, // 현재 논의할 주제 추가
     });
@@ -130,11 +132,32 @@ export async function runCycle(opts: {
     console.log(`Agent ${agent.id} stance: ${stances[agent.id as 1 | 2 | 3]}`);
     console.log(`Agent ${agent.id} consistency: ${DEFAULT_PATTERN[patternKey].consistency[agent.id as 1 | 2 | 3]}`);
 
-    const r = await callOpenAIChat({ system, user });
+    const r = await callOpenAIChat({ 
+      system, 
+      user, 
+      agentId: agent.id 
+    });
     const text = r.timedOut ? FALLBACK[stances[agent.id as 1 | 2 | 3]] : r.text || FALLBACK[stances[agent.id as 1 | 2 | 3]];
     
     console.log(`Agent ${agent.id} response: "${text.substring(0, 100)}..."`);
     console.log(`Agent ${agent.id} fallback used: ${r.timedOut || !r.text}`);
+    
+    // 현재 에이전트의 응답을 대화 이력에 추가
+    const agentMessage = {
+      id: crypto.randomUUID(),
+      participant_id: opts.participantId,
+      session_key: opts.sessionKey,
+      cycle: opts.cycle,
+      role: `agent${agent.id}`,
+      content: text,
+      latency_ms: r.latencyMs,
+      token_in: r.tokenIn ?? null,
+      token_out: r.tokenOut ?? null,
+      fallback_used: r.timedOut || !r.text,
+      ts: new Date().toISOString(),
+    };
+    
+    conversationHistory.push(agentMessage);
     
     results.push({ 
       agentId: agent.id, 
@@ -144,6 +167,12 @@ export async function runCycle(opts: {
       tokenOut: r.tokenOut, 
       fallback_used: r.timedOut || !r.text 
     });
+    
+    // 다음 에이전트가 이전 에이전트들의 응답을 고려할 수 있도록 잠시 대기
+    if (agent.id < 3) {
+      console.log(`Waiting 1 second before next agent...`);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
   }
 
   // 4) persist: upsert turn (idempotent), insert 3 messages (skip for test mode)
