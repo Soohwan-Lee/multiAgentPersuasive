@@ -9,8 +9,9 @@ const rateLimitMap = new Map<string, number>();
 const cycleRequestSchema = z.object({
   participantId: z.string(),
   sessionKey: z.enum(['test', 'main1', 'main2']),
-  cycle: z.number().int().min(1).max(4),
-  userMessage: z.string().min(1).max(1000),
+  cycle: z.number().min(1).max(4),
+  userMessage: z.string().min(1),
+  currentTask: z.string().optional(), // 현재 논의할 주제
 });
 
 export async function POST(request: NextRequest) {
@@ -177,6 +178,7 @@ export async function POST(request: NextRequest) {
       sessionKey,
       cycle,
       userMessage,
+      currentTask: body.currentTask,
     });
 
     console.log('Cycle result:', {

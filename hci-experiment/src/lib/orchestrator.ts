@@ -11,6 +11,7 @@ export async function runCycle(opts: {
   sessionKey: SessionKey;            // 'test'|'main1'|'main2'
   cycle: number;                     // 1..4 (chat cycles)
   userMessage: string;
+  currentTask?: string;              // 현재 논의할 주제
 }) {
   console.log(`=== Starting cycle ${opts.cycle} for session ${opts.sessionKey} ===`);
   console.log(`User message: "${opts.userMessage}"`);
@@ -88,6 +89,7 @@ export async function runCycle(opts: {
       chatCycle: opts.cycle,
       previousMessages: previousMessages || [], // 이전 대화 기록 추가
       t0Opinion: t0Response.opinion, // T0 의견 추가
+      currentTask: opts.currentTask, // 현재 논의할 주제 추가
     });
     
     const user = buildUserPrompt({
@@ -104,6 +106,7 @@ export async function runCycle(opts: {
       chatCycle: opts.cycle,
       previousMessages: previousMessages || [], // 이전 대화 기록 추가
       t0Opinion: t0Response.opinion, // T0 의견 추가
+      currentTask: opts.currentTask, // 현재 논의할 주제 추가
     });
 
     console.log(`Agent ${agent.id} stance: ${stances[agent.id as 1 | 2 | 3]}`);

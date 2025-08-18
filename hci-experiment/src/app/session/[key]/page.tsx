@@ -99,6 +99,7 @@ export default function SessionPage() {
           sessionKey,
           cycle: currentCycle,
           userMessage: message,
+          currentTask: sessionMeta.task, // Session 설정에서 task 가져오기
         }),
       });
 
