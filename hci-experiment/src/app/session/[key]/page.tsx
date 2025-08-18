@@ -287,6 +287,7 @@ export default function SessionPage() {
                 currentTurn={currentCycle}
                 sessionKey={sessionKey}
                 participantId={participantId}
+                isChatEnabled={currentState === 'chat'} // 채팅 상태일 때만 활성화
               />
             </CardContent>
           </Card>

@@ -12,43 +12,61 @@ export async function runCycle(opts: {
   cycle: number;                     // 1..4 (chat cycles)
   userMessage: string;
   currentTask?: string;              // 현재 논의할 주제
+  isTestMode?: boolean;              // 테스트 모드 여부
 }) {
   console.log(`=== Starting cycle ${opts.cycle} for session ${opts.sessionKey} ===`);
   console.log(`User message: "${opts.userMessage}"`);
+  console.log(`Test mode: ${opts.isTestMode}`);
   
-  // 1) load participant and T0 response
-  const { data: participant } = await supabase
-    .from('participants')
-    .select('*')
-    .eq('id', opts.participantId)
-    .single();
+  const isTestMode = opts.isTestMode || opts.participantId.startsWith('test-');
+  
+  // 1) load participant and T0 response (skip for test mode)
+  let participant = null;
+  let t0Response = null;
+  let previousMessages: any[] = [];
 
-  if (!participant) {
-    throw new Error('Participant not found');
+  if (!isTestMode) {
+    const { data: participantData } = await supabase
+      .from('participants')
+      .select('*')
+      .eq('id', opts.participantId)
+      .single();
+
+    if (!participantData) {
+      throw new Error('Participant not found');
+    }
+    participant = participantData;
+
+    // Get T0 response for this session
+    const { data: t0ResponseData } = await supabase
+      .from('responses')
+      .select('*')
+      .eq('participant_id', opts.participantId)
+      .eq('session_key', opts.sessionKey)
+      .eq('response_index', 0)
+      .single();
+
+    if (!t0ResponseData) {
+      throw new Error('T0 response not found');
+    }
+    t0Response = t0ResponseData;
+
+    // Get previous messages for conversation context
+    const { data: previousMessagesData } = await supabase
+      .from('messages')
+      .select('*')
+      .eq('participant_id', opts.participantId)
+      .eq('session_key', opts.sessionKey)
+      .lt('cycle', opts.cycle)
+      .order('cycle', { ascending: true })
+      .order('ts', { ascending: true });
+    
+    previousMessages = previousMessagesData || [];
+  } else {
+    // For test mode, use mock data
+    t0Response = { opinion: 25 }; // Mock T0 opinion
+    previousMessages = [];
   }
-
-  // Get T0 response for this session
-  const { data: t0Response } = await supabase
-    .from('responses')
-    .select('*')
-    .eq('participant_id', opts.participantId)
-    .eq('session_key', opts.sessionKey)
-    .eq('response_index', 0)
-    .single();
-
-  if (!t0Response) {
-    throw new Error('T0 response not found');
-  }
-
-  // Get previous messages for conversation context
-  const { data: previousMessages } = await supabase
-    .from('messages')
-    .select('*')
-    .eq('participant_id', opts.participantId)
-    .eq('session_key', opts.sessionKey)
-    .lt('cycle', opts.cycle)
-    .order('cycle', { ascending: true })
-    .order('ts', { ascending: true });
 
   console.log(`Found ${previousMessages?.length || 0} previous messages for context`);
 
@@ -128,38 +146,40 @@ export async function runCycle(opts: {
     });
   }
 
-  // 4) persist: upsert turn (idempotent), insert 3 messages
-  const turnId = crypto.randomUUID();
-  const { error: turnError } = await supabase
-    .from('turns')
-    .upsert({
-      id: turnId,
-      participant_id: opts.participantId,
-      session_key: opts.sessionKey,
-      cycle: opts.cycle,
-      user_msg: opts.userMessage,
-    }, { onConflict: 'participant_id,session_key,cycle' });
-
-  if (turnError) {
-    console.error('Turn upsert error:', turnError);
-  }
-
-  // Insert agent messages
-  for (const r of results) {
-    await supabase
-      .from('messages')
-      .insert({
-        id: crypto.randomUUID(),
+  // 4) persist: upsert turn (idempotent), insert 3 messages (skip for test mode)
+  if (!isTestMode) {
+    const turnId = crypto.randomUUID();
+    const { error: turnError } = await supabase
+      .from('turns')
+      .upsert({
+        id: turnId,
         participant_id: opts.participantId,
         session_key: opts.sessionKey,
         cycle: opts.cycle,
-        role: `agent${r.agentId}`,
-        content: r.text,
-        latency_ms: r.latencyMs,
-        token_in: r.tokenIn ?? null,
-        token_out: r.tokenOut ?? null,
-        fallback_used: r.fallback_used,
-      });
+        user_msg: opts.userMessage,
+      }, { onConflict: 'participant_id,session_key,cycle' });
+
+    if (turnError) {
+      console.error('Turn upsert error:', turnError);
+    }
+
+    // Insert agent messages
+    for (const r of results) {
+      await supabase
+        .from('messages')
+        .insert({
+          id: crypto.randomUUID(),
+          participant_id: opts.participantId,
+          session_key: opts.sessionKey,
+          cycle: opts.cycle,
+          role: `agent${r.agentId}`,
+          content: r.text,
+          latency_ms: r.latencyMs,
+          token_in: r.tokenIn ?? null,
+          token_out: r.tokenOut ?? null,
+          fallback_used: r.fallback_used,
+        });
+    }
   }
 
   console.log(`=== Cycle ${opts.cycle} completed successfully ===\n`);

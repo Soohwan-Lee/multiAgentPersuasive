@@ -15,9 +15,10 @@ interface ChatProps {
   currentTurn: number;
   sessionKey: string;
   participantId: string;
+  isChatEnabled?: boolean; // 채팅 활성화 여부
 }
 
-export function Chat({ messages, onSendMessage, isLoading, currentTurn, sessionKey, participantId }: ChatProps) {
+export function Chat({ messages, onSendMessage, isLoading, currentTurn, sessionKey, participantId, isChatEnabled = true }: ChatProps) {
   const [inputMessage, setInputMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -143,20 +144,31 @@ export function Chat({ messages, onSendMessage, isLoading, currentTurn, sessionK
       </div>
 
       {/* Input area */}
-      <div className="border-t p-4">
-        <form onSubmit={handleSubmit} className="flex space-x-2">
-          <Input
-            value={inputMessage}
-            onChange={(e) => setInputMessage(e.target.value)}
-            placeholder={currentTurn >= 2 ? "Continue the conversation..." : "Type your message..."}
-            disabled={isLoading}
-            className="flex-1"
-          />
-          <Button type="submit" disabled={isLoading}>
-            <Send className="h-4 w-4" />
-          </Button>
-        </form>
-      </div>
+      {isChatEnabled && (
+        <div className="border-t p-4">
+          <form onSubmit={handleSubmit} className="flex space-x-2">
+            <Input
+              value={inputMessage}
+              onChange={(e) => setInputMessage(e.target.value)}
+              placeholder={currentTurn >= 2 ? "Continue the conversation..." : "Type your message..."}
+              disabled={isLoading}
+              className="flex-1"
+            />
+            <Button type="submit" disabled={isLoading}>
+              <Send className="h-4 w-4" />
+            </Button>
+          </form>
+        </div>
+      )}
+      
+      {/* Disabled chat message */}
+      {!isChatEnabled && (
+        <div className="border-t p-4 bg-gray-50">
+          <div className="text-center text-sm text-muted-foreground">
+            <p>Please complete your response first before continuing the conversation.</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

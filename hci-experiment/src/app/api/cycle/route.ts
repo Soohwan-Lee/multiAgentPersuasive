@@ -22,46 +22,33 @@ export async function POST(request: NextRequest) {
     // Check if this is test mode
     const isTestMode = participantId.startsWith('test-');
 
+    // Check environment variables for OpenAI API
+    if (!process.env.OPENAI_API_KEY) {
+      return NextResponse.json(
+        { error: 'OpenAI API key not configured.' },
+        { status: 500 }
+      );
+    }
+
     if (isTestMode) {
-      // For test mode, simulate agent responses without database
+      // For test mode, use actual OpenAI API but skip database operations
       console.log('Test mode cycle:', { participantId, sessionKey, cycle, userMessage });
       
-      // Simulate agent responses with more realistic content
-      const mockResponses = {
-        agent1: {
-          content: "I understand your perspective on this issue. Let me share some thoughts that might be relevant to our discussion.",
-          latency_ms: 1200,
-          token_in: 150,
-          token_out: 45,
-          fallback_used: false
-        },
-        agent2: {
-          content: "That's an interesting point you've raised. I think we should consider the broader implications and long-term consequences.",
-          latency_ms: 1100,
-          token_in: 150,
-          token_out: 52,
-          fallback_used: false
-        },
-        agent3: {
-          content: "I see where you're coming from, but I'd like to offer a different viewpoint that might be worth considering.",
-          latency_ms: 1300,
-          token_in: 150,
-          token_out: 48,
-          fallback_used: false
-        }
-      };
+      // Use orchestrator to get real agent responses
+      const result = await runCycle({
+        participantId,
+        sessionKey,
+        cycle,
+        userMessage,
+        currentTask: body.currentTask,
+        isTestMode: true,
+      });
 
       return NextResponse.json({
-        agent1: mockResponses.agent1,
-        agent2: mockResponses.agent2,
-        agent3: mockResponses.agent3,
-        meta: {
-          cycle: cycle,
-          session_key: sessionKey,
-          participant_id: participantId,
-          stances: { 1: 'support', 2: 'neutral', 3: 'oppose' },
-          latencies: { agent1: 1200, agent2: 1100, agent3: 1300 },
-        }
+        agent1: result.agent1,
+        agent2: result.agent2,
+        agent3: result.agent3,
+        meta: result.meta
       });
     }
 
