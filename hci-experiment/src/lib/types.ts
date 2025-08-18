@@ -22,11 +22,12 @@ export interface Turn {
   participant_id: string;
   session_key: string;
   t_idx: number;
-  user_msg: string;
-  public_choice: string | null;
+  user_msg: string | null;
+  public_choice: number | null;
   public_conf: number | null;
-  private_belief: string | null;
+  private_belief: number | null;
   private_conf: number | null;
+  rt_ms: number | null;
   created_at: string;
 }
 

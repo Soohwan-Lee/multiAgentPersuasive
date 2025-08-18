@@ -29,8 +29,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ participant: existingParticipant });
     }
 
-    // 새 참가자 생성
+    // 새 참가자 생성 (패턴 랜덤 할당)
     const participantId = crypto.randomUUID();
+    const condition = Math.random() < 0.5 ? 'majority' : 'minority';
     const { data: newParticipant, error: insertError } = await supabase
       .from('participants')
       .insert({
@@ -38,6 +39,7 @@ export async function POST(request: NextRequest) {
         prolific_pid,
         study_id,
         session_id,
+        condition,
       })
       .select()
       .single();

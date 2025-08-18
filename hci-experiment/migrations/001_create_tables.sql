@@ -25,12 +25,13 @@ CREATE TABLE turns (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     participant_id UUID REFERENCES participants(id) ON DELETE CASCADE,
     session_key TEXT NOT NULL,
-    t_idx INT NOT NULL CHECK (t_idx >= 0 AND t_idx <= 3),
-    user_msg TEXT NOT NULL,
-    public_choice TEXT NULL,
+    t_idx INT NOT NULL CHECK (t_idx >= 0 AND t_idx <= 4),
+    user_msg TEXT NULL,
+    public_choice INT NULL CHECK (public_choice >= -50 AND public_choice <= 50),
     public_conf INT NULL CHECK (public_conf >= 0 AND public_conf <= 100),
-    private_belief TEXT NULL,
+    private_belief INT NULL CHECK (private_belief >= -50 AND private_belief <= 50),
     private_conf INT NULL CHECK (private_conf >= 0 AND private_conf <= 100),
+    rt_ms INT NULL,
     created_at TIMESTAMPTZ DEFAULT now(),
     UNIQUE (participant_id, session_key, t_idx)
 );
