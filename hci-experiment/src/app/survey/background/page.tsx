@@ -24,6 +24,7 @@ export default function BackgroundSurveyPage() {
   const router = useRouter();
   const [participantId, setParticipantId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
   
   // Basic Demographics
   const [age, setAge] = useState('');
@@ -36,7 +37,7 @@ export default function BackgroundSurveyPage() {
   const [raceOther, setRaceOther] = useState('');
 
   // AI / Multi-Agent Experience
-  const [llmUsage, setLlmUsage] = useState(4);
+  const [llmUsage, setLlmUsage] = useState<number | null>(null);
   const [toolsUsed, setToolsUsed] = useState<string[]>([]);
   const [toolsOther, setToolsOther] = useState('');
   const [multiAgentExperience, setMultiAgentExperience] = useState('');
@@ -45,21 +46,21 @@ export default function BackgroundSurveyPage() {
   const [multiAgentOpenEnded, setMultiAgentOpenEnded] = useState('');
 
   // Individual Difference Measures
-  const [sii1, setSii1] = useState(4);
-  const [sii2, setSii2] = useState(4);
-  const [sii3, setSii3] = useState(4);
-  const [sii4, setSii4] = useState(4);
-  const [nfc1, setNfc1] = useState(4);
-  const [nfc2, setNfc2] = useState(4);
-  const [nfc3, setNfc3] = useState(4);
-  const [nfc4, setNfc4] = useState(4);
-  const [nfc5, setNfc5] = useState(4);
-  const [nfc6, setNfc6] = useState(4);
-  const [aiAcceptance1, setAiAcceptance1] = useState(4);
-  const [aiAcceptance2, setAiAcceptance2] = useState(4);
-  const [aiAcceptance3, setAiAcceptance3] = useState(4);
-  const [aiAcceptance4, setAiAcceptance4] = useState(4);
-  const [aiAcceptance5, setAiAcceptance5] = useState(4);
+  const [sii1, setSii1] = useState<number | null>(null);
+  const [sii2, setSii2] = useState<number | null>(null);
+  const [sii3, setSii3] = useState<number | null>(null);
+  const [sii4, setSii4] = useState<number | null>(null);
+  const [nfc1, setNfc1] = useState<number | null>(null);
+  const [nfc2, setNfc2] = useState<number | null>(null);
+  const [nfc3, setNfc3] = useState<number | null>(null);
+  const [nfc4, setNfc4] = useState<number | null>(null);
+  const [nfc5, setNfc5] = useState<number | null>(null);
+  const [nfc6, setNfc6] = useState<number | null>(null);
+  const [aiAcceptance1, setAiAcceptance1] = useState<number | null>(null);
+  const [aiAcceptance2, setAiAcceptance2] = useState<number | null>(null);
+  const [aiAcceptance3, setAiAcceptance3] = useState<number | null>(null);
+  const [aiAcceptance4, setAiAcceptance4] = useState<number | null>(null);
+  const [aiAcceptance5, setAiAcceptance5] = useState<number | null>(null);
 
   useEffect(() => {
     const id = sessionStorage.getItem('participantId');
@@ -98,8 +99,49 @@ export default function BackgroundSurveyPage() {
     }
   };
 
+  const validateForm = () => {
+    const errors: string[] = [];
+
+    // Basic Demographics validation
+    if (!age.trim()) errors.push('Age is required');
+    if (!gender) errors.push('Gender is required');
+    if (!education) errors.push('Education level is required');
+    if (!occupation.trim()) errors.push('Occupation is required');
+    if (!country) errors.push('Country is required');
+    if (languages.length === 0) errors.push('Please select at least one language');
+
+    // AI / Multi-Agent Experience validation
+    if (llmUsage === null) errors.push('Please rate your LLM usage frequency');
+    if (multiAgentExperience === '') errors.push('Please select your multi-agent experience level');
+
+    // Individual Difference Measures validation
+    if (sii1 === null) errors.push('Please answer SII question 1');
+    if (sii2 === null) errors.push('Please answer SII question 2');
+    if (sii3 === null) errors.push('Please answer SII question 3');
+    if (sii4 === null) errors.push('Please answer SII question 4');
+    if (nfc1 === null) errors.push('Please answer NFC question 1');
+    if (nfc2 === null) errors.push('Please answer NFC question 2');
+    if (nfc3 === null) errors.push('Please answer NFC question 3');
+    if (nfc4 === null) errors.push('Please answer NFC question 4');
+    if (nfc5 === null) errors.push('Please answer NFC question 5');
+    if (nfc6 === null) errors.push('Please answer NFC question 6');
+    if (aiAcceptance1 === null) errors.push('Please answer AI Acceptance question 1');
+    if (aiAcceptance2 === null) errors.push('Please answer AI Acceptance question 2');
+    if (aiAcceptance3 === null) errors.push('Please answer AI Acceptance question 3');
+    if (aiAcceptance4 === null) errors.push('Please answer AI Acceptance question 4');
+    if (aiAcceptance5 === null) errors.push('Please answer AI Acceptance question 5');
+
+    setValidationErrors(errors);
+    return errors.length === 0;
+  };
+
   const handleSubmit = async () => {
     if (!participantId) return;
+
+    if (!validateForm()) {
+      alert(`Please complete all required fields:\n\n${validationErrors.join('\n')}`);
+      return;
+    }
 
     setIsSubmitting(true);
 
@@ -153,25 +195,37 @@ export default function BackgroundSurveyPage() {
     return <div>Loading...</div>;
   }
 
-  const render7PointScale = (value: number, onChange: (value: number) => void, label: string) => (
-    <div className="space-y-2">
-      <Label>{label} ({value})</Label>
-      <input
-        type="range"
-        min="1"
-        max="7"
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full"
-      />
+  const render7PointLikert = (value: number | null, onChange: (value: number) => void, label: string) => (
+    <div className="space-y-3">
+      <Label className="text-sm font-medium">{label}</Label>
+      <div className="grid grid-cols-7 gap-2">
+        {[1, 2, 3, 4, 5, 6, 7].map((scale) => (
+          <div key={scale} className="text-center">
+            <input
+              type="radio"
+              id={`${label}-${scale}`}
+              name={label}
+              value={scale}
+              checked={value === scale}
+              onChange={(e) => onChange(Number(e.target.value))}
+              className="sr-only"
+            />
+            <label
+              htmlFor={`${label}-${scale}`}
+              className={`block w-full p-2 text-xs border rounded cursor-pointer transition-colors ${
+                value === scale
+                  ? 'bg-blue-500 text-white border-blue-500'
+                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              {scale}
+            </label>
+          </div>
+        ))}
+      </div>
       <div className="flex justify-between text-xs text-muted-foreground">
-        <span>1</span>
-        <span>2</span>
-        <span>3</span>
-        <span>4</span>
-        <span>5</span>
-        <span>6</span>
-        <span>7</span>
+        <span>Strongly Disagree</span>
+        <span>Strongly Agree</span>
       </div>
     </div>
   );
@@ -195,6 +249,9 @@ export default function BackgroundSurveyPage() {
             <p className="text-muted-foreground">
               Please provide some information about yourself and your experience with AI systems.
             </p>
+            <p className="text-sm text-red-600 mt-2">
+              * All fields marked with an asterisk are required
+            </p>
           </div>
 
           {/* 1. Basic Demographics */}
@@ -203,18 +260,19 @@ export default function BackgroundSurveyPage() {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="age">Age</Label>
+                <Label htmlFor="age">Age *</Label>
                 <Input
                   id="age"
                   type="number"
                   placeholder="Please enter your age in years"
                   value={age}
                   onChange={(e) => setAge(e.target.value)}
+                  required
                 />
               </div>
 
               <div className="space-y-2">
-                <Label>Gender</Label>
+                <Label>Gender *</Label>
                 <Select value={gender} onValueChange={setGender}>
                   <SelectTrigger>
                     <SelectValue placeholder="What is your gender?" />
@@ -229,7 +287,7 @@ export default function BackgroundSurveyPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>Education Level</Label>
+                <Label>Education Level *</Label>
                 <Select value={education} onValueChange={setEducation}>
                   <SelectTrigger>
                     <SelectValue placeholder="Please select your highest level of education" />
@@ -244,17 +302,18 @@ export default function BackgroundSurveyPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="occupation">Occupation</Label>
+                <Label htmlFor="occupation">Occupation *</Label>
                 <Input
                   id="occupation"
                   placeholder="Please write your current main occupation or activity"
                   value={occupation}
                   onChange={(e) => setOccupation(e.target.value)}
+                  required
                 />
               </div>
 
               <div className="space-y-2">
-                <Label>Country of Residence</Label>
+                <Label>Country of Residence *</Label>
                 <Select value={country} onValueChange={setCountry}>
                   <SelectTrigger>
                     <SelectValue placeholder="Please select your current country of residence" />
@@ -277,7 +336,7 @@ export default function BackgroundSurveyPage() {
             </div>
 
             <div className="space-y-4">
-              <Label>Primary Language(s)</Label>
+              <Label>Primary Language(s) *</Label>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {['English', 'Spanish', 'French', 'German', 'Chinese', 'Japanese', 'Korean', 'Arabic', 'Hindi', 'Portuguese', 'Russian', 'Other'].map((lang) => (
                   <div key={lang} className="flex items-center space-x-2">
@@ -320,7 +379,7 @@ export default function BackgroundSurveyPage() {
           <div className="space-y-6">
             <h3 className="text-lg font-semibold border-b pb-2">2. AI / Multi-Agent Experience</h3>
             
-            {render7PointScale(llmUsage, setLlmUsage, "How often have you used LLM chatbots (e.g., ChatGPT, Claude, Gemini) in the past 6 months? (1 = Never – 7 = Almost daily)")}
+            {render7PointLikert(llmUsage, setLlmUsage, "How often have you used LLM chatbots (e.g., ChatGPT, Claude, Gemini) in the past 6 months? *")}
 
             <div className="space-y-4">
               <Label>Which tools have you used?</Label>
@@ -346,7 +405,7 @@ export default function BackgroundSurveyPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>Have you ever interacted with two or more AI/chatbots at the same time?</Label>
+              <Label>Have you ever interacted with two or more AI/chatbots at the same time? *</Label>
               <Select value={multiAgentExperience} onValueChange={setMultiAgentExperience}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select your experience level" />
@@ -408,35 +467,35 @@ export default function BackgroundSurveyPage() {
             
             <div className="space-y-6">
               <div>
-                <h4 className="font-medium mb-4">Susceptibility to Interpersonal Influence (SII-4)</h4>
+                <h4 className="font-medium mb-4">Susceptibility to Interpersonal Influence (SII-4) *</h4>
                 <div className="space-y-4">
-                  {render7PointScale(sii1, setSii1, "I often buy products recommended by my friends.")}
-                  {render7PointScale(sii2, setSii2, "If others say something is good, I tend to see it positively.")}
-                  {render7PointScale(sii3, setSii3, "My choices are often influenced by others' opinions.")}
-                  {render7PointScale(sii4, setSii4, "I am rarely swayed by others' opinions. (reverse-scored)")}
+                  {render7PointLikert(sii1, setSii1, "I often buy products recommended by my friends.")}
+                  {render7PointLikert(sii2, setSii2, "If others say something is good, I tend to see it positively.")}
+                  {render7PointLikert(sii3, setSii3, "My choices are often influenced by others' opinions.")}
+                  {render7PointLikert(sii4, setSii4, "I am rarely swayed by others' opinions. (reverse-scored)")}
                 </div>
               </div>
 
               <div>
-                <h4 className="font-medium mb-4">Need for Cognition (NFC-6)</h4>
+                <h4 className="font-medium mb-4">Need for Cognition (NFC-6) *</h4>
                 <div className="space-y-4">
-                  {render7PointScale(nfc1, setNfc1, "I enjoy solving complex problems.")}
-                  {render7PointScale(nfc2, setNfc2, "I find reading challenging books interesting.")}
-                  {render7PointScale(nfc3, setNfc3, "I try to avoid tasks that require a lot of thinking. (reverse-scored)")}
-                  {render7PointScale(nfc4, setNfc4, "I prefer decisions that are based on thorough analysis.")}
-                  {render7PointScale(nfc5, setNfc5, "I like to think deeply about new ideas.")}
-                  {render7PointScale(nfc6, setNfc6, "I find complex discussions boring. (reverse-scored)")}
+                  {render7PointLikert(nfc1, setNfc1, "I enjoy solving complex problems.")}
+                  {render7PointLikert(nfc2, setNfc2, "I find reading challenging books interesting.")}
+                  {render7PointLikert(nfc3, setNfc3, "I try to avoid tasks that require a lot of thinking. (reverse-scored)")}
+                  {render7PointLikert(nfc4, setNfc4, "I prefer decisions that are based on thorough analysis.")}
+                  {render7PointLikert(nfc5, setNfc5, "I like to think deeply about new ideas.")}
+                  {render7PointLikert(nfc6, setNfc6, "I find complex discussions boring. (reverse-scored)")}
                 </div>
               </div>
 
               <div>
-                <h4 className="font-medium mb-4">AI Acceptance (Short Scale, 5 items)</h4>
+                <h4 className="font-medium mb-4">AI Acceptance (Short Scale, 5 items) *</h4>
                 <div className="space-y-4">
-                  {render7PointScale(aiAcceptance1, setAiAcceptance1, "AI has many beneficial applications.")}
-                  {render7PointScale(aiAcceptance2, setAiAcceptance2, "AI is helpful in daily life.")}
-                  {render7PointScale(aiAcceptance3, setAiAcceptance3, "I want to interact with AI in my everyday life.")}
-                  {render7PointScale(aiAcceptance4, setAiAcceptance4, "Society will benefit from AI.")}
-                  {render7PointScale(aiAcceptance5, setAiAcceptance5, "I am willing to delegate part of complex decisions to AI.")}
+                  {render7PointLikert(aiAcceptance1, setAiAcceptance1, "AI has many beneficial applications.")}
+                  {render7PointLikert(aiAcceptance2, setAiAcceptance2, "AI is helpful in daily life.")}
+                  {render7PointLikert(aiAcceptance3, setAiAcceptance3, "I want to interact with AI in my everyday life.")}
+                  {render7PointLikert(aiAcceptance4, setAiAcceptance4, "Society will benefit from AI.")}
+                  {render7PointLikert(aiAcceptance5, setAiAcceptance5, "I am willing to delegate part of complex decisions to AI.")}
                 </div>
               </div>
             </div>

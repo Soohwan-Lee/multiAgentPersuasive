@@ -22,8 +22,36 @@ export function ResponsePanel({
   const [confidence, setConfidence] = useState(50);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [startTime] = useState(Date.now());
+  
+  // Track if sliders have been moved from their initial positions
+  const [opinionMoved, setOpinionMoved] = useState(false);
+  const [confidenceMoved, setConfidenceMoved] = useState(false);
+
+  const handleOpinionChange = (value: number) => {
+    setOpinion(value);
+    if (!opinionMoved) {
+      setOpinionMoved(true);
+    }
+  };
+
+  const handleConfidenceChange = (value: number) => {
+    setConfidence(value);
+    if (!confidenceMoved) {
+      setConfidenceMoved(true);
+    }
+  };
 
   const handleSubmit = async () => {
+    // Check if both sliders have been moved
+    if (!opinionMoved || !confidenceMoved) {
+      const missingMoves = [];
+      if (!opinionMoved) missingMoves.push('opinion slider');
+      if (!confidenceMoved) missingMoves.push('confidence slider');
+      
+      alert(`Please move the ${missingMoves.join(' and ')} before submitting your response.`);
+      return;
+    }
+
     setIsSubmitting(true);
     const rtMs = Date.now() - startTime;
 
@@ -76,6 +104,7 @@ export function ResponsePanel({
         <div className="space-y-2">
           <Label htmlFor="opinion">
             Your opinion on Death Penalty: {getOpinionLabel()}
+            {!opinionMoved && <span className="text-red-500 ml-1">*</span>}
           </Label>
           <input
             id="opinion"
@@ -83,7 +112,7 @@ export function ResponsePanel({
             min="-50"
             max="50"
             value={opinion}
-            onChange={(e) => setOpinion(Number(e.target.value))}
+            onChange={(e) => handleOpinionChange(Number(e.target.value))}
             className="w-full"
           />
           <div className="flex justify-between text-xs text-muted-foreground">
@@ -91,11 +120,15 @@ export function ResponsePanel({
             <span>Neutral</span>
             <span>Strongly Support</span>
           </div>
+          {!opinionMoved && (
+            <p className="text-xs text-red-500">Please move the opinion slider to indicate your position</p>
+          )}
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="confidence">
             Confidence in your opinion: {confidence}%
+            {!confidenceMoved && <span className="text-red-500 ml-1">*</span>}
           </Label>
           <input
             id="confidence"
@@ -103,22 +136,31 @@ export function ResponsePanel({
             min="0"
             max="100"
             value={confidence}
-            onChange={(e) => setConfidence(Number(e.target.value))}
+            onChange={(e) => handleConfidenceChange(Number(e.target.value))}
             className="w-full"
           />
           <div className="flex justify-between text-xs text-muted-foreground">
             <span>Not at all confident</span>
             <span>Very confident</span>
           </div>
+          {!confidenceMoved && (
+            <p className="text-xs text-red-500">Please move the confidence slider to indicate your confidence level</p>
+          )}
         </div>
 
         <Button 
           onClick={handleSubmit} 
-          disabled={isSubmitting}
+          disabled={isSubmitting || !opinionMoved || !confidenceMoved}
           className="w-full"
         >
           {isSubmitting ? 'Submitting...' : 'Submit Response'}
         </Button>
+        
+        {(!opinionMoved || !confidenceMoved) && (
+          <p className="text-xs text-muted-foreground text-center">
+            Please move both sliders before submitting
+          </p>
+        )}
       </CardContent>
     </Card>
   );
