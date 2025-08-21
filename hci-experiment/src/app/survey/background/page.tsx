@@ -33,7 +33,8 @@ export default function BackgroundSurveyPage() {
   const [occupation, setOccupation] = useState('');
   const [country, setCountry] = useState('');
   const [languages, setLanguages] = useState<string[]>([]);
-  const [raceEthnicity, setRaceEthnicity] = useState<string[]>([]);
+  const [englishProficiency, setEnglishProficiency] = useState<number | null>(null);
+  const [raceEthnicity, setRaceEthnicity] = useState<string>('');
   const [raceOther, setRaceOther] = useState('');
 
   // AI / Multi-Agent Experience
@@ -75,12 +76,8 @@ export default function BackgroundSurveyPage() {
     }
   };
 
-  const handleRaceEthnicityChange = (race: string, checked: any) => {
-    if (checked) {
-      setRaceEthnicity([...raceEthnicity, race]);
-    } else {
-      setRaceEthnicity(raceEthnicity.filter(r => r !== race));
-    }
+  const handleRaceEthnicityChange = (race: string) => {
+    setRaceEthnicity(race);
   };
 
   const handleToolsChange = (tool: string, checked: any) => {
@@ -104,11 +101,14 @@ export default function BackgroundSurveyPage() {
 
     // Basic Demographics validation
     if (!age.trim()) errors.push('Age is required');
+    if (parseInt(age) < 1) errors.push('Age must be 1 or greater');
     if (!gender) errors.push('Gender is required');
     if (!education) errors.push('Education level is required');
     if (!occupation.trim()) errors.push('Occupation is required');
     if (!country) errors.push('Country is required');
     if (languages.length === 0) errors.push('Please select at least one language');
+    if (englishProficiency === null) errors.push('English proficiency is required');
+    if (!raceEthnicity) errors.push('Race/Ethnicity is required');
 
     // AI / Multi-Agent Experience validation
     if (llmUsage === null) errors.push('Please rate your LLM usage frequency');
@@ -161,6 +161,7 @@ export default function BackgroundSurveyPage() {
             occupation,
             country,
             languages,
+            englishProficiency,
             raceEthnicity,
             raceOther,
             
@@ -264,6 +265,7 @@ export default function BackgroundSurveyPage() {
                 <Input
                   id="age"
                   type="number"
+                  min="1"
                   placeholder="Please enter your age in years"
                   value={age}
                   onChange={(e) => setAge(e.target.value)}
@@ -352,20 +354,33 @@ export default function BackgroundSurveyPage() {
             </div>
 
             <div className="space-y-4">
-              <Label>Race/Ethnicity (Optional)</Label>
+              <Label>English Proficiency *</Label>
+              {render7PointLikert(englishProficiency, setEnglishProficiency, "How would you rate your English proficiency?")}
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Not at all proficient</span>
+                <span>Native-like proficiency</span>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <Label>Race/Ethnicity *</Label>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {['Asian', 'White', 'Black/African', 'Hispanic/Latinx', 'Middle Eastern/North African', 'Indigenous/Mixed', 'Other', 'Prefer not to answer'].map((race) => (
                   <div key={race} className="flex items-center space-x-2">
-                    <Checkbox
+                    <input
+                      type="radio"
                       id={`race-${race}`}
-                      checked={raceEthnicity.includes(race)}
-                      onCheckedChange={(checked) => handleRaceEthnicityChange(race, checked as boolean)}
+                      name="raceEthnicity"
+                      value={race}
+                      checked={raceEthnicity === race}
+                      onChange={(e) => handleRaceEthnicityChange(e.target.value)}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500"
                     />
                     <Label htmlFor={`race-${race}`} className="text-sm">{race}</Label>
                   </div>
                 ))}
               </div>
-              {raceEthnicity.includes('Other') && (
+              {raceEthnicity === 'Other' && (
                 <Input
                   placeholder="Please specify"
                   value={raceOther}
