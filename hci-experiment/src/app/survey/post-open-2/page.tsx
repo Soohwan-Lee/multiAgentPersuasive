@@ -8,14 +8,15 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ProgressHeader } from '@/components/ProgressHeader';
 import { SkipForward } from 'lucide-react';
+import { CURRENT_PATTERN } from '@/config/patterns';
 
 export default function PostOpenSurvey2Page() {
   const router = useRouter();
   const [participantId, setParticipantId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // 하드코딩된 조건 - 테스트용으로 minorityDiffusion 설정
-  const condition: string = "minorityDiffusion";
+  // patterns.ts에서 현재 패턴을 동적으로 가져오기
+  const condition: string = CURRENT_PATTERN;
   
   // Survey responses
   const [basisOfDecision, setBasisOfDecision] = useState('');

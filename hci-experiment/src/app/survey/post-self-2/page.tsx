@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { ProgressHeader } from '@/components/ProgressHeader';
 import { SkipForward } from 'lucide-react';
+import { CURRENT_PATTERN } from '@/config/patterns';
 
 interface SurveyResponses {
   // Perceived Compliance (모든 조건에 공통)
@@ -54,8 +55,8 @@ export default function PostSelfSurvey2Page() {
   const [participantId, setParticipantId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // 하드코딩된 조건 - 테스트용으로 minorityDiffusion 설정
-  const condition: string = "minorityDiffusion";
+  // patterns.ts에서 현재 패턴을 동적으로 가져오기
+  const condition: string = CURRENT_PATTERN;
   
   // Survey responses - 모든 필드를 null로 초기화
   const [responses, setResponses] = useState<SurveyResponses>({
