@@ -10,7 +10,9 @@ export interface PatternConfig {
 }
 
 // EASY PATTERN CONFIGURATION - Change this to switch patterns
-export const CURRENT_PATTERN: PatternKey = "minorityDiffusion"; // Change this: "majority" | "minority" | "minorityDiffusion"
+export const CURRENT_PATTERN: PatternKey = "majority"; // Change this: "majority" | "minority" | "minorityDiffusion"
+// export const CURRENT_PATTERN: PatternKey = "minority";
+// export const CURRENT_PATTERN: PatternKey = "minorityDiffusion";
 
 export const DEFAULT_PATTERN: Record<PatternKey, PatternConfig> = {
   majority: { 
