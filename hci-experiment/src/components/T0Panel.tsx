@@ -77,7 +77,7 @@ export function T0Panel({ sessionKey, participantId, onComplete }: T0PanelProps)
 
         <div className="space-y-2">
           <Label htmlFor="confidence">
-            Confidence in your opinion: {confidence}%
+            Confidence in your opinion
           </Label>
           <input
             id="confidence"

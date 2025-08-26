@@ -354,8 +354,7 @@ export default function BackgroundSurveyPage() {
             </div>
 
             <div className="space-y-4">
-              <Label>English Proficiency *</Label>
-              {render7PointLikert(englishProficiency, setEnglishProficiency, "How would you rate your English proficiency?")}
+              {render7PointLikert(englishProficiency, setEnglishProficiency, "* How would you rate your English proficiency?")}
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span>Not at all proficient</span>
                 <span>Native-like proficiency</span>

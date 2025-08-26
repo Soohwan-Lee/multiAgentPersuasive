@@ -103,7 +103,7 @@ export default function PostSelfSurvey2Page() {
 
             <div className="space-y-2">
               <Label htmlFor="credibility">
-                How credible did you find the agents? ({agentCredibility}%)
+                How credible did you find the agents?
               </Label>
               <input
                 id="credibility"
@@ -122,7 +122,7 @@ export default function PostSelfSurvey2Page() {
 
             <div className="space-y-2">
               <Label htmlFor="confidence">
-                How confident are you in your final decision? ({decisionConfidence}%)
+                How confident are you in your final decision?
               </Label>
               <input
                 id="confidence"
@@ -141,7 +141,7 @@ export default function PostSelfSurvey2Page() {
 
             <div className="space-y-2">
               <Label htmlFor="satisfaction">
-                Overall satisfaction with the session? ({overallSatisfaction}%)
+                Overall satisfaction with the session?
               </Label>
               <input
                 id="satisfaction"

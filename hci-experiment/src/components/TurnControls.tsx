@@ -96,7 +96,7 @@ export function TurnControls({
 
             <div className="space-y-2">
               <Label htmlFor="private-confidence">
-                개인 신념에 대한 확신도: {privateConfidence}%
+                개인 신념에 대한 확신도
               </Label>
               <input
                 id="private-confidence"

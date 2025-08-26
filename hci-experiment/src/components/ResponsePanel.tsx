@@ -127,7 +127,7 @@ export function ResponsePanel({
 
         <div className="space-y-2">
           <Label htmlFor="confidence">
-            Confidence in your opinion: {confidence}%
+            Confidence in your opinion
             {!confidenceMoved && <span className="text-red-500 ml-1">*</span>}
           </Label>
           <input
