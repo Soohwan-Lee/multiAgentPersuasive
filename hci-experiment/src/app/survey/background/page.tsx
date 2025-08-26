@@ -224,10 +224,6 @@ export default function BackgroundSurveyPage() {
           </div>
         ))}
       </div>
-      <div className="flex justify-between text-xs text-muted-foreground">
-        <span>Strongly Disagree</span>
-        <span>Strongly Agree</span>
-      </div>
     </div>
   );
 
@@ -486,7 +482,7 @@ export default function BackgroundSurveyPage() {
                   {render7PointLikert(sii1, setSii1, "I often buy products recommended by my friends.")}
                   {render7PointLikert(sii2, setSii2, "If others say something is good, I tend to see it positively.")}
                   {render7PointLikert(sii3, setSii3, "My choices are often influenced by others' opinions.")}
-                  {render7PointLikert(sii4, setSii4, "I am rarely swayed by others' opinions. (reverse-scored)")}
+                  {render7PointLikert(sii4, setSii4, "I am often swayed by others' opinions.")}
                 </div>
               </div>
 
@@ -495,10 +491,10 @@ export default function BackgroundSurveyPage() {
                 <div className="space-y-4">
                   {render7PointLikert(nfc1, setNfc1, "I enjoy solving complex problems.")}
                   {render7PointLikert(nfc2, setNfc2, "I find reading challenging books interesting.")}
-                  {render7PointLikert(nfc3, setNfc3, "I try to avoid tasks that require a lot of thinking. (reverse-scored)")}
+                  {render7PointLikert(nfc3, setNfc3, "I enjoy tasks that require a lot of thinking.")}
                   {render7PointLikert(nfc4, setNfc4, "I prefer decisions that are based on thorough analysis.")}
                   {render7PointLikert(nfc5, setNfc5, "I like to think deeply about new ideas.")}
-                  {render7PointLikert(nfc6, setNfc6, "I find complex discussions boring. (reverse-scored)")}
+                  {render7PointLikert(nfc6, setNfc6, "I find complex discussions interesting.")}
                 </div>
               </div>
 
