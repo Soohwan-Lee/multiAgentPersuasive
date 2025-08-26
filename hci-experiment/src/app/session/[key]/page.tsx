@@ -74,12 +74,12 @@ export default function SessionPage() {
       setCurrentResponseIndex(currentResponseIndex + 1);
       setCurrentState('response');
     } else if (currentState === 'response') {
-      // 응답 완료 후 다음 사이클로 이동
-      if (currentCycle < 4) {
-        setCurrentCycle(currentCycle + 1);
+      // 응답 완료 후 다음 응답으로 이동
+      if (currentResponseIndex < 4) {
+        setCurrentResponseIndex(currentResponseIndex + 1);
         setCurrentState('chat');
       } else {
-        // 세션 완료
+        // T4 완료 후 세션 완료
         setCurrentState('complete');
         // 다음 페이지로 이동
         if (sessionKey === 'test') {
@@ -196,11 +196,12 @@ export default function SessionPage() {
   };
 
   const handleResponseComplete = () => {
-    if (currentCycle < 4) {
-      setCurrentCycle(currentCycle + 1);
+    if (currentResponseIndex < 4) {
+      // T0, T1, T2, T3까지는 다음 응답으로 이동
+      setCurrentResponseIndex(currentResponseIndex + 1);
       setCurrentState('chat');
     } else {
-      // 세션 완료
+      // T4 완료 후 세션 완료
       setCurrentState('complete');
       // 다음 페이지로 이동
       if (sessionKey === 'test') {

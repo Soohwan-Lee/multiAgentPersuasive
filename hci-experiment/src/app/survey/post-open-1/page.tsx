@@ -32,6 +32,12 @@ export default function PostOpenSurvey1Page() {
   const handleSubmit = async () => {
     if (!participantId) return;
 
+    // 패턴별 경험 질문이 필수 응답인지 확인
+    if (!experienceByPattern.trim()) {
+      alert('Please answer the question about your experience with the influence pattern.');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -148,7 +154,7 @@ export default function PostOpenSurvey1Page() {
 
             <div className="space-y-2">
               <Label htmlFor="experience-by-pattern">
-                {getPatternQuestion()}
+                {getPatternQuestion()} <span className="text-red-500">*</span>
               </Label>
               <Textarea
                 id="experience-by-pattern"
@@ -156,6 +162,7 @@ export default function PostOpenSurvey1Page() {
                 value={experienceByPattern}
                 onChange={(e) => setExperienceByPattern(e.target.value)}
                 className="min-h-[100px]"
+                required
               />
             </div>
 
