@@ -66,17 +66,17 @@ export default function SessionPage() {
 
   const handleSkip = () => {
     if (currentState === 't0') {
-      // T0 완료 후 채팅으로 이동
-      setCurrentResponseIndex(1);
+      // T0 완료 후 첫 번째 채팅으로 이동
+      setCurrentCycle(1);
       setCurrentState('chat');
     } else if (currentState === 'chat') {
       // 채팅에서 다음 응답으로 이동
       setCurrentResponseIndex(currentResponseIndex + 1);
       setCurrentState('response');
     } else if (currentState === 'response') {
-      // 응답 완료 후 다음 응답으로 이동
+      // 응답 완료 후 다음 사이클로 이동
       if (currentResponseIndex < 4) {
-        setCurrentResponseIndex(currentResponseIndex + 1);
+        setCurrentCycle(currentCycle + 1);
         setCurrentState('chat');
       } else {
         // T4 완료 후 세션 완료
@@ -197,8 +197,8 @@ export default function SessionPage() {
 
   const handleResponseComplete = () => {
     if (currentResponseIndex < 4) {
-      // T0, T1, T2, T3까지는 다음 응답으로 이동
-      setCurrentResponseIndex(currentResponseIndex + 1);
+      // T0, T1, T2, T3 완료 후 다음 사이클로 이동
+      setCurrentCycle(currentCycle + 1);
       setCurrentState('chat');
     } else {
       // T4 완료 후 세션 완료
