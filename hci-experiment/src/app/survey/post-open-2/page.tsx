@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ProgressHeader } from '@/components/ProgressHeader';
+import { SkipForward } from 'lucide-react';
 
 export default function PostOpenSurvey2Page() {
   const router = useRouter();
@@ -45,7 +46,7 @@ export default function PostOpenSurvey2Page() {
         })
       });
 
-      // Navigate to completion page
+      // Navigate to next page
       router.push('/finish');
     } catch (error) {
       console.error('Error submitting survey:', error);
@@ -53,6 +54,10 @@ export default function PostOpenSurvey2Page() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleSkip = () => {
+    router.push('/finish');
   };
 
   if (!participantId) {
@@ -83,7 +88,7 @@ export default function PostOpenSurvey2Page() {
           <div className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="thoughts">
-                What were your general thoughts about this session compared to the first one?
+                What were your general thoughts about the experiment and the AI agents?
               </Label>
               <Textarea
                 id="thoughts"
@@ -96,11 +101,11 @@ export default function PostOpenSurvey2Page() {
 
             <div className="space-y-2">
               <Label htmlFor="comparison">
-                How would you compare the AI agents in this session to the previous session?
+                How would you compare the different AI agents? Did any stand out to you?
               </Label>
               <Textarea
                 id="comparison"
-                placeholder="Please compare the sessions..."
+                placeholder="Please compare the agents..."
                 value={agentComparison}
                 onChange={(e) => setAgentComparison(e.target.value)}
                 className="min-h-[100px]"
@@ -109,11 +114,11 @@ export default function PostOpenSurvey2Page() {
 
             <div className="space-y-2">
               <Label htmlFor="suggestions">
-                Any final thoughts or suggestions about the overall experiment?
+                Do you have any suggestions for improving the experiment or the AI agents?
               </Label>
               <Textarea
                 id="suggestions"
-                placeholder="Please share any final thoughts..."
+                placeholder="Please share any suggestions..."
                 value={suggestions}
                 onChange={(e) => setSuggestions(e.target.value)}
                 className="min-h-[100px]"
@@ -121,10 +126,22 @@ export default function PostOpenSurvey2Page() {
             </div>
           </div>
 
-          <div className="text-center pt-6">
+          <div className="text-center pt-6 space-y-3">
             <Button onClick={handleSubmit} disabled={isSubmitting} size="lg">
               {isSubmitting ? 'Submitting...' : 'Complete Experiment'}
             </Button>
+            
+            {/* TEST MODE SKIP BUTTON */}
+            <div className="border-t pt-4">
+              <Button 
+                onClick={handleSkip}
+                variant="outline"
+                className="text-orange-600 border-orange-300 hover:bg-orange-50"
+              >
+                <SkipForward className="h-4 w-4 mr-2" />
+                Skip to Finish (Test Mode)
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

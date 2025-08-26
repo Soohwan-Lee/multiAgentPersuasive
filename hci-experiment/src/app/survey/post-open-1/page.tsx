@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ProgressHeader } from '@/components/ProgressHeader';
+import { SkipForward } from 'lucide-react';
 
 export default function PostOpenSurvey1Page() {
   const router = useRouter();
@@ -53,6 +54,10 @@ export default function PostOpenSurvey1Page() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleSkip = () => {
+    router.push('/session/main2');
   };
 
   if (!participantId) {
@@ -121,10 +126,22 @@ export default function PostOpenSurvey1Page() {
             </div>
           </div>
 
-          <div className="text-center pt-6">
+          <div className="text-center pt-6 space-y-3">
             <Button onClick={handleSubmit} disabled={isSubmitting} size="lg">
               {isSubmitting ? 'Submitting...' : 'Continue to Next Session'}
             </Button>
+            
+            {/* TEST MODE SKIP BUTTON */}
+            <div className="border-t pt-4">
+              <Button 
+                onClick={handleSkip}
+                variant="outline"
+                className="text-orange-600 border-orange-300 hover:bg-orange-50"
+              >
+                <SkipForward className="h-4 w-4 mr-2" />
+                Skip to Next Session (Test Mode)
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

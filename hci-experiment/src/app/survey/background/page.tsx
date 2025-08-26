@@ -19,6 +19,7 @@ const Checkbox = ({ id, checked, onCheckedChange }: { id: string; checked: boole
 );
 import { Textarea } from '@/components/ui/textarea';
 import { ProgressHeader } from '@/components/ProgressHeader';
+import { SkipForward } from 'lucide-react';
 
 export default function BackgroundSurveyPage() {
   const router = useRouter();
@@ -190,6 +191,10 @@ export default function BackgroundSurveyPage() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleSkip = () => {
+    router.push('/session/test');
   };
 
   if (!participantId) {
@@ -511,10 +516,22 @@ export default function BackgroundSurveyPage() {
             </div>
           </div>
 
-          <div className="text-center pt-6">
+          <div className="text-center pt-6 space-y-3">
             <Button onClick={handleSubmit} disabled={isSubmitting} size="lg">
               {isSubmitting ? 'Submitting...' : 'Continue to Practice Session'}
             </Button>
+            
+            {/* TEST MODE SKIP BUTTON */}
+            <div className="border-t pt-4">
+              <Button 
+                onClick={handleSkip}
+                variant="outline"
+                className="text-orange-600 border-orange-300 hover:bg-orange-50"
+              >
+                <SkipForward className="h-4 w-4 mr-2" />
+                Skip to Practice Session (Test Mode)
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

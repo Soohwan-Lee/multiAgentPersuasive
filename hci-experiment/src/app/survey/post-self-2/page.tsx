@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { ProgressHeader } from '@/components/ProgressHeader';
+import { SkipForward } from 'lucide-react';
 
 interface SurveyResponses {
   // Perceived Compliance (모든 조건에 공통)
@@ -131,6 +132,10 @@ export default function PostSelfSurvey2Page() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleSkip = () => {
+    router.push('/survey/post-open-2');
   };
 
   const render7PointLikert = (
@@ -363,10 +368,22 @@ export default function PostSelfSurvey2Page() {
             </>
           )}
 
-          <div className="text-center pt-6">
+          <div className="text-center pt-6 space-y-3">
             <Button onClick={handleSubmit} disabled={isSubmitting} size="lg">
               {isSubmitting ? 'Submitting...' : 'Continue'}
             </Button>
+            
+            {/* TEST MODE SKIP BUTTON */}
+            <div className="border-t pt-4">
+              <Button 
+                onClick={handleSkip}
+                variant="outline"
+                className="text-orange-600 border-orange-300 hover:bg-orange-50"
+              >
+                <SkipForward className="h-4 w-4 mr-2" />
+                Skip to Open Questions (Test Mode)
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

@@ -3,12 +3,13 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { ProgressHeader } from '@/components/ProgressHeader';
 import { Chat } from '@/components/Chat';
 import { ResponsePanel } from '@/components/ResponsePanel';
 import { SESSION_META } from '@/config/sessions';
 import { Message, Response } from '@/lib/types';
-import { Info, Lightbulb, MessageSquare } from 'lucide-react';
+import { Info, Lightbulb, MessageSquare, SkipForward } from 'lucide-react';
 
 type SessionState = 't0' | 'chat' | 'agents-responding' | 'response' | 'complete';
 
@@ -63,6 +64,35 @@ export default function SessionPage() {
     setCurrentState('chat');
   };
 
+  const handleSkip = () => {
+    if (currentState === 't0') {
+      // T0 완료 후 채팅으로 이동
+      setCurrentResponseIndex(1);
+      setCurrentState('chat');
+    } else if (currentState === 'chat') {
+      // 채팅에서 다음 응답으로 이동
+      setCurrentResponseIndex(currentResponseIndex + 1);
+      setCurrentState('response');
+    } else if (currentState === 'response') {
+      // 응답 완료 후 다음 사이클로 이동
+      if (currentCycle < 4) {
+        setCurrentCycle(currentCycle + 1);
+        setCurrentState('chat');
+      } else {
+        // 세션 완료
+        setCurrentState('complete');
+        // 다음 페이지로 이동
+        if (sessionKey === 'test') {
+          router.push('/session/main1');
+        } else if (sessionKey === 'main1') {
+          router.push('/survey/post-self-1');
+        } else if (sessionKey === 'main2') {
+          router.push('/survey/post-self-2');
+        }
+      }
+    }
+  };
+
   const handleSendMessage = async (message: string) => {
     if (!participantId) return;
 
@@ -98,8 +128,7 @@ export default function SessionPage() {
           participantId,
           sessionKey,
           cycle: currentCycle,
-          userMessage: message,
-          currentTask: sessionMeta.task, // Session 설정에서 task 가져오기
+          userMessage,
         }),
       });
 
@@ -109,16 +138,7 @@ export default function SessionPage() {
 
       const result = await response.json();
       
-      console.log('Received API response:', {
-        agent1Exists: !!result.agent1,
-        agent2Exists: !!result.agent2,
-        agent3Exists: !!result.agent3,
-        agent1Content: result.agent1?.content?.substring(0, 50) + '...',
-        agent2Content: result.agent2?.content?.substring(0, 50) + '...',
-        agent3Content: result.agent3?.content?.substring(0, 50) + '...',
-      });
-      
-      // 에이전트 응답을 순차적으로 추가 (각각 지연 시간을 두고)
+      // 에이전트 응답들을 메시지에 추가
       const agentMessages: Message[] = [
         {
           id: crypto.randomUUID(),
@@ -126,11 +146,11 @@ export default function SessionPage() {
           session_key: sessionKey,
           cycle: currentCycle,
           role: 'agent1',
-          content: result.agent1?.content || 'Agent 1 response',
-          latency_ms: result.agent1?.latency_ms || null,
-          token_in: result.agent1?.token_in || null,
-          token_out: result.agent1?.token_out || null,
-          fallback_used: result.agent1?.fallback_used || false,
+          content: result.agent1.content,
+          latency_ms: result.meta.latencies.agent1,
+          token_in: null,
+          token_out: null,
+          fallback_used: false,
           ts: new Date().toISOString(),
         },
         {
@@ -139,11 +159,11 @@ export default function SessionPage() {
           session_key: sessionKey,
           cycle: currentCycle,
           role: 'agent2',
-          content: result.agent2?.content || 'Agent 2 response',
-          latency_ms: result.agent2?.latency_ms || null,
-          token_in: result.agent2?.token_in || null,
-          token_out: result.agent2?.token_out || null,
-          fallback_used: result.agent2?.fallback_used || false,
+          content: result.agent2.content,
+          latency_ms: result.meta.latencies.agent2,
+          token_in: null,
+          token_out: null,
+          fallback_used: false,
           ts: new Date().toISOString(),
         },
         {
@@ -152,91 +172,65 @@ export default function SessionPage() {
           session_key: sessionKey,
           cycle: currentCycle,
           role: 'agent3',
-          content: result.agent3?.content || 'Agent 3 response',
-          latency_ms: result.agent3?.latency_ms || null,
-          token_in: result.agent3?.token_in || null,
-          token_out: result.agent3?.token_out || null,
-          fallback_used: result.agent3?.fallback_used || false,
+          content: result.agent3.content,
+          latency_ms: result.meta.latencies.agent3,
+          token_in: null,
+          token_out: null,
+          fallback_used: false,
           ts: new Date().toISOString(),
         },
       ];
-
-      // Agent 1 응답 즉시 추가
-      setMessages(prev => [...prev, agentMessages[0]]);
       
-      // Agent 2 응답 2초 후 추가 (Agent 1의 응답을 고려한 후)
-      setTimeout(() => {
-        setMessages(prev => [...prev, agentMessages[1]]);
-      }, 2000);
+      setMessages(prev => [...prev, ...agentMessages]);
       
-      // Agent 3 응답 4초 후 추가 (Agent 1, 2의 응답을 고려한 후)
-      setTimeout(() => {
-        setMessages(prev => [...prev, agentMessages[2]]);
-        
-        // 모든 에이전트 응답이 표시된 후 1초 더 기다린 다음 응답 패널로 이동
-        setTimeout(() => {
-          setCurrentState('response');
-          setIsLoading(false);
-        }, 1000);
-      }, 4000);
-
-      console.log(`Added ${agentMessages.length} agent messages with delays`);
+      // 다음 응답으로 이동
+      setCurrentResponseIndex(currentResponseIndex + 1);
+      setCurrentState('response');
       
     } catch (error) {
       console.error('Error sending message:', error);
       alert('Failed to send message. Please try again.');
-      setCurrentState('chat');
+    } finally {
       setIsLoading(false);
     }
   };
 
   const handleResponseComplete = () => {
-    if (currentResponseIndex >= 4) {
-      // Session complete
-      setCurrentState('complete');
-      
-      // Navigate to next page after a delay
-      setTimeout(() => {
-        if (sessionKey === 'test') {
-          router.push('/session/main1');
-        } else if (sessionKey === 'main1') {
-          router.push('/survey/post-self-1');
-        } else if (sessionKey === 'main2') {
-          router.push('/survey/post-self-2');
-        }
-      }, 2000);
-    } else {
-      setCurrentResponseIndex(currentResponseIndex + 1);
+    if (currentCycle < 4) {
       setCurrentCycle(currentCycle + 1);
       setCurrentState('chat');
+    } else {
+      // 세션 완료
+      setCurrentState('complete');
+      // 다음 페이지로 이동
+      if (sessionKey === 'test') {
+        router.push('/session/main1');
+      } else if (sessionKey === 'main1') {
+        router.push('/survey/post-self-1');
+      } else if (sessionKey === 'main2') {
+        router.push('/survey/post-self-2');
+      }
     }
   };
 
   if (!participantId) {
-    return <div>Loading...</div>;
+    return null;
   }
 
   const sessionMeta = SESSION_META[sessionKey];
-  const stepIndex = sessionKey === 'test' ? 3 : sessionKey === 'main1' ? 4 : 8;
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
       <ProgressHeader
         currentStep={sessionMeta.label}
-        currentStepIndex={stepIndex}
         totalSteps={11}
+        currentStepIndex={sessionKey === 'test' ? 3 : sessionKey === 'main1' ? 4 : 8}
       />
 
-      {/* Session Header */}
+      {/* Session Info */}
       <div className="mb-6">
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5" />
-              {sessionMeta.label} • Response T{currentResponseIndex} of 4 and Chat Cycle C{currentCycle} of 4
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             <div className="flex items-start gap-4">
               <Info className="h-5 w-5 text-blue-500 mt-0.5" />
               <div className="space-y-2">
@@ -332,6 +326,20 @@ export default function SessionPage() {
             </Card>
           )}
         </div>
+      </div>
+
+      {/* TEST MODE SKIP BUTTON */}
+      <div className="mt-6 text-center">
+        <Button 
+          onClick={handleSkip}
+          variant="outline"
+          className="text-orange-600 border-orange-300 hover:bg-orange-50"
+        >
+          <SkipForward className="h-4 w-4 mr-2" />
+          Skip to Next Step (Test Mode) - {currentState === 't0' ? 'Complete T0' : 
+            currentState === 'chat' ? 'Skip Chat' : 
+            currentState === 'response' ? 'Complete Response' : 'Next'}
+        </Button>
       </div>
     </div>
   );

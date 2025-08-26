@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ProgressHeader } from '@/components/ProgressHeader';
-import { Loader2, CheckCircle } from 'lucide-react';
+import { Loader2, CheckCircle, SkipForward } from 'lucide-react';
 
 function EntryPageContent() {
   const router = useRouter();
@@ -80,6 +80,17 @@ function EntryPageContent() {
     initializeParticipant();
   }, [searchParams, router]);
 
+  const handleSkip = () => {
+    // Create test participant and skip to introduction
+    const testParticipantId = 'test-' + Date.now();
+    sessionStorage.setItem('participantId', testParticipantId);
+    sessionStorage.setItem('prolificPid', 'TEST_PID');
+    sessionStorage.setItem('studyId', 'TEST_STUDY');
+    sessionStorage.setItem('sessionId', 'TEST_SESSION');
+    sessionStorage.setItem('isTestMode', 'true');
+    router.push('/introduction');
+  };
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <ProgressHeader
@@ -138,6 +149,18 @@ function EntryPageContent() {
               Please do not close the browser or refresh during the experiment.
               All responses are processed anonymously.
             </p>
+          </div>
+
+          {/* TEST MODE SKIP BUTTON */}
+          <div className="border-t pt-4">
+            <Button 
+              onClick={handleSkip}
+              variant="outline"
+              className="w-full text-orange-600 border-orange-300 hover:bg-orange-50"
+            >
+              <SkipForward className="h-4 w-4 mr-2" />
+              Skip to Introduction (Test Mode)
+            </Button>
           </div>
         </CardContent>
       </Card>

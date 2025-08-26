@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ProgressHeader } from '@/components/ProgressHeader';
-import { MessageSquare, Users, Clock, Shield } from 'lucide-react';
+import { MessageSquare, Users, Clock, Shield, SkipForward } from 'lucide-react';
 
 export default function IntroductionPage() {
   const router = useRouter();
@@ -21,6 +21,10 @@ export default function IntroductionPage() {
   }, [router]);
 
   const handleStart = () => {
+    router.push('/survey/background');
+  };
+
+  const handleSkip = () => {
     router.push('/survey/background');
   };
 
@@ -103,10 +107,22 @@ export default function IntroductionPage() {
             </ul>
           </div>
 
-          <div className="text-center pt-4">
+          <div className="text-center pt-4 space-y-3">
             <Button onClick={handleStart} size="lg">
               Start Experiment
             </Button>
+            
+            {/* TEST MODE SKIP BUTTON */}
+            <div className="border-t pt-4">
+              <Button 
+                onClick={handleSkip}
+                variant="outline"
+                className="text-orange-600 border-orange-300 hover:bg-orange-50"
+              >
+                <SkipForward className="h-4 w-4 mr-2" />
+                Skip to Background Survey (Test Mode)
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
