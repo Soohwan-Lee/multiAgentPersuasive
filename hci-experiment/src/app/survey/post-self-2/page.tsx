@@ -10,90 +10,75 @@ import { SkipForward } from 'lucide-react';
 
 interface SurveyResponses {
   // Perceived Compliance (모든 조건에 공통)
-  perceivedCompliance1: number;
-  perceivedCompliance2: number;
-  perceivedCompliance3: number;
-  perceivedCompliance4: number;
+  perceivedCompliance1: number | null;
+  perceivedCompliance2: number | null;
+  perceivedCompliance3: number | null;
+  perceivedCompliance4: number | null;
   
   // Perceived Conversion (모든 조건에 공통)
-  perceivedConversion1: number;
-  perceivedConversion2: number;
-  perceivedConversion3: number;
-  perceivedConversion4: number;
+  perceivedConversion1: number | null;
+  perceivedConversion2: number | null;
+  perceivedConversion3: number | null;
+  perceivedConversion4: number | null;
   
-  // AI Agent 인식 (Minority Influence & Minority Diffusion 조건에만)
-  agent1Competence?: number;
-  agent1Predictability?: number;
-  agent1Integrity?: number;
-  agent1Understanding?: number;
-  agent1Utility?: number;
-  agent1Affect?: number;
-  agent1Trust?: number;
+  // AI Agent 인식 (조건에 따라 다름)
+  // Majority 조건: 모든 에이전트에 대한 7개 항목
+  agentCompetence?: number | null;
+  agentPredictability?: number | null;
+  agentIntegrity?: number | null;
+  agentUnderstanding?: number | null;
+  agentUtility?: number | null;
+  agentAffect?: number | null;
+  agentTrust?: number | null;
   
-  agent2Competence?: number;
-  agent2Predictability?: number;
-  agent2Integrity?: number;
-  agent2Understanding?: number;
-  agent2Utility?: number;
-  agent2Affect?: number;
-  agent2Trust?: number;
+  // Minority & MinorityDiffusion 조건: Agent 1&2와 Agent 3 분리
+  agent1Competence?: number | null;
+  agent1Predictability?: number | null;
+  agent1Integrity?: number | null;
+  agent1Understanding?: number | null;
+  agent1Utility?: number | null;
+  agent1Affect?: number | null;
+  agent1Trust?: number | null;
   
-  agent3Competence?: number;
-  agent3Predictability?: number;
-  agent3Integrity?: number;
-  agent3Understanding?: number;
-  agent3Utility?: number;
-  agent3Affect?: number;
-  agent3Trust?: number;
+  agent3Competence?: number | null;
+  agent3Predictability?: number | null;
+  agent3Integrity?: number | null;
+  agent3Understanding?: number | null;
+  agent3Utility?: number | null;
+  agent3Affect?: number | null;
+  agent3Trust?: number | null;
 }
 
 export default function PostSelfSurvey2Page() {
   const router = useRouter();
   const [participantId, setParticipantId] = useState<string | null>(null);
-  const [condition, setCondition] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   
-  // Survey responses - 모든 필드를 4로 초기화 (7-point Likert scale의 중간값)
+  // 하드코딩된 조건 - 테스트용으로 minorityDiffusion 설정
+  const condition: string = "minorityDiffusion";
+  
+  // Survey responses - 모든 필드를 null로 초기화
   const [responses, setResponses] = useState<SurveyResponses>({
     // Perceived Compliance
-    perceivedCompliance1: 4,
-    perceivedCompliance2: 4,
-    perceivedCompliance3: 4,
-    perceivedCompliance4: 4,
+    perceivedCompliance1: null,
+    perceivedCompliance2: null,
+    perceivedCompliance3: null,
+    perceivedCompliance4: null,
     
     // Perceived Conversion
-    perceivedConversion1: 4,
-    perceivedConversion2: 4,
-    perceivedConversion3: 4,
-    perceivedConversion4: 4,
+    perceivedConversion1: null,
+    perceivedConversion2: null,
+    perceivedConversion3: null,
+    perceivedConversion4: null,
   });
 
   useEffect(() => {
-    const loadParticipantData = async () => {
-      const id = sessionStorage.getItem('participantId');
-      if (!id) {
-        router.push('/entry');
-        return;
-      }
-      
-      setParticipantId(id);
-      
-      try {
-        // 참가자 조건 가져오기
-        const conditionResponse = await fetch(`/api/participants/condition?participantId=${id}`);
-        if (conditionResponse.ok) {
-          const { condition: participantCondition } = await conditionResponse.json();
-          setCondition(participantCondition);
-        }
-      } catch (error) {
-        console.error('Error loading participant condition:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadParticipantData();
+    const id = sessionStorage.getItem('participantId');
+    if (!id) {
+      router.push('/entry');
+      return;
+    }
+    setParticipantId(id);
   }, [router]);
 
   const updateResponse = (field: keyof SurveyResponses, value: number) => {
@@ -103,8 +88,63 @@ export default function PostSelfSurvey2Page() {
     }));
   };
 
+  const validateForm = () => {
+    const errors: string[] = [];
+
+    // Perceived Compliance validation
+    if (responses.perceivedCompliance1 === null) errors.push('Please answer Perceived Compliance question 1');
+    if (responses.perceivedCompliance2 === null) errors.push('Please answer Perceived Compliance question 2');
+    if (responses.perceivedCompliance3 === null) errors.push('Please answer Perceived Compliance question 3');
+    if (responses.perceivedCompliance4 === null) errors.push('Please answer Perceived Compliance question 4');
+
+    // Perceived Conversion validation
+    if (responses.perceivedConversion1 === null) errors.push('Please answer Perceived Conversion question 1');
+    if (responses.perceivedConversion2 === null) errors.push('Please answer Perceived Conversion question 2');
+    if (responses.perceivedConversion3 === null) errors.push('Please answer Perceived Conversion question 3');
+    if (responses.perceivedConversion4 === null) errors.push('Please answer Perceived Conversion question 4');
+
+    // AI Agent 인식 validation (조건에 따라 다름)
+    if (condition === 'majority') {
+      // Majority 조건: 모든 에이전트에 대한 7개 항목
+      if (responses.agentCompetence === null) errors.push('Please answer Agent Competence question');
+      if (responses.agentPredictability === null) errors.push('Please answer Agent Predictability question');
+      if (responses.agentIntegrity === null) errors.push('Please answer Agent Integrity question');
+      if (responses.agentUnderstanding === null) errors.push('Please answer Agent Understanding question');
+      if (responses.agentUtility === null) errors.push('Please answer Agent Utility question');
+      if (responses.agentAffect === null) errors.push('Please answer Agent Affect question');
+      if (responses.agentTrust === null) errors.push('Please answer Agent Trust question');
+    } else if (condition === 'minority' || condition === 'minorityDiffusion') {
+      // Minority 조건: Agent 1&2와 Agent 3 분리
+      // Agent 1 & 2 인식
+      if (responses.agent1Competence === null) errors.push('Please answer Agent 1 & 2 Competence question');
+      if (responses.agent1Predictability === null) errors.push('Please answer Agent 1 & 2 Predictability question');
+      if (responses.agent1Integrity === null) errors.push('Please answer Agent 1 & 2 Integrity question');
+      if (responses.agent1Understanding === null) errors.push('Please answer Agent 1 & 2 Understanding question');
+      if (responses.agent1Utility === null) errors.push('Please answer Agent 1 & 2 Utility question');
+      if (responses.agent1Affect === null) errors.push('Please answer Agent 1 & 2 Affect question');
+      if (responses.agent1Trust === null) errors.push('Please answer Agent 1 & 2 Trust question');
+
+      // Agent 3 인식
+      if (responses.agent3Competence === null) errors.push('Please answer Agent 3 Competence question');
+      if (responses.agent3Predictability === null) errors.push('Please answer Agent 3 Predictability question');
+      if (responses.agent3Integrity === null) errors.push('Please answer Agent 3 Integrity question');
+      if (responses.agent3Understanding === null) errors.push('Please answer Agent 3 Understanding question');
+      if (responses.agent3Utility === null) errors.push('Please answer Agent 3 Utility question');
+      if (responses.agent3Affect === null) errors.push('Please answer Agent 3 Affect question');
+      if (responses.agent3Trust === null) errors.push('Please answer Agent 3 Trust question');
+    }
+
+    return errors;
+  };
+
   const handleSubmit = async () => {
     if (!participantId) return;
+
+    const errors = validateForm();
+    if (errors.length > 0) {
+      alert(`Please complete all required fields:\n\n${errors.join('\n')}`);
+      return;
+    }
 
     setIsSubmitting(true);
 
@@ -139,26 +179,37 @@ export default function PostSelfSurvey2Page() {
   };
 
   const render7PointLikert = (
-    value: number, 
+    value: number | null, 
     onChange: (value: number) => void, 
-    label: string,
-    required: boolean = true
+    label: string
   ) => (
-    <div className="space-y-2">
-      <Label htmlFor={label.replace(/\s+/g, '-').toLowerCase()}>
-        {label} {required && <span className="text-red-500">*</span>}
-      </Label>
-      <div className="flex items-center space-x-4">
-        <input
-          type="range"
-          min="1"
-          max="7"
-          value={value}
-          onChange={(e) => onChange(Number(e.target.value))}
-          className="flex-1"
-          required={required}
-        />
-        <span className="text-sm font-medium min-w-[3rem] text-center">{value}</span>
+    <div className="space-y-3">
+      <Label className="text-sm font-medium">{label} *</Label>
+      <div className="grid grid-cols-7 gap-2">
+        {[1, 2, 3, 4, 5, 6, 7].map((scale) => (
+          <div key={scale} className="text-center">
+            <input
+              type="radio"
+              id={`${label}-${scale}`}
+              name={label}
+              value={scale}
+              checked={value === scale}
+              onChange={(e) => onChange(Number(e.target.value))}
+              className="sr-only"
+              required
+            />
+            <label
+              htmlFor={`${label}-${scale}`}
+              className={`block w-full p-2 text-xs border rounded cursor-pointer transition-colors ${
+                value === scale
+                  ? 'bg-blue-500 text-white border-blue-500'
+                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              {scale}
+            </label>
+          </div>
+        ))}
       </div>
       <div className="flex justify-between text-xs text-muted-foreground">
         <span>Strongly Disagree</span>
@@ -167,14 +218,11 @@ export default function PostSelfSurvey2Page() {
     </div>
   );
 
-  if (isLoading) {
-    return <div className="container mx-auto px-4 py-8 max-w-4xl">Loading...</div>;
-  }
-
   if (!participantId) {
     return <div>Loading...</div>;
   }
 
+  const isMajorityCondition = condition === 'majority';
   const isMinorityCondition = condition === 'minority' || condition === 'minorityDiffusion';
 
   return (
@@ -182,7 +230,7 @@ export default function PostSelfSurvey2Page() {
       <ProgressHeader
         currentStep="Post-Self Survey 2"
         totalSteps={11}
-        currentStepIndex={8}
+        currentStepIndex={7}
       />
 
       <Card className="max-w-4xl mx-auto">
@@ -195,7 +243,9 @@ export default function PostSelfSurvey2Page() {
           <div className="text-center mb-6">
             <p className="text-muted-foreground">
               Please rate your experience during the second session with the AI agents.
-              All questions marked with * are required.
+            </p>
+            <p className="text-sm text-red-600 mt-2">
+              * All fields marked with an asterisk are required
             </p>
           </div>
 
@@ -263,7 +313,58 @@ export default function PostSelfSurvey2Page() {
             )}
           </div>
 
-          {/* AI Agent 인식 Section - Minority 조건에만 표시 */}
+          {/* AI Agent 인식 Section - 조건에 따라 다르게 표시 */}
+          {isMajorityCondition && (
+            <div className="space-y-6">
+              <h3 className="text-lg font-semibold border-b pb-2">Perception of AI Agents</h3>
+              <p className="text-sm text-muted-foreground">
+                Please rate your perception of the AI agents during the discussion.
+              </p>
+              
+              {render7PointLikert(
+                responses.agentCompetence || null,
+                (value) => updateResponse('agentCompetence', value),
+                "The agents' suggestions are generally accurate and professional."
+              )}
+              
+              {render7PointLikert(
+                responses.agentPredictability || null,
+                (value) => updateResponse('agentPredictability', value),
+                "The agents' outputs are predictable and consistent."
+              )}
+              
+              {render7PointLikert(
+                responses.agentIntegrity || null,
+                (value) => updateResponse('agentIntegrity', value),
+                "The agents' claims are fair and balanced."
+              )}
+              
+              {render7PointLikert(
+                responses.agentUnderstanding || null,
+                (value) => updateResponse('agentUnderstanding', value),
+                "The agents understood what I was trying to say."
+              )}
+              
+              {render7PointLikert(
+                responses.agentUtility || null,
+                (value) => updateResponse('agentUtility', value),
+                "The agents (their functions) are useful to me."
+              )}
+              
+              {render7PointLikert(
+                responses.agentAffect || null,
+                (value) => updateResponse('agentAffect', value),
+                "I find these agents likable."
+              )}
+              
+              {render7PointLikert(
+                responses.agentTrust || null,
+                (value) => updateResponse('agentTrust', value),
+                "Overall, I trust these agents."
+              )}
+            </div>
+          )}
+
           {isMinorityCondition && (
             <>
               {/* Agent 1 & 2 인식 */}
@@ -274,43 +375,43 @@ export default function PostSelfSurvey2Page() {
                 </p>
                 
                 {render7PointLikert(
-                  responses.agent1Competence || 4,
+                  responses.agent1Competence || null,
                   (value) => updateResponse('agent1Competence', value),
                   "The agents' suggestions are generally accurate and professional."
                 )}
                 
                 {render7PointLikert(
-                  responses.agent1Predictability || 4,
+                  responses.agent1Predictability || null,
                   (value) => updateResponse('agent1Predictability', value),
                   "The agents' outputs are predictable and consistent."
                 )}
                 
                 {render7PointLikert(
-                  responses.agent1Integrity || 4,
+                  responses.agent1Integrity || null,
                   (value) => updateResponse('agent1Integrity', value),
                   "The agents' claims are fair and balanced."
                 )}
                 
                 {render7PointLikert(
-                  responses.agent1Understanding || 4,
+                  responses.agent1Understanding || null,
                   (value) => updateResponse('agent1Understanding', value),
                   "The agents understood what I was trying to say."
                 )}
                 
                 {render7PointLikert(
-                  responses.agent1Utility || 4,
+                  responses.agent1Utility || null,
                   (value) => updateResponse('agent1Utility', value),
                   "The agents (their functions) are useful to me."
                 )}
                 
                 {render7PointLikert(
-                  responses.agent1Affect || 4,
+                  responses.agent1Affect || null,
                   (value) => updateResponse('agent1Affect', value),
                   "I find these agents likable."
                 )}
                 
                 {render7PointLikert(
-                  responses.agent1Trust || 4,
+                  responses.agent1Trust || null,
                   (value) => updateResponse('agent1Trust', value),
                   "Overall, I trust these agents."
                 )}
@@ -324,43 +425,43 @@ export default function PostSelfSurvey2Page() {
                 </p>
                 
                 {render7PointLikert(
-                  responses.agent3Competence || 4,
+                  responses.agent3Competence || null,
                   (value) => updateResponse('agent3Competence', value),
                   "The agent's suggestions are generally accurate and professional."
                 )}
                 
                 {render7PointLikert(
-                  responses.agent3Predictability || 4,
+                  responses.agent3Predictability || null,
                   (value) => updateResponse('agent3Predictability', value),
                   "The agent's outputs are predictable and consistent."
                 )}
                 
                 {render7PointLikert(
-                  responses.agent3Integrity || 4,
+                  responses.agent3Integrity || null,
                   (value) => updateResponse('agent3Integrity', value),
                   "The agent's claims are fair and balanced."
                 )}
                 
                 {render7PointLikert(
-                  responses.agent3Understanding || 4,
+                  responses.agent3Understanding || null,
                   (value) => updateResponse('agent3Understanding', value),
                   "The agent understood what I was trying to say."
                 )}
                 
                 {render7PointLikert(
-                  responses.agent3Utility || 4,
+                  responses.agent3Utility || null,
                   (value) => updateResponse('agent3Utility', value),
                   "The agent (its functions) is useful to me."
                 )}
                 
                 {render7PointLikert(
-                  responses.agent3Affect || 4,
+                  responses.agent3Affect || null,
                   (value) => updateResponse('agent3Affect', value),
                   "I find this agent likable."
                 )}
                 
                 {render7PointLikert(
-                  responses.agent3Trust || 4,
+                  responses.agent3Trust || null,
                   (value) => updateResponse('agent3Trust', value),
                   "Overall, I trust this agent."
                 )}
