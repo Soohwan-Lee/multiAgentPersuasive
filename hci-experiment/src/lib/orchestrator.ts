@@ -1,5 +1,5 @@
 import { AGENTS, Stance } from "@/config/agents";
-import { DEFAULT_PATTERN, resolveStances, stanceFromT0, SessionKey, CURRENT_PATTERN } from "@/config/patterns";
+import { DEFAULT_PATTERN, resolveStances, stanceFromT0, SessionKey, CURRENT_PATTERN, type PatternKey } from "@/config/patterns";
 import { buildSystemPrompt, buildUserPrompt } from "@/lib/prompts";
 import { callOpenAIChat } from "@/lib/llm-openai";
 import { FALLBACK_BY_AGENT } from "@/lib/fallbacks";
@@ -71,11 +71,14 @@ export async function runCycle(opts: {
   console.log(`Found ${previousMessages?.length || 0} previous messages for context`);
 
   const initial: Stance = stanceFromT0(t0Response.opinion);
-  // Use CURRENT_PATTERN for easy configuration
-  const patternKey = CURRENT_PATTERN;
+  // Use participant's actual condition instead of hardcoded pattern
+  const participantCondition = participant?.condition;
+  const patternKey: PatternKey = (participantCondition === 'majority' || participantCondition === 'minority' || participantCondition === 'minorityDiffusion') 
+    ? participantCondition 
+    : CURRENT_PATTERN;
   
   console.log(`T0 opinion: ${t0Response.opinion} -> Initial stance: ${initial}`);
-  console.log(`Current pattern: ${patternKey}`);
+  console.log(`Participant condition: ${patternKey}`);
 
   // 2) resolve stances for this cycle
   const stances = resolveStances({ 
