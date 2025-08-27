@@ -206,8 +206,15 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Cycle API error:', error);
+    
+    // 더 자세한 에러 정보 제공
+    let errorMessage = 'Server error occurred.';
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    
     return NextResponse.json(
-      { error: 'Server error occurred.' },
+      { error: errorMessage },
       { status: 500 }
     );
   }

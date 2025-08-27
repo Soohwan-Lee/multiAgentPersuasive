@@ -84,6 +84,8 @@ export async function callOpenAIChat({
     console.error('Error status:', e?.status);
     console.error('Timed out:', timedOut);
     console.error('Full error object:', JSON.stringify(e, null, 2));
-    return { text: "", tokenIn: undefined, tokenOut: undefined, latencyMs: Date.now() - startTime, timedOut };
+    
+    // 에러를 다시 throw하여 상위에서 처리할 수 있도록 함
+    throw new Error(`OpenAI API error: ${e?.message || 'Unknown error'} (Code: ${e?.code || 'N/A'}, Status: ${e?.status || 'N/A'})`);
   }
 }

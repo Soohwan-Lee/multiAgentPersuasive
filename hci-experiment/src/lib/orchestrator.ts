@@ -137,11 +137,18 @@ export async function runCycle(opts: {
     console.log(`Agent ${agent.id} stance: ${stances[agent.id as 1 | 2 | 3]}`);
     console.log(`Agent ${agent.id} consistency: ${DEFAULT_PATTERN[patternKey].consistency[agent.id as 1 | 2 | 3]}`);
 
-    const r = await callOpenAIChat({ 
-      system, 
-      user, 
-      agentId: agent.id 
-    });
+    let r;
+    try {
+      r = await callOpenAIChat({ 
+        system, 
+        user, 
+        agentId: agent.id 
+      });
+    } catch (error) {
+      console.error(`Error calling OpenAI for Agent ${agent.id}:`, error);
+      throw error; // 에러를 상위로 전파
+    }
+    
     const text = r.timedOut ? FALLBACK_BY_AGENT[agent.id][stances[agent.id as 1 | 2 | 3]] : r.text || FALLBACK_BY_AGENT[agent.id][stances[agent.id as 1 | 2 | 3]];
     
     console.log(`Agent ${agent.id} response: "${text.substring(0, 100)}..."`);
