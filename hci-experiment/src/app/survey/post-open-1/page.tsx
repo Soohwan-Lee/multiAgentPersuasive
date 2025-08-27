@@ -62,7 +62,7 @@ export default function PostOpenSurvey1Page() {
       });
 
       // Navigate to next page
-      router.push('/session/main2');
+      router.push('/session/informative');
     } catch (error) {
       console.error('Error submitting survey:', error);
       alert('Failed to submit survey. Please try again.');
@@ -72,7 +72,7 @@ export default function PostOpenSurvey1Page() {
   };
 
   const handleSkip = () => {
-    router.push('/session/main2');
+    router.push('/session/informative');
   };
 
   const getPatternQuestion = () => {

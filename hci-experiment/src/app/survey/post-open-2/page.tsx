@@ -56,7 +56,7 @@ export default function PostOpenSurvey2Page() {
             experienceByPattern,
             other,
             condition,
-            taskType: 'main2'
+            taskType: 'informative'
           }
         })
       });

@@ -160,7 +160,7 @@ export default function PostSelfSurvey2Page() {
           payload: {
             ...responses,
             condition,
-            taskType: 'main2'
+            taskType: 'informative'
           }
         })
       });
