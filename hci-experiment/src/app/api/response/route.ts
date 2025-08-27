@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 const responseRequestSchema = z.object({
   participantId: z.string(),
-  sessionKey: z.enum(['test', 'main1', 'main2']),
+  sessionKey: z.enum(['test', 'normative', 'informative']), // main1, main2를 normative, informative로 변경
   responseIndex: z.number().int().min(0).max(4),
   opinion: z.number().int().min(-50).max(50),
   confidence: z.number().int().min(0).max(100),

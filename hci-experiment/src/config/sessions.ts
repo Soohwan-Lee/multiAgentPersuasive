@@ -1,18 +1,18 @@
 export const SESSION_META = {
-  test: { 
-    label: "Test Session", 
-    framing: "Practice the flow. Topic: Death Penalty (support vs oppose).",
-    task: "Should we support the death penalty?"
+  test: {
+    name: "Practice Session",
+    description: "Practice session to get familiar with the interface",
+    taskType: "normative" as const, // test 세션은 normative task 사용
   },
-  main1: { 
-    label: "Main Session 1 — Normative", 
-    framing: "Focus on social norms, approval, and reputational concerns.",
-    task: "Should we support the death penalty?" // Will be randomized later
+  normative: { // main1을 normative으로 변경
+    name: "Normative Session", 
+    description: "Session focusing on normative arguments and social values",
+    taskType: "normative" as const,
   },
-  main2: { 
-    label: "Main Session 2 — Informative", 
-    framing: "Focus on evidence quality, accuracy, and uncertainty reduction.",
-    task: "Should we support the death penalty?" // Will be randomized later
+  informative: { // main2를 informative로 변경
+    name: "Informative Session",
+    description: "Session focusing on informative arguments and factual evidence", 
+    taskType: "informative" as const,
   },
 } as const;
 

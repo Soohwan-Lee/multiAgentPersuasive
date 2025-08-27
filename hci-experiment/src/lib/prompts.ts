@@ -4,7 +4,7 @@ import type { Message } from "@/lib/types";
 export interface PromptCtx {
   agentId: 1 | 2 | 3;
   agentName: string;
-  sessionKey: "test" | "main1" | "main2";
+  sessionKey: "test" | "normative" | "informative"; // main1, main2를 normative, informative로 변경
   turnIndex: number;                 // 0..3 for post-t0 cycles
   participantPublicStance?: "support" | "oppose" | "neutral";
   participantMessage: string;
@@ -16,6 +16,59 @@ export interface PromptCtx {
   previousMessages?: Message[];     // 이전 대화 기록
   t0Opinion?: number;               // T0에서의 사용자 의견 (-50 to +50)
   currentTask?: string;             // 현재 논의할 주제
+  taskType?: "informative" | "normative"; // task 타입 추가
+}
+
+// Task 리스트 정의
+export const INFORMATIVE_TASKS = [
+  "Cleopatra's lifetime was closer in time to the Moon landing than to the construction of the Great Pyramid of Giza (the Pyramid of Khufu).",
+  "Koalas belong to the bear family.",
+  "The force that causes the surface of a liquid to contract to the smallest possible area is cohesion.",
+  "'Chauvinist' is the correct English spelling of a word that means a blindly patriotic person.",
+  "Thomas Edison is famous for inventing the light bulb.",
+  "Napoleon's nickname was 'the little giant' because of his short height."
+];
+
+export const NORMATIVE_TASKS = [
+  "Online meetings are more efficient than offline meetings.",
+  "Customers must always leave a tip at restaurants.",
+  "It is acceptable to make a phone call inside an elevator when other people are present.",
+  "Honest and direct feedback is more helpful than polite and considerate feedback.",
+  "Hybrid work (remote + office) is more desirable than traditional office work.",
+  "Short and frequent meetings are more helpful than long and infrequent meetings."
+];
+
+// Task 선택 인덱스 (0~5 사이, 현재는 0으로 하드코딩)
+// TODO: 나중에 랜덤하게 변경하거나 환경변수로 설정 가능하도록 수정
+const NORMATIVE_TASK_INDEX = 0; // 0~5 사이의 값으로 변경 가능
+const INFORMATIVE_TASK_INDEX = 0; // 0~5 사이의 값으로 변경 가능
+
+// Task 타입에 따른 프롬프트 조정 함수
+function getTaskSpecificInstructions(taskType: "informative" | "normative" | undefined, sessionKey: string) {
+  if (taskType === "informative") {
+    return {
+      stanceInstruction: "Focus on factual accuracy and evidence-based arguments.",
+      argumentStyle: "Present verifiable facts, statistics, and logical reasoning.",
+      interactionStyle: "Emphasize objective analysis and empirical support."
+    };
+  } else if (taskType === "normative") {
+    return {
+      stanceInstruction: "Focus on social norms, values, and behavioral expectations.",
+      argumentStyle: "Present arguments based on social conventions, moral principles, and group dynamics.",
+      interactionStyle: "Emphasize social appropriateness and collective values."
+    };
+  } else {
+    // 기본값 (기존 로직 유지)
+    return {
+      stanceInstruction: sessionKey === "normative" 
+        ? "Focus on normative arguments: social approval, shared values, reputational costs."
+        : sessionKey === "informative"
+        ? "Focus on informative arguments: empirical evidence, alternative explanations, long-term consequences."
+        : "Discuss with simple and clear arguments.",
+      argumentStyle: "Present balanced arguments considering multiple perspectives.",
+      interactionStyle: "Engage respectfully with the participant's viewpoint."
+    };
+  }
 }
 
 const NORMATIVE_PRIMS = [
@@ -38,6 +91,9 @@ const DEFAULT_TASK = "Should we support the death penalty?";
 export function buildSystemPrompt(ctx: PromptCtx) {
   const currentTask = ctx.currentTask || DEFAULT_TASK;
   
+  // Task 타입별 지시사항 가져오기
+  const taskInstructions = getTaskSpecificInstructions(ctx.taskType, ctx.sessionKey);
+  
   // Determine user's initial position from T0
   let userInitialPosition = "neutral";
   if (ctx.t0Opinion !== undefined) {
@@ -49,15 +105,19 @@ export function buildSystemPrompt(ctx: PromptCtx) {
   // Base stance instruction with task context
   const stanceLine =
     ctx.stance === "oppose"
-      ? `You consistently OPPOSE the current topic. The participant initially ${userInitialPosition === "oppose" ? "also opposed" : userInitialPosition === "support" ? "supported" : "was neutral about"} the topic (T0 opinion: ${ctx.t0Opinion}). You must take the OPPOSING position.`
+      ? `You consistently OPPOSE the current topic. The participant initially ${userInitialPosition === "oppose" ? "also opposed" : userInitialPosition === "support" ? "supported" : "was neutral about"} the topic (T0 opinion: ${ctx.t0Opinion}). You must take the OPPOSING position. ${taskInstructions.stanceInstruction}`
       : ctx.stance === "support"
-      ? `You consistently SUPPORT the current topic. The participant initially ${userInitialPosition === "support" ? "also supported" : userInitialPosition === "oppose" ? "opposed" : "was neutral about"} the topic (T0 opinion: ${ctx.t0Opinion}). You must take the SUPPORTING position.`
-      : `You remain NEUTRAL about the current topic. The participant initially ${userInitialPosition} the topic (T0 opinion: ${ctx.t0Opinion}). You must present balanced arguments considering both sides.`;
+      ? `You consistently SUPPORT the current topic. The participant initially ${userInitialPosition === "support" ? "also supported" : userInitialPosition === "oppose" ? "opposed" : "was neutral about"} the topic (T0 opinion: ${ctx.t0Opinion}). You must take the SUPPORTING position. ${taskInstructions.stanceInstruction}`
+      : `You remain NEUTRAL about the current topic. The participant initially ${userInitialPosition} the topic (T0 opinion: ${ctx.t0Opinion}). You must present balanced arguments considering both sides. ${taskInstructions.stanceInstruction}`;
 
-  // Session-specific framing
-  const conformityFocus = ctx.sessionKey === "main1"
+  // Session-specific framing (task 타입이 있으면 우선 적용)
+  const conformityFocus = ctx.taskType === "normative"
     ? `Focus on the current topic using NORMATIVE arguments: ${NORMATIVE_PRIMS.join(", ")}.`
-    : ctx.sessionKey === "main2"
+    : ctx.taskType === "informative"
+    ? `Focus on the current topic using INFORMATIVE arguments: ${INFORMATIVE_PRIMS.join(", ")}.`
+    : ctx.sessionKey === "normative"
+    ? `Focus on the current topic using NORMATIVE arguments: ${NORMATIVE_PRIMS.join(", ")}.`
+    : ctx.sessionKey === "informative"
     ? `Focus on the current topic using INFORMATIVE arguments: ${INFORMATIVE_PRIMS.join(", ")}.`
     : "In this practice session, discuss the current topic with simple and clear arguments.";
 
@@ -160,4 +220,39 @@ export function buildUserPrompt(ctx: PromptCtx) {
     sequentialInstruction,
     `Respond to the current topic with 1–3 numbered arguments supporting your ${ctx.stance} stance. Start with an interaction phrase as instructed.`
   ].filter(Boolean).join("\n");
+}
+
+// Task 선택 및 관리 유틸리티 함수들
+export function getSelectedTask(taskType: "informative" | "normative"): string {
+  const taskList = taskType === "informative" ? INFORMATIVE_TASKS : NORMATIVE_TASKS;
+  const index = taskType === "informative" ? INFORMATIVE_TASK_INDEX : NORMATIVE_TASK_INDEX;
+  return taskList[index];
+}
+
+// 기존 함수명 유지 (하위 호환성)
+export function getRandomTask(taskType: "informative" | "normative"): string {
+  return getSelectedTask(taskType);
+}
+
+export function getTaskType(task: string): "informative" | "normative" {
+  if (INFORMATIVE_TASKS.includes(task)) {
+    return "informative";
+  } else if (NORMATIVE_TASKS.includes(task)) {
+    return "normative";
+  } else {
+    // 기본값 또는 사용자 정의 task의 경우 sessionKey로 판단
+    return "normative"; // 기본값
+  }
+}
+
+export function getAllTasks(): { informative: string[], normative: string[] } {
+  return {
+    informative: [...INFORMATIVE_TASKS],
+    normative: [...NORMATIVE_TASKS]
+  };
+}
+
+// Task 검증 함수
+export function isValidTask(task: string): boolean {
+  return INFORMATIVE_TASKS.includes(task) || NORMATIVE_TASKS.includes(task);
 }

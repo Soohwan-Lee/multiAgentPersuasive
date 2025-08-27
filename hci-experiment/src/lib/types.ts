@@ -11,7 +11,7 @@ export interface Participant {
 export interface Session {
   id: string;
   participant_id: string;
-  key: 'test' | 'main1' | 'main2';
+  key: 'test' | 'normative' | 'informative'; // main1, main2를 normative, informative로 변경
   started_at: string;
   completed_at: string | null;
   current_turn: number;

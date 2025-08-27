@@ -1,6 +1,6 @@
 import type { Stance } from "./agents";
 
-export type SessionKey = "test" | "main1" | "main2";
+export type SessionKey = "test" | "normative" | "informative"; // main1, main2를 normative, informative로 변경
 export type PatternKey = "majority" | "minority" | "minorityDiffusion";
 
 export interface PatternConfig {

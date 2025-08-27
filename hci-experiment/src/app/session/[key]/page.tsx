@@ -16,7 +16,7 @@ type SessionState = 't0' | 'chat' | 'agents-responding' | 'response' | 'complete
 export default function SessionPage() {
   const params = useParams();
   const router = useRouter();
-  const sessionKey = params.key as 'test' | 'main1' | 'main2';
+  const sessionKey = params.key as 'test' | 'normative' | 'informative'; // main1, main2를 normative, informative로 변경
   
   const [participantId, setParticipantId] = useState<string | null>(null);
   const [currentState, setCurrentState] = useState<SessionState>('t0');
@@ -83,10 +83,10 @@ export default function SessionPage() {
         setCurrentState('complete');
         // 다음 페이지로 이동
         if (sessionKey === 'test') {
-          router.push('/session/main1');
-        } else if (sessionKey === 'main1') {
+          router.push('/session/normative');
+        } else if (sessionKey === 'normative') {
           router.push('/survey/post-self-1');
-        } else if (sessionKey === 'main2') {
+        } else if (sessionKey === 'informative') {
           router.push('/survey/post-self-2');
         }
       }
@@ -205,10 +205,10 @@ export default function SessionPage() {
       setCurrentState('complete');
       // 다음 페이지로 이동
       if (sessionKey === 'test') {
-        router.push('/session/main1');
-      } else if (sessionKey === 'main1') {
+        router.push('/session/normative');
+      } else if (sessionKey === 'normative') {
         router.push('/survey/post-self-1');
-      } else if (sessionKey === 'main2') {
+      } else if (sessionKey === 'informative') {
         router.push('/survey/post-self-2');
       }
     }
@@ -223,9 +223,9 @@ export default function SessionPage() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       <ProgressHeader
-        currentStep={sessionMeta.label}
+        currentStep={sessionMeta.name}
         totalSteps={11}
-        currentStepIndex={sessionKey === 'test' ? 3 : sessionKey === 'main1' ? 4 : 8}
+        currentStepIndex={sessionKey === 'test' ? 3 : sessionKey === 'normative' ? 4 : 8}
       />
 
       {/* Session Info */}
@@ -236,7 +236,7 @@ export default function SessionPage() {
               <Info className="h-5 w-5 text-blue-500 mt-0.5" />
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">
-                  {sessionMeta.framing}
+                  {sessionMeta.description}
                 </p>
                 {sessionKey === 'test' && (
                   <div className="bg-blue-50 p-3 rounded-lg">

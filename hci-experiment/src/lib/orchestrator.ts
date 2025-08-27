@@ -1,6 +1,6 @@
 import { AGENTS, Stance } from "@/config/agents";
 import { DEFAULT_PATTERN, resolveStances, stanceFromT0, SessionKey, CURRENT_PATTERN } from "@/config/patterns";
-import { buildSystemPrompt, buildUserPrompt } from "@/lib/prompts";
+import { buildSystemPrompt, buildUserPrompt, getTaskType } from "@/lib/prompts";
 import { callOpenAIChat } from "@/lib/llm-openai";
 import { FALLBACK_BY_AGENT } from "@/lib/fallbacks";
 import { supabase } from "@/lib/supabase";
@@ -95,6 +95,9 @@ export async function runCycle(opts: {
     console.log(`\n--- Generating response for ${agent.name} (Agent ${agent.id}) ---`);
     console.log(`Current conversation history length: ${conversationHistory.length}`);
     
+    // Task 타입 결정
+    const taskType = opts.currentTask ? getTaskType(opts.currentTask) : undefined;
+    
     const system = buildSystemPrompt({
       agentId: agent.id as 1 | 2 | 3,
       agentName: agent.name,
@@ -110,6 +113,7 @@ export async function runCycle(opts: {
       previousMessages: conversationHistory, // 현재까지의 대화 이력 전달
       t0Opinion: t0Response.opinion, // T0 의견 추가
       currentTask: opts.currentTask, // 현재 논의할 주제 추가
+      taskType: taskType, // task 타입 추가
     });
     
     const user = buildUserPrompt({
@@ -127,6 +131,7 @@ export async function runCycle(opts: {
       previousMessages: conversationHistory, // 현재까지의 대화 이력 전달
       t0Opinion: t0Response.opinion, // T0 의견 추가
       currentTask: opts.currentTask, // 현재 논의할 주제 추가
+      taskType: taskType, // task 타입 추가
     });
 
     console.log(`Agent ${agent.id} stance: ${stances[agent.id as 1 | 2 | 3]}`);

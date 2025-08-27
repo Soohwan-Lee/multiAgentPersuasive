@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 
 interface T0PanelProps {
-  sessionKey: 'test' | 'main1' | 'main2';
+  sessionKey: 'test' | 'normative' | 'informative'; // main1, main2를 normative, informative로 변경
   participantId: string;
   onComplete: () => void;
 }

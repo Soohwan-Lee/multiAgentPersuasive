@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 interface ResponsePanelProps {
   responseIndex: number;
   participantId: string;
-  sessionKey: 'test' | 'main1' | 'main2';
+  sessionKey: 'test' | 'normative' | 'informative'; // main1, main2를 normative, informative로 변경
   onComplete: () => void;
 }
 
