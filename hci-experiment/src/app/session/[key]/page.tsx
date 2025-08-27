@@ -136,7 +136,7 @@ export default function SessionPage() {
           participantId,
           sessionKey,
           cycle: currentCycle,
-          userMessage,
+          userMessage: message, // 문자열로 전송
           currentTask, // 현재 task 추가
         }),
       });
