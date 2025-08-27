@@ -18,6 +18,11 @@ export default function SessionPage() {
   const router = useRouter();
   const sessionKey = params.key as 'test' | 'normative' | 'informative'; // main1, main2를 normative, informative로 변경
   
+  // 디버깅을 위한 로깅
+  console.log('SessionPage - params:', params);
+  console.log('SessionPage - sessionKey:', sessionKey);
+  console.log('SessionPage - available keys:', Object.keys(SESSION_META));
+  
   const [participantId, setParticipantId] = useState<string | null>(null);
   const [currentState, setCurrentState] = useState<SessionState>('t0');
   const [currentResponseIndex, setCurrentResponseIndex] = useState(0);
@@ -244,7 +249,23 @@ export default function SessionPage() {
     return null;
   }
 
-  const sessionMeta = SESSION_META[sessionKey];
+  const sessionMeta = SESSION_META[sessionKey as keyof typeof SESSION_META];
+  
+  // sessionMeta가 undefined인 경우 처리
+  if (!sessionMeta) {
+    console.error('Invalid session key:', sessionKey);
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">Invalid Session</h1>
+          <p className="text-gray-600 mb-4">The session you're trying to access is not valid.</p>
+          <Button onClick={() => router.push('/entry')}>
+            Return to Entry
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
