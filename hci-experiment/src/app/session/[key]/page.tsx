@@ -147,48 +147,58 @@ export default function SessionPage() {
 
       const result = await response.json();
       
-      // 에이전트 응답들을 메시지에 추가
-      const agentMessages: Message[] = [
-        {
+      console.log('API Response:', result);
+      
+      // 에이전트 응답들을 메시지에 추가 (안전하게 처리)
+      const agentMessages: Message[] = [];
+      
+      if (result.agent1 && result.agent1.content) {
+        agentMessages.push({
           id: crypto.randomUUID(),
           participant_id: participantId,
           session_key: sessionKey,
           cycle: currentCycle,
           role: 'agent1',
           content: result.agent1.content,
-          latency_ms: result.meta.latencies.agent1,
+          latency_ms: result.meta?.latencies?.agent1 || 0,
           token_in: null,
           token_out: null,
           fallback_used: false,
           ts: new Date().toISOString(),
-        },
-        {
+        });
+      }
+      
+      if (result.agent2 && result.agent2.content) {
+        agentMessages.push({
           id: crypto.randomUUID(),
           participant_id: participantId,
           session_key: sessionKey,
           cycle: currentCycle,
           role: 'agent2',
           content: result.agent2.content,
-          latency_ms: result.meta.latencies.agent2,
+          latency_ms: result.meta?.latencies?.agent2 || 0,
           token_in: null,
           token_out: null,
           fallback_used: false,
           ts: new Date().toISOString(),
-        },
-        {
+        });
+      }
+      
+      if (result.agent3 && result.agent3.content) {
+        agentMessages.push({
           id: crypto.randomUUID(),
           participant_id: participantId,
           session_key: sessionKey,
           cycle: currentCycle,
           role: 'agent3',
           content: result.agent3.content,
-          latency_ms: result.meta.latencies.agent3,
+          latency_ms: result.meta?.latencies?.agent3 || 0,
           token_in: null,
           token_out: null,
           fallback_used: false,
           ts: new Date().toISOString(),
-        },
-      ];
+        });
+      }
       
       setMessages(prev => [...prev, ...agentMessages]);
       
@@ -198,7 +208,14 @@ export default function SessionPage() {
       
     } catch (error) {
       console.error('Error sending message:', error);
-      alert('Failed to send message. Please try again.');
+      
+      // 더 자세한 에러 메시지
+      let errorMessage = 'Failed to send message. Please try again.';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
+      alert(`Error: ${errorMessage}`);
     } finally {
       setIsLoading(false);
     }

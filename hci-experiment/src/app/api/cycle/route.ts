@@ -17,7 +17,7 @@ const cycleRequestSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { participantId, sessionKey, cycle, userMessage } = cycleRequestSchema.parse(body);
+    const { participantId, sessionKey, cycle, userMessage, currentTask } = cycleRequestSchema.parse(body);
 
     // Check if this is test mode
     const isTestMode = participantId.startsWith('test-');
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
         sessionKey,
         cycle,
         userMessage,
-        currentTask: body.currentTask,
+        currentTask: currentTask,
         isTestMode: true,
       });
 
@@ -165,7 +165,7 @@ export async function POST(request: NextRequest) {
       sessionKey,
       cycle,
       userMessage,
-      currentTask: body.currentTask,
+      currentTask: currentTask,
     });
 
     console.log('Cycle result:', {
