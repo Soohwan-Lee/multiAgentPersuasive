@@ -23,7 +23,33 @@ export async function POST(request: NextRequest) {
     const isTestMode = participantId.startsWith('test-');
 
     // Check environment variables for OpenAI API
+    console.log('Environment check:', {
+      hasOpenAIKey: !!process.env.OPENAI_API_KEY,
+      openAIKeyLength: process.env.OPENAI_API_KEY?.length || 0,
+      hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+      hasSupabaseKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+    });
+    
     if (!process.env.OPENAI_API_KEY) {
+      console.error('OpenAI API key not configured in environment');
+      
+      // Test mode에서 API 키가 없을 때 fallback 응답 제공
+      if (isTestMode) {
+        console.log('Providing fallback responses for test mode');
+        return NextResponse.json({
+          agent1: { content: "I understand your perspective on this topic." },
+          agent2: { content: "That's an interesting point you've raised." },
+          agent3: { content: "I see where you're coming from." },
+          meta: {
+            cycle: cycle,
+            session_key: sessionKey,
+            participant_id: participantId,
+            stances: { 1: 'oppose', 2: 'oppose', 3: 'oppose' },
+            latencies: { agent1: 100, agent2: 100, agent3: 100 }
+          }
+        });
+      }
+      
       return NextResponse.json(
         { error: 'OpenAI API key not configured.' },
         { status: 500 }
