@@ -119,6 +119,14 @@ export default function SessionPage() {
       
       setMessages(prev => [...prev, userMessage]);
       
+      // 현재 세션의 task 가져오기
+      const { getSelectedTask } = await import('@/lib/prompts');
+      const currentTask = sessionKey === 'test' 
+        ? getSelectedTask('normative') 
+        : sessionKey === 'normative' 
+        ? getSelectedTask('normative') 
+        : getSelectedTask('informative');
+
       const response = await fetch('/api/cycle', {
         method: 'POST',
         headers: {
@@ -129,6 +137,7 @@ export default function SessionPage() {
           sessionKey,
           cycle: currentCycle,
           userMessage,
+          currentTask, // 현재 task 추가
         }),
       });
 

@@ -1,15 +1,5 @@
 import { AgentResponse } from './types';
 
-// 에이전트 시스템 프롬프트 (환경 변수에서 가져오거나 기본값 사용)
-const getAgentPrompts = () => ({
-  agent1: process.env.AGENT_SYSTEM_PROMPT_1 || 
-    "당신은 다수 의견을 대표하는 에이전트입니다. 설득력 있고 논리적인 방식으로 당신의 관점을 제시하세요.",
-  agent2: process.env.AGENT_SYSTEM_PROMPT_2 || 
-    "당신은 소수 의견을 대표하는 에이전트입니다. 창의적이고 대안적인 관점을 제시하세요.",
-  agent3: process.env.AGENT_SYSTEM_PROMPT_3 || 
-    "당신은 중립적이고 균형잡힌 관점을 대표하는 에이전트입니다. 객관적이고 포용적인 접근을 취하세요."
-});
-
 // OpenAI API 호출 함수
 async function callOpenAI(systemPrompt: string, userMessage: string): Promise<AgentResponse> {
   const startTime = Date.now();
@@ -62,19 +52,20 @@ async function callOpenAI(systemPrompt: string, userMessage: string): Promise<Ag
   }
 }
 
-// 다중 에이전트 오케스트레이션
+// 다중 에이전트 오케스트레이션 (legacy - 현재는 사용되지 않음)
 export async function orchestrateAgents(userMessage: string): Promise<{
   agent1: AgentResponse;
   agent2: AgentResponse;
   agent3: AgentResponse;
 }> {
-  const prompts = getAgentPrompts();
+  // 기본 프롬프트 (실제로는 prompts.ts의 buildSystemPrompt 사용)
+  const systemPrompt = "You are an AI agent. Express your opinion clearly and concisely in one sentence.";
   
   // 3개 에이전트를 병렬로 호출
   const [agent1Response, agent2Response, agent3Response] = await Promise.allSettled([
-    callOpenAI(prompts.agent1, userMessage),
-    callOpenAI(prompts.agent2, userMessage),
-    callOpenAI(prompts.agent3, userMessage),
+    callOpenAI(systemPrompt, userMessage),
+    callOpenAI(systemPrompt, userMessage),
+    callOpenAI(systemPrompt, userMessage),
   ]);
 
   // 각 응답을 처리 (실패 시 폴백)

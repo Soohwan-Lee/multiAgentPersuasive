@@ -153,22 +153,41 @@ export function buildSystemPrompt(ctx: PromptCtx) {
     conversationContext = "This is an ongoing conversation. Build naturally on previous exchanges and acknowledge the conversation flow.";
   }
 
+  // 컨디션별 간단한 프롬프트
+  let simplePrompt = "";
+  if (ctx.pattern === "majority") {
+    simplePrompt = `You are Agent ${ctx.agentId}. You oppose the participant's opinion. Express your opposing view clearly and concisely in one sentence.`;
+  } else if (ctx.pattern === "minority") {
+    if (ctx.agentId === 3) {
+      simplePrompt = `You are Agent ${ctx.agentId}. You oppose the participant's opinion. Express your opposing view clearly and concisely in one sentence.`;
+    } else {
+      simplePrompt = `You are Agent ${ctx.agentId}. You support the participant's opinion. Express your supporting view clearly and concisely in one sentence.`;
+    }
+  } else if (ctx.pattern === "minorityDiffusion") {
+    if (ctx.chatCycle && ctx.chatCycle <= 2) {
+      if (ctx.agentId === 3) {
+        simplePrompt = `You are Agent ${ctx.agentId}. You oppose the participant's opinion. Express your opposing view clearly and concisely in one sentence.`;
+      } else {
+        simplePrompt = `You are Agent ${ctx.agentId}. You support the participant's opinion. Express your supporting view clearly and concisely in one sentence.`;
+      }
+    } else if (ctx.chatCycle === 3 && ctx.agentId === 1) {
+      simplePrompt = `You are Agent ${ctx.agentId}. You are now changing your stance to oppose the participant's opinion. Express your opposing view clearly and concisely in one sentence.`;
+    } else if (ctx.chatCycle === 4 && ctx.agentId === 2) {
+      simplePrompt = `You are Agent ${ctx.agentId}. You are now changing your stance to oppose the participant's opinion. Express your opposing view clearly and concisely in one sentence.`;
+    } else if (ctx.chatCycle && ctx.chatCycle >= 3) {
+      simplePrompt = `You are Agent ${ctx.agentId}. You oppose the participant's opinion. Express your opposing view clearly and concisely in one sentence.`;
+    }
+  } else {
+    simplePrompt = `You are Agent ${ctx.agentId}. Express your opinion clearly and concisely in one sentence.`;
+  }
+
   return [
     `Role: You are ${ctx.agentName}, one of three AI agents in a decision discussion.`,
     `Current Task: "${currentTask}"`,
     `Participant's Initial Position: ${userInitialPosition} (T0 opinion: ${ctx.t0Opinion})`,
-    `Your Required Stance: ${ctx.stance.toUpperCase()} the current topic (maintain with probability ≈ ${Math.round(ctx.consistency * 100)}%).`,
-    conformityFocus,
-    stanceLine,
-    patternContext,
-    conversationContext,
-    "IMPORTANT: Start your response with an interaction phrase:",
-    "- If you AGREE with the participant's position: 'I agree with your opinion.'",
-    "- If you DISAGREE with the participant's position: 'I understand your opinion, but I have a different perspective.'",
-    "- If you are NEUTRAL: 'I see both sides of this issue.'",
-    "Then provide 1-3 numbered arguments supporting your stance. Be concise and direct.",
-    `CRITICAL: You are Agent ${ctx.agentId}. Make your response UNIQUE and DIFFERENT from other agents. Use your own words and perspective.`,
-    "Style: concise English, numbered points (1., 2., 3.), no redundancy, avoid hedging. Aim ≤ ~120 tokens.",
+    simplePrompt,
+    "IMPORTANT: Express your opinion clearly and concisely in ONE SENTENCE.",
+    "Style: One clear sentence expressing your stance on the topic.",
     "Ethics: respectful; do not request personal data; no medical/legal advice.",
   ].filter(Boolean).join("\n");
 }
@@ -218,7 +237,7 @@ export function buildUserPrompt(ctx: PromptCtx) {
     `Current participant message: """${ctx.participantMessage}"""`,
     continueMessage,
     sequentialInstruction,
-    `Respond to the current topic with 1–3 numbered arguments supporting your ${ctx.stance} stance. Start with an interaction phrase as instructed.`
+    `Express your ${ctx.stance} stance on the current topic in ONE CLEAR SENTENCE.`
   ].filter(Boolean).join("\n");
 }
 
