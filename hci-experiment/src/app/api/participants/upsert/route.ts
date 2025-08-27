@@ -1,6 +1,6 @@
     import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import { participantUpsertSchema } from '@/lib/validations';
+import { participantSchema } from '@/lib/validations';
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,15 +13,15 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { prolific_pid, study_id, session_id } = participantUpsertSchema.parse(body);
+    const { prolificPid, studyId, sessionId } = participantSchema.parse(body);
 
     // Check existing participant
     const { data: existingParticipant } = await supabase
       .from('participants')
       .select('*')
-      .eq('prolific_pid', prolific_pid)
-      .eq('study_id', study_id)
-      .eq('session_id', session_id)
+      .eq('prolific_pid', prolificPid)
+      .eq('study_id', studyId)
+      .eq('session_id', sessionId)
       .single();
 
     if (existingParticipant) {
@@ -38,9 +38,9 @@ export async function POST(request: NextRequest) {
       .from('participants')
       .insert({
         id: participantId,
-        prolific_pid,
-        study_id,
-        session_id,
+        prolific_pid: prolificPid,
+        study_id: studyId,
+        session_id: sessionId,
         condition,
       })
       .select()
@@ -54,11 +54,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create initial sessions
+    // Create sessions for this participant
     const sessions = [
-      { key: 'test', started_at: new Date().toISOString() },
-      { key: 'main1', started_at: null },
-      { key: 'main2', started_at: null },
+      { key: 'test', started_at: null },
+      { key: 'normative', started_at: null }, // main1을 normative으로 변경
+      { key: 'informative', started_at: null }, // main2를 informative로 변경
     ];
 
     const sessionInserts = sessions.map(session => ({

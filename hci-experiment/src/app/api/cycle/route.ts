@@ -8,7 +8,7 @@ const rateLimitMap = new Map<string, number>();
 
 const cycleRequestSchema = z.object({
   participantId: z.string(),
-  sessionKey: z.enum(['test', 'main1', 'main2']),
+  sessionKey: z.enum(['test', 'normative', 'informative']), // main1, main2를 normative, informative로 변경
   cycle: z.number().min(1).max(4),
   userMessage: z.string().min(1),
   currentTask: z.string().optional(), // 현재 논의할 주제

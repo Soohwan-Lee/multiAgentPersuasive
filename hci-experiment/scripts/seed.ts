@@ -24,11 +24,11 @@ async function seedDatabase() {
 
     console.log('✅ 참가자 생성 완료:', participant.id);
 
-    // 세션들 생성
+    // Create sessions
     const sessions = [
-      { key: 'test', started_at: new Date().toISOString() },
-      { key: 'main1', started_at: null },
-      { key: 'main2', started_at: null },
+      { key: 'test', started_at: null },
+      { key: 'normative', started_at: null }, // main1을 normative으로 변경
+      { key: 'informative', started_at: null }, // main2를 informative로 변경
     ];
 
     const sessionInserts = sessions.map(session => ({

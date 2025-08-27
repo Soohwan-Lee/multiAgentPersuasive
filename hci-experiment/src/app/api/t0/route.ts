@@ -3,8 +3,8 @@ import { supabase } from '@/lib/supabase';
 import { z } from 'zod';
 
 const t0RequestSchema = z.object({
-  participantId: z.string().uuid(),
-  sessionKey: z.enum(['test', 'main1', 'main2']),
+  participantId: z.string(),
+  sessionKey: z.enum(['test', 'normative', 'informative']), // main1, main2를 normative, informative로 변경
   publicChoice: z.number().int().min(-50).max(50),
   publicConf: z.number().int().min(0).max(100),
   rtMs: z.number().int().min(0),

@@ -7,10 +7,10 @@ import { runTurn } from '@/lib/orchestrator';
 const rateLimitMap = new Map<string, number>();
 
 const turnRequestSchema = z.object({
-  participantId: z.string().uuid(),
-  sessionKey: z.enum(['test', 'main1', 'main2']),
-  turnIndex: z.number().int().min(1).max(4),
-  userMessage: z.string().min(1).max(1000),
+  participantId: z.string(),
+  sessionKey: z.enum(['test', 'normative', 'informative']), // main1, main2를 normative, informative로 변경
+  turnIndex: z.number().min(0).max(3),
+  userMessage: z.string().min(1),
 });
 
 export async function POST(request: NextRequest) {

@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
           {
             id: 'test-session-2',
             participant_id: participantId,
-            key: 'main1',
+            key: 'normative', // main1을 normative으로 변경
             started_at: null,
             completed_at: null,
             current_turn: 0,
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
           {
             id: 'test-session-3',
             participant_id: participantId,
-            key: 'main2',
+            key: 'informative', // main2를 informative로 변경
             started_at: null,
             completed_at: null,
             current_turn: 0,

@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const turnRequestSchema = z.object({
   participantId: z.string().uuid(),
-  sessionKey: z.enum(['test', 'main1', 'main2']),
+  sessionKey: z.enum(['test', 'normative', 'informative']),
   turnIndex: z.number().int().min(0).max(3),
   userMessage: z.string().min(1).max(1000),
 });
@@ -11,10 +11,11 @@ export const stateRequestSchema = z.object({
   participantId: z.string().uuid(),
 });
 
-export const participantUpsertSchema = z.object({
-  prolific_pid: z.string(),
-  study_id: z.string(),
-  session_id: z.string(),
+export const participantSchema = z.object({
+  prolificPid: z.string(),
+  studyId: z.string(),
+  sessionId: z.string(),
+  sessionKey: z.enum(['test', 'normative', 'informative']), // main1, main2를 normative, informative로 변경
 });
 
 export const surveyBackgroundSchema = z.object({

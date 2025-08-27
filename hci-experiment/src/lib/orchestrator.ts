@@ -8,7 +8,7 @@ import { Message } from "@/lib/types";
 
 export async function runCycle(opts: {
   participantId: string;
-  sessionKey: SessionKey;            // 'test'|'main1'|'main2'
+  sessionKey: SessionKey;            // 'test'|'normative'|'informative'
   cycle: number;                     // 1..4 (chat cycles)
   userMessage: string;
   currentTask?: string;              // 현재 논의할 주제
