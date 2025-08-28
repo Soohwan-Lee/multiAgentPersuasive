@@ -287,9 +287,17 @@ export default function SessionPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Chat Area */}
         <div className="lg:col-span-2">
-          <Card className="h-[600px]">
+          <Card className={`h-[600px] ${sessionKey === 'test' && currentState === 'chat' ? 'ring-4 ring-blue-500 ring-opacity-50 bg-blue-50' : ''}`}>
             <CardHeader>
-              <CardTitle className="text-lg">Discussion with AI Agents</CardTitle>
+              <CardTitle className="text-lg flex items-center gap-2">
+                Discussion with AI Agents
+                {sessionKey === 'test' && currentState === 'chat' && (
+                  <div className="flex items-center gap-1 text-blue-600 text-sm">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                    Current Step
+                  </div>
+                )}
+              </CardTitle>
               {currentState === 'agents-responding' && (
                 <div className="text-sm text-blue-600">
                   Agents are responding... Please wait.
@@ -313,21 +321,41 @@ export default function SessionPage() {
         {/* Response Panel */}
         <div className="lg:col-span-1">
           {currentState === 't0' && (
-            <ResponsePanel
-              responseIndex={0}
-              sessionKey={sessionKey}
-              participantId={participantId}
-              onComplete={handleT0Complete}
-            />
+            <div className={`${sessionKey === 'test' ? 'ring-4 ring-blue-500 ring-opacity-50 bg-blue-50' : ''}`}>
+              <ResponsePanel
+                responseIndex={0}
+                sessionKey={sessionKey}
+                participantId={participantId}
+                onComplete={handleT0Complete}
+              />
+              {sessionKey === 'test' && (
+                <div className="mt-2 p-2 bg-blue-100 rounded-lg">
+                  <div className="flex items-center gap-2 text-blue-700 text-sm">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                    <span className="font-medium">Current Step:</span> Complete the initial response
+                  </div>
+                </div>
+              )}
+            </div>
           )}
           
           {currentState === 'response' && (
-            <ResponsePanel
-              responseIndex={currentResponseIndex}
-              sessionKey={sessionKey}
-              participantId={participantId}
-              onComplete={handleResponseComplete}
-            />
+            <div className={`${sessionKey === 'test' ? 'ring-4 ring-blue-500 ring-opacity-50 bg-blue-50' : ''}`}>
+              <ResponsePanel
+                responseIndex={currentResponseIndex}
+                sessionKey={sessionKey}
+                participantId={participantId}
+                onComplete={handleResponseComplete}
+              />
+              {sessionKey === 'test' && (
+                <div className="mt-2 p-2 bg-blue-100 rounded-lg">
+                  <div className="flex items-center gap-2 text-blue-700 text-sm">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                    <span className="font-medium">Current Step:</span> Rate the agents' responses
+                  </div>
+                </div>
+              )}
+            </div>
           )}
           
           {currentState === 'agents-responding' && (
