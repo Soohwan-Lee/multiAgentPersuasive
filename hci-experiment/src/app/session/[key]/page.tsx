@@ -10,6 +10,7 @@ import { ResponsePanel } from '@/components/ResponsePanel';
 import { SESSION_META } from '@/config/sessions';
 import { Message, Response } from '@/lib/types';
 import { Info, Lightbulb, MessageSquare, SkipForward } from 'lucide-react';
+import { getFirstSession, getSecondSession } from '@/config/session-order';
 
 type SessionState = 't0' | 'chat' | 'agents-responding' | 'response' | 'complete';
 
@@ -88,10 +89,10 @@ export default function SessionPage() {
         setCurrentState('complete');
         // 다음 페이지로 이동
         if (sessionKey === 'test') {
-          router.push('/session/normative');
-        } else if (sessionKey === 'normative') {
+          router.push(`/session/${getFirstSession()}`);
+        } else if (sessionKey === getFirstSession()) {
           router.push('/survey/post-self-1');
-        } else if (sessionKey === 'informative') {
+        } else if (sessionKey === getSecondSession()) {
           router.push('/survey/post-self-2');
         }
       }
@@ -236,10 +237,10 @@ export default function SessionPage() {
       setCurrentState('complete');
       // 다음 페이지로 이동
       if (sessionKey === 'test') {
-        router.push('/session/normative');
-      } else if (sessionKey === 'normative') {
+        router.push(`/session/${getFirstSession()}`);
+      } else if (sessionKey === getFirstSession()) {
         router.push('/survey/post-self-1');
-      } else if (sessionKey === 'informative') {
+      } else if (sessionKey === getSecondSession()) {
         router.push('/survey/post-self-2');
       }
     }

@@ -10,15 +10,17 @@ interface ProgressHeaderProps {
   turnNumber?: number;
 }
 
+import { getFirstSession, getSecondSession } from '@/config/session-order';
+
 const steps = [
   { name: 'Entry', path: '/entry' },
   { name: 'Introduction', path: '/introduction' },
   { name: 'Background Survey', path: '/survey/background' },
   { name: 'Practice Session', path: '/session/test' },
-  { name: 'Main Session 1', path: '/session/main1' },
+  { name: `Main Session 1 (${getFirstSession()})`, path: `/session/${getFirstSession()}` },
   { name: 'Post-Self Survey 1', path: '/survey/post-self-1' },
   { name: 'Post-Open Survey 1', path: '/survey/post-open-1' },
-      { name: 'Main Session 2', path: '/session/informative' },
+  { name: `Main Session 2 (${getSecondSession()})`, path: `/session/${getSecondSession()}` },
   { name: 'Post-Self Survey 2', path: '/survey/post-self-2' },
   { name: 'Post-Open Survey 2', path: '/survey/post-open-2' },
   { name: 'Completion', path: '/finish' },

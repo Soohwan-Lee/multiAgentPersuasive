@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ProgressHeader } from '@/components/ProgressHeader';
 import { SkipForward } from 'lucide-react';
 import { CURRENT_PATTERN } from '@/config/patterns';
+import { getSecondSession } from '@/config/session-order';
 
 export default function PostOpenSurvey1Page() {
   const router = useRouter();
@@ -62,7 +63,7 @@ export default function PostOpenSurvey1Page() {
       });
 
       // Navigate to next page
-      router.push('/session/informative');
+      router.push(`/session/${getSecondSession()}`);
     } catch (error) {
       console.error('Error submitting survey:', error);
       alert('Failed to submit survey. Please try again.');
@@ -72,7 +73,7 @@ export default function PostOpenSurvey1Page() {
   };
 
   const handleSkip = () => {
-    router.push('/session/informative');
+    router.push(`/session/${getSecondSession()}`);
   };
 
   const getPatternQuestion = () => {
