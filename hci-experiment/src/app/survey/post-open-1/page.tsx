@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ProgressHeader } from '@/components/ProgressHeader';
 import { SkipForward } from 'lucide-react';
 import { CURRENT_PATTERN } from '@/config/patterns';
-import { getSecondSession } from '@/config/session-order';
+import { getFirstSession, getSecondSession } from '@/config/session-order';
 
 export default function PostOpenSurvey1Page() {
   const router = useRouter();
@@ -57,13 +57,13 @@ export default function PostOpenSurvey1Page() {
             experienceByPattern,
             other,
             condition,
-            taskType: 'main1'
+            taskType: getFirstSession()
           }
         })
       });
 
       // Navigate to next page
-      router.push(`/session/${getSecondSession()}`);
+      router.push('/session-transition-2');
     } catch (error) {
       console.error('Error submitting survey:', error);
       alert('Failed to submit survey. Please try again.');
@@ -73,7 +73,7 @@ export default function PostOpenSurvey1Page() {
   };
 
   const handleSkip = () => {
-    router.push(`/session/${getSecondSession()}`);
+    router.push('/session-transition-2');
   };
 
   const getPatternQuestion = () => {
@@ -97,8 +97,8 @@ export default function PostOpenSurvey1Page() {
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <ProgressHeader
         currentStep="Post-Open Survey 1"
-        totalSteps={11}
-        currentStepIndex={6}
+        totalSteps={13}
+        currentStepIndex={7}
       />
 
       <Card className="max-w-3xl mx-auto">

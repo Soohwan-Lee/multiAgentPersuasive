@@ -36,7 +36,7 @@ export default function IntroductionPage() {
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <ProgressHeader
         currentStep="Introduction"
-        totalSteps={9}
+        totalSteps={13}
         currentStepIndex={1}
       />
 

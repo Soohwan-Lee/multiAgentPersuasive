@@ -95,7 +95,7 @@ function EntryPageContent() {
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <ProgressHeader
         currentStep="Entry"
-        totalSteps={9}
+        totalSteps={13}
         currentStepIndex={0}
       />
 

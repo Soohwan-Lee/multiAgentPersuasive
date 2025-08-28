@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ProgressHeader } from '@/components/ProgressHeader';
+import { SessionBanner } from '@/components/SessionBanner';
 import { Chat } from '@/components/Chat';
 import { ResponsePanel } from '@/components/ResponsePanel';
 import { SESSION_META } from '@/config/sessions';
@@ -89,7 +90,7 @@ export default function SessionPage() {
         setCurrentState('complete');
         // 다음 페이지로 이동
         if (sessionKey === 'test') {
-          router.push(`/session/${getFirstSession()}`);
+          router.push('/session-transition');
         } else if (sessionKey === getFirstSession()) {
           router.push('/survey/post-self-1');
         } else if (sessionKey === getSecondSession()) {
@@ -237,7 +238,7 @@ export default function SessionPage() {
       setCurrentState('complete');
       // 다음 페이지로 이동
       if (sessionKey === 'test') {
-        router.push(`/session/${getFirstSession()}`);
+        router.push('/session-transition');
       } else if (sessionKey === getFirstSession()) {
         router.push('/survey/post-self-1');
       } else if (sessionKey === getSecondSession()) {
@@ -272,42 +273,15 @@ export default function SessionPage() {
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       <ProgressHeader
         currentStep={sessionMeta.name}
-        totalSteps={11}
-        currentStepIndex={sessionKey === 'test' ? 3 : sessionKey === 'normative' ? 4 : 8}
+        totalSteps={13}
+        currentStepIndex={sessionKey === 'test' ? 3 : sessionKey === 'normative' ? 5 : 9}
       />
 
-      {/* Session Info */}
-      <div className="mb-6">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-start gap-4">
-              <Info className="h-5 w-5 text-blue-500 mt-0.5" />
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">
-                  {sessionMeta.description}
-                </p>
-                {sessionKey === 'test' && (
-                  <div className="bg-blue-50 p-3 rounded-lg">
-                    <div className="flex items-start gap-2">
-                      <Lightbulb className="h-4 w-4 text-blue-600 mt-0.5" />
-                      <div className="text-sm text-blue-800">
-                        <p className="font-medium mb-1">Practice Session Tips:</p>
-                        <ul className="space-y-1 text-xs">
-                          <li>• This is a practice session to help you understand the experiment</li>
-                          <li>• After this practice, you'll have two main sessions</li>
-                          <li>• When you provide your initial response (T0), you'll discuss with AI agents</li>
-                          <li>• The 4 chat cycles (T0-T4) are continuous conversations within one session</li>
-                          <li>• Each cycle builds on the previous one - it's not separate chats</li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Session Banner */}
+      <SessionBanner 
+        sessionKey={sessionKey} 
+        isFirstMainSession={sessionKey === getFirstSession()}
+      />
 
       {/* Main Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

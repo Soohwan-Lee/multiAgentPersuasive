@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ProgressHeader } from '@/components/ProgressHeader';
 import { SkipForward } from 'lucide-react';
 import { CURRENT_PATTERN } from '@/config/patterns';
+import { getSecondSession } from '@/config/session-order';
 
 export default function PostOpenSurvey2Page() {
   const router = useRouter();
@@ -56,7 +57,7 @@ export default function PostOpenSurvey2Page() {
             experienceByPattern,
             other,
             condition,
-            taskType: 'informative'
+            taskType: getSecondSession()
           }
         })
       });
@@ -96,8 +97,8 @@ export default function PostOpenSurvey2Page() {
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <ProgressHeader
         currentStep="Post-Open Survey 2"
-        totalSteps={11}
-        currentStepIndex={9}
+        totalSteps={13}
+        currentStepIndex={12}
       />
 
       <Card className="max-w-3xl mx-auto">

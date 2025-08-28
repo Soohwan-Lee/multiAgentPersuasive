@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { ProgressHeader } from '@/components/ProgressHeader';
 import { SkipForward } from 'lucide-react';
 import { CURRENT_PATTERN } from '@/config/patterns';
+import { getFirstSession } from '@/config/session-order';
 
 interface SurveyResponses {
   // Perceived Compliance (모든 조건에 공통)
@@ -160,7 +161,7 @@ export default function PostSelfSurvey1Page() {
           payload: {
             ...responses,
             condition,
-            taskType: 'main1'
+            taskType: getFirstSession()
           }
         })
       });
@@ -230,8 +231,8 @@ export default function PostSelfSurvey1Page() {
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <ProgressHeader
         currentStep="Post-Self Survey 1"
-        totalSteps={11}
-        currentStepIndex={5}
+        totalSteps={13}
+        currentStepIndex={6}
       />
 
       <Card className="max-w-4xl mx-auto">

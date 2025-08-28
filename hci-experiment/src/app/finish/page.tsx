@@ -53,8 +53,8 @@ export default function FinishPage() {
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <ProgressHeader
         currentStep="Completion"
-        totalSteps={11}
-        currentStepIndex={10}
+        totalSteps={13}
+        currentStepIndex={12}
       />
 
       <Card className="max-w-2xl mx-auto">
