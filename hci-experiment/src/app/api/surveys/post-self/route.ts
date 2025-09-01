@@ -3,6 +3,7 @@ import { savePostSelfSurvey } from '@/lib/supabase';
 
 export async function POST(request: NextRequest) {
   try {
+    const body = await request.json();
     const {
       participant_id,
       session_id,
@@ -39,7 +40,7 @@ export async function POST(request: NextRequest) {
       agent3_utility,
       agent3_affect,
       agent3_trust,
-    } = await request.json();
+    } = body;
 
     if (!participant_id || !session_id || !survey_number) {
       return NextResponse.json(
@@ -64,7 +65,7 @@ export async function POST(request: NextRequest) {
     ];
 
     for (const field of requiredFields) {
-      if (request.body[field] === undefined || request.body[field] === null) {
+      if (body[field] === undefined || body[field] === null) {
         return NextResponse.json(
           { error: `Missing required field: ${field}` },
           { status: 400 }
