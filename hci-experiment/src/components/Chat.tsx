@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send, Loader2, MessageCircle } from 'lucide-react';
+import { Send, Loader2, MessageCircle, Target } from 'lucide-react';
 import { AGENTS, getAgentColor } from '@/config/agents';
 import { Message } from '@/lib/types';
 
@@ -16,9 +16,19 @@ interface ChatProps {
   sessionKey: string;
   participantId: string;
   isChatEnabled?: boolean; // 채팅 활성화 여부
+  currentTask?: string; // 현재 task 주제
 }
 
-export function Chat({ messages, onSendMessage, isLoading, currentTurn, sessionKey, participantId, isChatEnabled = true }: ChatProps) {
+export function Chat({ 
+  messages, 
+  onSendMessage, 
+  isLoading, 
+  currentTurn, 
+  sessionKey, 
+  participantId, 
+  isChatEnabled = true,
+  currentTask 
+}: ChatProps) {
   const [inputMessage, setInputMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -51,6 +61,18 @@ export function Chat({ messages, onSendMessage, isLoading, currentTurn, sessionK
               <p className="font-medium">Start the conversation</p>
             </div>
             <p className="text-sm">Send a message to begin chatting with the AI agents.</p>
+            
+            {/* 현재 task 주제 표시 */}
+            {currentTask && (
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <Target className="h-4 w-4 text-blue-600" />
+                  <span className="font-medium text-blue-800">Discussion Topic:</span>
+                </div>
+                <p className="text-blue-700 font-medium">{currentTask}</p>
+              </div>
+            )}
+            
             {currentTurn >= 2 && (
               <div className="mt-4 p-3 bg-blue-50 rounded-lg">
                 <p className="text-sm text-blue-700">

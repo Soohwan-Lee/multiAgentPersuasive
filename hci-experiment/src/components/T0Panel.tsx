@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { getCurrentTaskDisplay } from '@/lib/task-example';
 
 interface T0PanelProps {
   sessionKey: 'test' | 'normative' | 'informative'; // main1, main2를 normative, informative로 변경
@@ -16,6 +17,9 @@ export function T0Panel({ sessionKey, participantId, onComplete }: T0PanelProps)
   const [confidence, setConfidence] = useState(50);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [startTime] = useState(Date.now());
+
+  // 현재 task 주제 가져오기
+  const currentTaskDisplay = getCurrentTaskDisplay(sessionKey);
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
@@ -53,11 +57,14 @@ export function T0Panel({ sessionKey, participantId, onComplete }: T0PanelProps)
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
         <CardTitle className="text-center">Initial Response</CardTitle>
+        <div className="text-center text-sm text-muted-foreground">
+          Current Topic: <span className="font-medium">{currentTaskDisplay}</span>
+        </div>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-2">
           <Label htmlFor="opinion">
-            Your opinion on Death Penalty: {opinion > 0 ? 'Support' : opinion < 0 ? 'Oppose' : 'Neutral'} ({opinion})
+            Your opinion on {currentTaskDisplay}: {opinion > 0 ? 'Support' : opinion < 0 ? 'Oppose' : 'Neutral'} ({opinion})
           </Label>
           <input
             id="opinion"

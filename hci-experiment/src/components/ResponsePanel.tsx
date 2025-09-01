@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { getCurrentTaskDisplay } from '@/lib/task-example';
 
 interface ResponsePanelProps {
   responseIndex: number;
@@ -26,6 +27,9 @@ export function ResponsePanel({
   // Track if sliders have been moved from their initial positions
   const [opinionMoved, setOpinionMoved] = useState(false);
   const [confidenceMoved, setConfidenceMoved] = useState(false);
+
+  // 현재 task 주제 가져오기
+  const currentTaskDisplay = getCurrentTaskDisplay(sessionKey);
 
   const handleOpinionChange = (value: number) => {
     setOpinion(value);
@@ -99,11 +103,14 @@ export function ResponsePanel({
     <Card className="w-full max-w-md">
       <CardHeader>
         <CardTitle className="text-center">{getResponseTitle()}</CardTitle>
+        <div className="text-center text-sm text-muted-foreground">
+          Current Topic: <span className="font-medium">{currentTaskDisplay}</span>
+        </div>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-2">
           <Label htmlFor="opinion">
-            Your opinion on Death Penalty: {getOpinionLabel()}
+            Your opinion on {currentTaskDisplay}: {getOpinionLabel()}
             {!opinionMoved && <span className="text-red-500 ml-1">*</span>}
           </Label>
           <input

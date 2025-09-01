@@ -92,6 +92,30 @@ export function getCurrentSessionTask(sessionKey: "test" | "normative" | "inform
   return getSelectedTask(sessionKey);
 }
 
+// 현재 task를 간단한 형태로 변환하는 함수 (UI 표시용)
+export function getCurrentTaskDisplay(sessionKey: "test" | "normative" | "informative"): string {
+  const fullTask = getCurrentSessionTask(sessionKey);
+  
+  // "Should we support the death penalty?" -> "death penalty"
+  // "Should we support gun control?" -> "gun control"
+  // 등등...
+  
+  // "Should we support" 또는 "Should we" 로 시작하는 경우 제거
+  let displayTask = fullTask;
+  if (displayTask.startsWith("Should we support ")) {
+    displayTask = displayTask.replace("Should we support ", "");
+  } else if (displayTask.startsWith("Should we ")) {
+    displayTask = displayTask.replace("Should we ", "");
+  }
+  
+  // 끝의 "?" 제거
+  if (displayTask.endsWith("?")) {
+    displayTask = displayTask.slice(0, -1);
+  }
+  
+  return displayTask;
+}
+
 // 세션 순서 변경 함수 (나중에 사용)
 export function setSessionOrder(order: ("normative" | "informative")[]): void {
   // TODO: 환경변수나 설정 파일에 저장

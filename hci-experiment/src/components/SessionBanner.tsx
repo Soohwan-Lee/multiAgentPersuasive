@@ -4,9 +4,10 @@ import { AlertTriangle, Play, TestTube, Target, Info } from 'lucide-react';
 interface SessionBannerProps {
   sessionKey: 'test' | 'normative' | 'informative';
   isFirstMainSession?: boolean;
+  currentTask?: string;
 }
 
-export function SessionBanner({ sessionKey, isFirstMainSession = false }: SessionBannerProps) {
+export function SessionBanner({ sessionKey, isFirstMainSession = false, currentTask }: SessionBannerProps) {
   const getSessionInfo = () => {
     switch (sessionKey) {
       case 'test':
@@ -55,6 +56,17 @@ export function SessionBanner({ sessionKey, isFirstMainSession = false }: Sessio
           <div className="flex-1">
             <h3 className="text-lg font-bold mb-2">{sessionInfo.title}</h3>
             <p className="text-sm mb-4">{sessionInfo.description}</p>
+            
+            {/* 현재 task 주제 표시 */}
+            {currentTask && (
+              <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg mb-4">
+                <h4 className="font-medium mb-1 text-blue-800 flex items-center gap-2">
+                  <Target className="h-4 w-4" />
+                  Current Discussion Topic
+                </h4>
+                <p className="text-blue-700 font-medium">{currentTask}</p>
+              </div>
+            )}
             
             {sessionInfo.tips.length > 0 && (
               <div className="bg-white/50 p-3 rounded-lg">

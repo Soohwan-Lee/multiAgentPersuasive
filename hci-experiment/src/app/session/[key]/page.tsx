@@ -12,6 +12,7 @@ import { SESSION_META } from '@/config/sessions';
 import { Message, Response } from '@/lib/types';
 import { Info, Lightbulb, MessageSquare, SkipForward } from 'lucide-react';
 import { getFirstSession, getSecondSession } from '@/config/session-order';
+import { getCurrentSessionTask, getCurrentTaskDisplay } from '@/lib/task-example';
 
 type SessionState = 't0' | 'chat' | 'agents-responding' | 'response' | 'complete';
 
@@ -33,6 +34,10 @@ export default function SessionPage() {
   const [responses, setResponses] = useState<Response[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [agentResponseDelay, setAgentResponseDelay] = useState(2000); // 2초 지연
+
+  // 현재 task 정보 가져오기
+  const currentTask = getCurrentSessionTask(sessionKey);
+  const currentTaskDisplay = getCurrentTaskDisplay(sessionKey);
 
   useEffect(() => {
     const storedParticipantId = sessionStorage.getItem('participantId');
@@ -281,6 +286,7 @@ export default function SessionPage() {
       <SessionBanner 
         sessionKey={sessionKey} 
         isFirstMainSession={sessionKey === getFirstSession()}
+        currentTask={currentTaskDisplay}
       />
 
       {/* Main Content */}
@@ -313,6 +319,7 @@ export default function SessionPage() {
                 sessionKey={sessionKey}
                 participantId={participantId}
                 isChatEnabled={currentState === 'chat'} // 채팅 상태일 때만 활성화
+                currentTask={currentTaskDisplay}
               />
             </CardContent>
           </Card>
