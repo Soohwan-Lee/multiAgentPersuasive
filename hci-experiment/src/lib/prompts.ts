@@ -16,7 +16,7 @@ export interface PromptCtx {
   previousMessages?: Message[];     // 이전 대화 기록
   t0Opinion?: number;               // T0에서의 사용자 의견 (-50 to +50)
   currentTask?: string;             // 현재 논의할 주제
-  taskType?: "informative" | "normative"; // task 타입 추가
+  taskType?: "informative" | "normative" | "test"; // task 타입 추가 (test 포함)
 }
 
 // Task 리스트 정의
@@ -44,7 +44,7 @@ const NORMATIVE_TASK_INDEX = 0; // 0~5 사이의 값으로 변경 가능
 const INFORMATIVE_TASK_INDEX = 0; // 0~5 사이의 값으로 변경 가능
 
 // Task 타입에 따른 프롬프트 조정 함수
-function getTaskSpecificInstructions(taskType: "informative" | "normative" | undefined, sessionKey: string) {
+function getTaskSpecificInstructions(taskType: "informative" | "normative" | "test" | undefined, sessionKey: string) {
   if (taskType === "informative") {
     return {
       stanceInstruction: "Focus on factual accuracy and evidence-based arguments.",
@@ -56,6 +56,12 @@ function getTaskSpecificInstructions(taskType: "informative" | "normative" | und
       stanceInstruction: "Focus on social norms, values, and behavioral expectations.",
       argumentStyle: "Present arguments based on social conventions, moral principles, and group dynamics.",
       interactionStyle: "Emphasize social appropriateness and collective values."
+    };
+  } else if (taskType === "test") {
+    return {
+      stanceInstruction: "Focus on simple and clear arguments for practice purposes.",
+      argumentStyle: "Present straightforward arguments that are easy to understand.",
+      interactionStyle: "Engage in a friendly and helpful manner for learning purposes."
     };
   } else {
     // 기본값 (기존 로직 유지)
@@ -253,11 +259,13 @@ export function getRandomTask(taskType: "informative" | "normative"): string {
   return getSelectedTask(taskType);
 }
 
-export function getTaskType(task: string): "informative" | "normative" {
+export function getTaskType(task: string): "informative" | "normative" | "test" {
   if (INFORMATIVE_TASKS.includes(task)) {
     return "informative";
   } else if (NORMATIVE_TASKS.includes(task)) {
     return "normative";
+  } else if (task === "Should we turn on cameras during online video meetings as a courtesy?") {
+    return "test";
   } else {
     // 기본값 또는 사용자 정의 task의 경우 sessionKey로 판단
     return "normative"; // 기본값

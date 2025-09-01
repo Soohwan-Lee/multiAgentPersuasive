@@ -132,12 +132,8 @@ export default function SessionPage() {
       setMessages(prev => [...prev, userMessage]);
       
       // 현재 세션의 task 가져오기
-      const { getSelectedTask } = await import('@/lib/prompts');
-      const currentTask = sessionKey === 'test' 
-        ? getSelectedTask('normative') 
-        : sessionKey === 'normative' 
-        ? getSelectedTask('normative') 
-        : getSelectedTask('informative');
+      const { getCurrentSessionTask } = await import('@/lib/task-example');
+      const currentTask = getCurrentSessionTask(sessionKey);
 
       const response = await fetch('/api/cycle', {
         method: 'POST',

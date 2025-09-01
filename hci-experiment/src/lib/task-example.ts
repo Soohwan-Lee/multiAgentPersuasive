@@ -81,11 +81,14 @@ export function getSessionTasks(): TaskInfo[] {
   return SESSION_ORDER.map(sessionKey => getTaskInfo(sessionKey));
 }
 
+// Test 세션용 task 정의
+export const TEST_SESSION_TASK = "Should we turn on cameras during online video meetings as a courtesy?";
+
 // 실제 사용 예시
 export function getCurrentSessionTask(sessionKey: "test" | "normative" | "informative"): string {
-  // test 세션은 normative task 사용
+  // test 세션은 별도의 test task 사용
   if (sessionKey === "test") {
-    return getSelectedTask("normative");
+    return TEST_SESSION_TASK;
   }
   
   // normative/informative 세션은 각각 해당하는 task 사용
@@ -98,6 +101,7 @@ export function getCurrentTaskDisplay(sessionKey: "test" | "normative" | "inform
   
   // "Should we support the death penalty?" -> "death penalty"
   // "Should we support gun control?" -> "gun control"
+  // "Should we turn on cameras during online video meetings as a courtesy?" -> "turning on cameras during online meetings"
   // 등등...
   
   // "Should we support" 또는 "Should we" 로 시작하는 경우 제거
@@ -111,6 +115,11 @@ export function getCurrentTaskDisplay(sessionKey: "test" | "normative" | "inform
   // 끝의 "?" 제거
   if (displayTask.endsWith("?")) {
     displayTask = displayTask.slice(0, -1);
+  }
+  
+  // "turn on cameras during online video meetings as a courtesy" -> "turning on cameras during online meetings"
+  if (displayTask.includes("turn on cameras during online video meetings as a courtesy")) {
+    displayTask = "turning on cameras during online meetings";
   }
   
   return displayTask;
