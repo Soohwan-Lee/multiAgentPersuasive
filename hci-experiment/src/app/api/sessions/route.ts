@@ -20,8 +20,8 @@ export async function POST(request: NextRequest) {
     const session_order = session_key === 'test' ? 0 : 
                          session_key === getCurrentSessionOrder()[0] ? 1 : 2;
     
-    // Get task index (0-5 for normative/informative, null for test)
-    const task_index = session_key === 'test' ? null : 0; // TODO: Get from participant's task indices
+    // Get task index (0-5 for normative/informative, undefined for test)
+    const task_index = session_key === 'test' ? undefined : 0; // TODO: Get from participant's task indices
 
     // Create session
     const session = await createSession({
