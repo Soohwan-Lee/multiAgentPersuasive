@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Save T0 response
+    // Save T0 response into turn_responses with response_index = 0
     const response = await saveT0Response({
       participant_id,
       session_id,

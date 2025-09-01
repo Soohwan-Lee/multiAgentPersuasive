@@ -52,6 +52,8 @@ export interface T0Response {
   id: string;
   participant_id: string;
   session_id: string;
+  cycle: number | null; // null for T0
+  response_index: 0;    // T0
   opinion: number;
   confidence: number;
   response_time_ms: number;
@@ -193,12 +195,25 @@ export async function createParticipant(data: {
   return participant;
 }
 
-export async function getParticipant(participantId: string): Promise<Participant | null> {
-  const { data: participant, error } = await supabase
+export async function getParticipant(prolificPidOrId: string): Promise<Participant | null> {
+  // Try by prolific_pid first, then by id
+  let { data: participant, error } = await supabase
     .from('participants')
     .select('*')
-    .eq('id', participantId)
+    .eq('prolific_pid', prolificPidOrId)
     .single();
+
+  if (error && error.code === 'PGRST116') {
+    // If not found by prolific_pid, try by id
+    const result = await supabase
+      .from('participants')
+      .select('*')
+      .eq('id', prolificPidOrId)
+      .single();
+    
+    participant = result.data;
+    error = result.error;
+  }
 
   if (error) {
     console.error('Error fetching participant:', error);
@@ -320,9 +335,19 @@ export async function saveT0Response(data: {
   confidence: number;
   response_time_ms: number;
 }): Promise<T0Response | null> {
+  const payload = {
+    participant_id: data.participant_id,
+    session_id: data.session_id,
+    cycle: null as number | null,
+    response_index: 0 as 0,
+    opinion: data.opinion,
+    confidence: data.confidence,
+    response_time_ms: data.response_time_ms,
+  };
+
   const { data: response, error } = await supabase
-    .from('t0_responses')
-    .insert([data])
+    .from('turn_responses')
+    .insert([payload])
     .select()
     .single();
 
@@ -331,14 +356,15 @@ export async function saveT0Response(data: {
     return null;
   }
 
-  return response;
+  return response as unknown as T0Response;
 }
 
 export async function getT0Response(sessionId: string): Promise<T0Response | null> {
   const { data: response, error } = await supabase
-    .from('t0_responses')
+    .from('turn_responses')
     .select('*')
     .eq('session_id', sessionId)
+    .eq('response_index', 0)
     .single();
 
   if (error) {
@@ -346,7 +372,7 @@ export async function getT0Response(sessionId: string): Promise<T0Response | nul
     return null;
   }
 
-  return response;
+  return response as unknown as T0Response;
 }
 
 // 5. Messages
@@ -420,6 +446,7 @@ export async function getSessionTurnResponses(sessionId: string): Promise<TurnRe
     .from('turn_responses')
     .select('*')
     .eq('session_id', sessionId)
+    .gt('response_index', 0)
     .order('cycle', { ascending: true });
 
   if (error) {
@@ -557,7 +584,7 @@ export async function getParticipantCompleteData(participantId: string) {
 
         return {
           ...session,
-          t0Response: t0Response?.data || null,
+          t0Response: t0Response || null,
           messages: messages || [],
           turnResponses: turnResponses || [],
           postSelfSurvey: postSelfSurvey?.data || null,
@@ -589,6 +616,36 @@ export async function getNextAvailableCondition(): Promise<ExperimentCondition |
   return condition;
 }
 
+// 원자적 조건 배정 함수 (동시성 문제 해결)
+export async function assignNextConditionAtomic(participantId: string): Promise<ExperimentCondition | null> {
+  const { data, error } = await supabase.rpc('assign_next_condition', {
+    p_participant_id: participantId
+  });
+
+  if (error) {
+    console.error('Error assigning condition atomically:', error);
+    return null;
+  }
+
+  if (!data || data.length === 0) {
+    console.log('No available conditions for assignment');
+    return null;
+  }
+
+  const condition = data[0];
+  return {
+    id: condition.condition_id,
+    condition_type: condition.condition_type,
+    task_order: condition.task_order,
+    informative_task_index: condition.informative_task_index,
+    normative_task_index: condition.normative_task_index,
+    is_assigned: true,
+    assigned_participant_id: participantId,
+    assigned_at: new Date().toISOString(),
+    created_at: new Date().toISOString()
+  };
+}
+
 export async function assignConditionToParticipant(conditionId: number, participantId: string): Promise<boolean> {
   const { error } = await supabase
     .from('experiment_conditions')
@@ -606,6 +663,49 @@ export async function assignConditionToParticipant(conditionId: number, particip
   }
 
   return true;
+}
+
+// 중도 이탈자 정리 함수
+export async function cleanupAbandonedAssignments(): Promise<number> {
+  const { data, error } = await supabase.rpc('cleanup_abandoned_assignments');
+
+  if (error) {
+    console.error('Error cleaning up abandoned assignments:', error);
+    return 0;
+  }
+
+  return data || 0;
+}
+
+// 조건 배정 상태 조회 함수
+export async function getConditionAssignmentStats(): Promise<{
+  totalConditions: number;
+  assignedConditions: number;
+  availableConditions: number;
+  completedParticipants: number;
+  activeParticipants: number;
+  abandonedParticipants: number;
+} | null> {
+  const { data, error } = await supabase.rpc('get_condition_stats');
+
+  if (error) {
+    console.error('Error fetching condition stats:', error);
+    return null;
+  }
+
+  if (!data || data.length === 0) {
+    return null;
+  }
+
+  const stats = data[0];
+  return {
+    totalConditions: stats.total_conditions,
+    assignedConditions: stats.assigned_conditions,
+    availableConditions: stats.available_conditions,
+    completedParticipants: stats.completed_participants,
+    activeParticipants: stats.active_participants,
+    abandonedParticipants: stats.abandoned_participants
+  };
 }
 
 export async function getParticipantCondition(participantId: string): Promise<ExperimentCondition | null> {
