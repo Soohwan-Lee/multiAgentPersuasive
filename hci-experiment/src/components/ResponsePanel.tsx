@@ -110,7 +110,7 @@ export function ResponsePanel({
       <CardContent className="space-y-6">
         <div className="space-y-2">
           <Label htmlFor="opinion">
-            Your opinion on {currentTaskDisplay}: {getOpinionLabel()}
+            Your opinion on current topic: {getOpinionLabel()}
             {!opinionMoved && <span className="text-red-500 ml-1">*</span>}
           </Label>
           <input

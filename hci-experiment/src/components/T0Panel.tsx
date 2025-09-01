@@ -64,7 +64,7 @@ export function T0Panel({ sessionKey, participantId, onComplete }: T0PanelProps)
       <CardContent className="space-y-6">
         <div className="space-y-2">
           <Label htmlFor="opinion">
-            Your opinion on {currentTaskDisplay}: {opinion > 0 ? 'Support' : opinion < 0 ? 'Oppose' : 'Neutral'} ({opinion})
+            Your opinion on current topic: {opinion > 0 ? 'Support' : opinion < 0 ? 'Oppose' : 'Neutral'} ({opinion})
           </Label>
           <input
             id="opinion"
