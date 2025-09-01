@@ -49,6 +49,9 @@ interface SurveyResponses {
   agent3Utility?: number | null;
   agent3Affect?: number | null;
   agent3Trust?: number | null;
+  
+  // Concentration Test (모든 조건에 공통)
+  concentrationTest: number | null;
 }
 
 export default function PostSelfSurvey2Page() {
@@ -72,6 +75,9 @@ export default function PostSelfSurvey2Page() {
     perceivedConversion2: null,
     perceivedConversion3: null,
     perceivedConversion4: null,
+    
+    // Concentration Test
+    concentrationTest: null,
   });
 
   useEffect(() => {
@@ -104,6 +110,9 @@ export default function PostSelfSurvey2Page() {
     if (responses.perceivedConversion2 === null) errors.push('Please answer Perceived Conversion question 2');
     if (responses.perceivedConversion3 === null) errors.push('Please answer Perceived Conversion question 3');
     if (responses.perceivedConversion4 === null) errors.push('Please answer Perceived Conversion question 4');
+
+    // Concentration Test validation
+    if (responses.concentrationTest === null) errors.push('Please answer the concentration test question');
 
     // AI Agent 인식 validation (조건에 따라 다름)
     if (condition === 'majority') {
@@ -470,6 +479,20 @@ export default function PostSelfSurvey2Page() {
               </div>
             </>
           )}
+
+          {/* Concentration Test Section */}
+          <div className="space-y-6">
+            <h3 className="text-lg font-semibold border-b pb-2">Concentration Test</h3>
+            <p className="text-sm text-muted-foreground">
+              Please answer the following question as instructed.
+            </p>
+            
+            {render7PointLikert(
+              responses.concentrationTest,
+              (value) => updateResponse('concentrationTest', value),
+              "(Concentration Test) Please select '4' for this question."
+            )}
+          </div>
 
           <div className="text-center pt-6 space-y-3">
             <Button onClick={handleSubmit} disabled={isSubmitting} size="lg">
