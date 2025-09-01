@@ -28,13 +28,13 @@ export default function AdminConditionPage() {
         const data = await response.json();
         setCurrentCondition(data.condition);
         setNewCondition(data.condition);
-        setMessage(`현재 조건: ${data.condition}`);
+        setMessage(`Current condition: ${data.condition}`);
       } else {
         const errorData = await response.json();
         setMessage(`에러: ${errorData.error}`);
       }
     } catch (error) {
-      setMessage('조건을 가져오는 중 오류가 발생했습니다.');
+              setMessage('Error occurred while fetching condition.');
     } finally {
       setLoading(false);
     }
@@ -63,13 +63,13 @@ export default function AdminConditionPage() {
 
       if (response.ok) {
         setCurrentCondition(newCondition);
-        setMessage(`조건이 성공적으로 ${newCondition}으로 변경되었습니다.`);
+        setMessage(`Condition successfully changed to ${newCondition}.`);
       } else {
         const errorData = await response.json();
         setMessage(`에러: ${errorData.error}`);
       }
     } catch (error) {
-      setMessage('조건을 업데이트하는 중 오류가 발생했습니다.');
+              setMessage('Error occurred while updating condition.');
     } finally {
       setLoading(false);
     }
@@ -79,7 +79,7 @@ export default function AdminConditionPage() {
     <div className="container mx-auto px-4 py-8 max-w-2xl">
       <Card>
         <CardHeader>
-          <CardTitle>실험 조건 관리</CardTitle>
+          <CardTitle>Experiment Condition Management</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
@@ -90,11 +90,11 @@ export default function AdminConditionPage() {
                 type="text"
                 value={participantId}
                 onChange={(e) => setParticipantId(e.target.value)}
-                placeholder="참가자 ID를 입력하세요"
+                placeholder="Enter participant ID"
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-md"
               />
               <Button onClick={handleFetchCondition} disabled={loading}>
-                {loading ? '조회 중...' : '조건 조회'}
+                {loading ? 'Loading...' : 'Fetch Condition'}
               </Button>
             </div>
           </div>
@@ -102,11 +102,11 @@ export default function AdminConditionPage() {
           {currentCondition && (
             <div className="space-y-4">
               <div className="p-4 bg-gray-50 rounded-lg">
-                <strong>현재 조건:</strong> {currentCondition}
+                <strong>Current condition:</strong> {currentCondition}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="newCondition">새로운 조건</Label>
+                <Label htmlFor="newCondition">New Condition</Label>
                 <Select value={newCondition} onValueChange={setNewCondition}>
                   <SelectTrigger>
                     <SelectValue />
@@ -124,7 +124,7 @@ export default function AdminConditionPage() {
                 disabled={loading || currentCondition === newCondition}
                 className="w-full"
               >
-                {loading ? '업데이트 중...' : '조건 업데이트'}
+                {loading ? 'Updating...' : 'Update Condition'}
               </Button>
             </div>
           )}
@@ -138,7 +138,7 @@ export default function AdminConditionPage() {
           )}
 
           <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-            <h3 className="font-semibold mb-2">조건별 질문 차이:</h3>
+            <h3 className="font-semibold mb-2">Question differences by condition:</h3>
             <div className="space-y-2 text-sm">
               <div>
                 <strong>Majority:</strong> Perceived Compliance (4개) + Perceived Conversion (4개)

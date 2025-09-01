@@ -47,7 +47,7 @@ export default function TestConditionPage() {
     <div className="container mx-auto px-4 py-8 max-w-2xl">
       <Card>
         <CardHeader>
-          <CardTitle>실험 조건 테스트</CardTitle>
+          <CardTitle>Experiment Condition Test</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
@@ -58,29 +58,29 @@ export default function TestConditionPage() {
           </div>
           <div>
             <strong>Condition Type:</strong> {
-              condition === 'majority' ? 'Majority (모든 조건에 Perceived Compliance & Conversion만 표시)' :
-              condition === 'minority' || condition === 'minorityDiffusion' ? 'Minority (AI Agent 인식 질문 추가)' :
+              condition === 'majority' ? 'Majority (Perceived Compliance & Conversion only for all conditions)' :
+                              condition === 'minority' || condition === 'minorityDiffusion' ? 'Minority (AI Agent recognition questions added)' :
               'Unknown'
             }
           </div>
           
           {condition === 'minority' || condition === 'minorityDiffusion' ? (
             <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-              <h3 className="font-semibold mb-2">Minority 조건에서 표시되는 질문:</h3>
+              <h3 className="font-semibold mb-2">Questions displayed in Minority condition:</h3>
               <ul className="list-disc list-inside space-y-1 text-sm">
-                <li>Perceived Compliance (4개 질문)</li>
-                <li>Perceived Conversion (4개 질문)</li>
-                <li>Agent 1 & 2 인식 (7개 항목)</li>
-                <li>Agent 3 인식 (7개 항목)</li>
+                <li>Perceived Compliance (4 questions)</li>
+                <li>Perceived Conversion (4 questions)</li>
+                <li>Agent 1 & 2 Recognition (7 items)</li>
+                <li>Agent 3 Recognition (7 items)</li>
               </ul>
             </div>
           ) : condition === 'majority' ? (
             <div className="mt-4 p-4 bg-green-50 rounded-lg">
-              <h3 className="font-semibold mb-2">Majority 조건에서 표시되는 질문:</h3>
+              <h3 className="font-semibold mb-2">Questions displayed in Majority condition:</h3>
               <ul className="list-disc list-inside space-y-1 text-sm">
-                <li>Perceived Compliance (4개 질문)</li>
-                <li>Perceived Conversion (4개 질문)</li>
-                <li>AI Agent 인식 질문은 표시되지 않음</li>
+                <li>Perceived Compliance (4 questions)</li>
+                <li>Perceived Conversion (4 questions)</li>
+                <li>AI Agent recognition questions are not displayed</li>
               </ul>
             </div>
           ) : null}

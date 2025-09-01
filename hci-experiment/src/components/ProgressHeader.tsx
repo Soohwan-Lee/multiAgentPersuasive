@@ -13,19 +13,19 @@ interface ProgressHeaderProps {
 import { getFirstSession, getSecondSession } from '@/config/session-order';
 
 const steps = [
-  { name: 'Entry', path: '/entry', description: '참가자 등록' },
-  { name: 'Introduction', path: '/introduction', description: '실험 소개' },
-  { name: 'Background Survey', path: '/survey/background', description: '배경 설문' },
-  { name: '🧪 Practice Session', path: '/session/test', description: '테스트 세션 (튜토리얼)' },
-  { name: 'Session Transition', path: '/session-transition', description: '본 실험 준비' },
-  { name: `🎯 Main Session 1 (${getFirstSession()})`, path: `/session/${getFirstSession()}`, description: '본 실험 1회차' },
-  { name: 'Post-Self Survey 1', path: '/survey/post-self-1', description: '자기보고 설문 1' },
-  { name: 'Post-Open Survey 1', path: '/survey/post-open-1', description: '개방형 설문 1' },
-  { name: 'Session Transition 2', path: '/session-transition-2', description: '두 번째 본 실험 준비' },
-  { name: `🎯 Main Session 2 (${getSecondSession()})`, path: `/session/${getSecondSession()}`, description: '본 실험 2회차' },
-  { name: 'Post-Self Survey 2', path: '/survey/post-self-2', description: '자기보고 설문 2' },
-  { name: 'Post-Open Survey 2', path: '/survey/post-open-2', description: '개방형 설문 2' },
-  { name: 'Completion', path: '/finish', description: '실험 완료' },
+  { name: 'Entry', path: '/entry', description: 'Participant Registration' },
+  { name: 'Introduction', path: '/introduction', description: 'Experiment Introduction' },
+  { name: 'Background Survey', path: '/survey/background', description: 'Background Survey' },
+  { name: '🧪 Practice Session', path: '/session/test', description: 'Test Session (Tutorial)' },
+  { name: 'Session Transition', path: '/session-transition', description: 'Main Experiment Preparation' },
+  { name: `🎯 Main Session 1 (${getFirstSession()})`, path: `/session/${getFirstSession()}`, description: 'Main Experiment Session 1' },
+  { name: 'Post-Self Survey 1', path: '/survey/post-self-1', description: 'Self-Report Survey 1' },
+  { name: 'Post-Open Survey 1', path: '/survey/post-open-1', description: 'Open-Ended Survey 1' },
+  { name: 'Session Transition 2', path: '/session-transition-2', description: 'Second Main Experiment Preparation' },
+  { name: `🎯 Main Session 2 (${getSecondSession()})`, path: `/session/${getSecondSession()}`, description: 'Main Experiment Session 2' },
+  { name: 'Post-Self Survey 2', path: '/survey/post-self-2', description: 'Self-Report Survey 2' },
+  { name: 'Post-Open Survey 2', path: '/survey/post-open-2', description: 'Open-Ended Survey 2' },
+  { name: 'Completion', path: '/finish', description: 'Experiment Completion' },
 ];
 
 export function ProgressHeader({ 

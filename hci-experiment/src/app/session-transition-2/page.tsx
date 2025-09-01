@@ -49,7 +49,7 @@ export default function SessionTransition2Page() {
       <ProgressHeader
         currentStep="Session Transition"
         totalSteps={13}
-        currentStepIndex={8} // 첫 번째 본 실험과 두 번째 본 실험 사이
+        currentStepIndex={8} // Between first and second main experiment
       />
 
       <Card className="max-w-3xl mx-auto border-2 border-gray-200 bg-gray-50">
