@@ -153,6 +153,18 @@ export interface Event {
   created_at: string;
 }
 
+export interface ExperimentCondition {
+  id: number;
+  condition_type: 'majority' | 'minority' | 'minorityDiffusion';
+  task_order: 'informativeFirst' | 'normativeFirst';
+  informative_task_index: number;
+  normative_task_index: number;
+  is_assigned: boolean;
+  assigned_participant_id?: string;
+  assigned_at?: string;
+  created_at: string;
+}
+
 // Database Functions
 
 // 1. Participant Management
@@ -557,4 +569,111 @@ export async function getParticipantCompleteData(participantId: string) {
   };
 
   return completeData;
+}
+
+// 11. Experiment Condition Management
+export async function getNextAvailableCondition(): Promise<ExperimentCondition | null> {
+  const { data: condition, error } = await supabase
+    .from('experiment_conditions')
+    .select('*')
+    .eq('is_assigned', false)
+    .order('id', { ascending: true })
+    .limit(1)
+    .single();
+
+  if (error) {
+    console.error('Error fetching next available condition:', error);
+    return null;
+  }
+
+  return condition;
+}
+
+export async function assignConditionToParticipant(conditionId: number, participantId: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('experiment_conditions')
+    .update({
+      is_assigned: true,
+      assigned_participant_id: participantId,
+      assigned_at: new Date().toISOString()
+    })
+    .eq('id', conditionId)
+    .eq('is_assigned', false); // Ensure it's still unassigned
+
+  if (error) {
+    console.error('Error assigning condition to participant:', error);
+    return false;
+  }
+
+  return true;
+}
+
+export async function getParticipantCondition(participantId: string): Promise<ExperimentCondition | null> {
+  const { data: condition, error } = await supabase
+    .from('experiment_conditions')
+    .select('*')
+    .eq('assigned_participant_id', participantId)
+    .single();
+
+  if (error) {
+    console.error('Error fetching participant condition:', error);
+    return null;
+  }
+
+  return condition;
+}
+
+export async function getConditionStatistics(): Promise<{
+  total: number;
+  assigned: number;
+  unassigned: number;
+  byCondition: Record<string, number>;
+  byOrder: Record<string, number>;
+} | null> {
+  // Get total counts
+  const { count: total } = await supabase
+    .from('experiment_conditions')
+    .select('*', { count: 'exact', head: true });
+
+  const { count: assigned } = await supabase
+    .from('experiment_conditions')
+    .select('*', { count: 'exact', head: true })
+    .eq('is_assigned', true);
+
+  // Get counts by condition type
+  const { data: conditionCounts } = await supabase
+    .from('experiment_conditions')
+    .select('condition_type, is_assigned')
+    .eq('is_assigned', true);
+
+  // Get counts by task order
+  const { data: orderCounts } = await supabase
+    .from('experiment_conditions')
+    .select('task_order, is_assigned')
+    .eq('is_assigned', true);
+
+  if (total === null || assigned === null) {
+    return null;
+  }
+
+  const byCondition: Record<string, number> = {};
+  const byOrder: Record<string, number> = {};
+
+  // Process condition counts
+  conditionCounts?.forEach(row => {
+    byCondition[row.condition_type] = (byCondition[row.condition_type] || 0) + 1;
+  });
+
+  // Process order counts
+  orderCounts?.forEach(row => {
+    byOrder[row.task_order] = (byOrder[row.task_order] || 0) + 1;
+  });
+
+  return {
+    total,
+    assigned,
+    unassigned: total - assigned,
+    byCondition,
+    byOrder
+  };
 }

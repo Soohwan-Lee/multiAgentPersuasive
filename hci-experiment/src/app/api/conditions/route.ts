@@ -2,81 +2,37 @@
 // 현재는 주석 처리되어 있으며, Supabase 연동 시 활성화할 예정
 
 import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
-
-// 요청 스키마
-const conditionRequestSchema = z.object({
-  participantId: z.string().min(1),
-});
-
-// 응답 타입
-interface ConditionResponse {
-  participantId: string;
-  conditionType: 'majority' | 'minority' | 'minorityDiffusion';
-  sessionOrder: ['normative', 'informative'] | ['informative', 'normative'];
-  taskIndexNormative: number;
-  taskIndexInformative: number;
-}
+import { getConditionStatistics, getParticipantCondition } from '@/lib/supabase';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const participantId = searchParams.get('participantId');
+    const participant_id = searchParams.get('participant_id');
 
-    if (!participantId) {
-      return NextResponse.json(
-        { error: 'participantId is required' },
-        { status: 400 }
-      );
+    if (participant_id) {
+      // Get specific participant's condition
+      const condition = await getParticipantCondition(participant_id);
+      if (!condition) {
+        return NextResponse.json(
+          { error: 'Participant condition not found' },
+          { status: 404 }
+        );
+      }
+      return NextResponse.json(condition);
     }
 
-    // TODO: Supabase 연동 시 이 부분을 활성화
-    /*
-    const { data, error } = await supabase
-      .from('experiment_conditions')
-      .select('*')
-      .eq('participant_id', participantId)
-      .single();
-
-    if (error) {
-      console.error('Error fetching condition:', error);
+    // Get overall condition statistics
+    const stats = await getConditionStatistics();
+    if (!stats) {
       return NextResponse.json(
-        { error: 'Failed to fetch condition data' },
+        { error: 'Failed to fetch condition statistics' },
         { status: 500 }
       );
     }
 
-    if (!data) {
-      return NextResponse.json(
-        { error: 'Condition not found' },
-        { status: 404 }
-      );
-    }
-
-    const response: ConditionResponse = {
-      participantId: data.participant_id,
-      conditionType: data.condition_type,
-      sessionOrder: data.session_order,
-      taskIndexNormative: data.task_index_normative,
-      taskIndexInformative: data.task_index_informative,
-    };
-
-    return NextResponse.json(response);
-    */
-
-    // 현재는 기본값 반환 (Supabase 연동 전까지)
-    const defaultResponse: ConditionResponse = {
-      participantId,
-      conditionType: 'majority', // 기본값
-      sessionOrder: ['normative', 'informative'], // 환경 변수 기반
-      taskIndexNormative: 0,
-      taskIndexInformative: 0,
-    };
-
-    return NextResponse.json(defaultResponse);
-
+    return NextResponse.json(stats);
   } catch (error) {
-    console.error('Condition API error:', error);
+    console.error('Error fetching condition data:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
