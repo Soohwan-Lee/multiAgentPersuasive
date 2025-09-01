@@ -2,7 +2,13 @@
 // 현재는 주석 처리되어 있으며, Supabase 연동 시 활성화할 예정
 
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { getConditionStatistics, getParticipantCondition } from '@/lib/supabase';
+
+// Define local schema to fix missing reference during build
+const conditionRequestSchema = z.object({
+  participantId: z.string().uuid(),
+});
 
 export async function GET(request: NextRequest) {
   try {
