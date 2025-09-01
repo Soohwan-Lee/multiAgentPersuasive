@@ -1,140 +1,64 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
-import { z } from 'zod';
-import { runTurn } from '@/lib/orchestrator';
-
-// 간단한 인메모리 레이트 리미터 (프로덕션에서는 Redis 사용 권장)
-const rateLimitMap = new Map<string, number>();
-
-const turnRequestSchema = z.object({
-  participantId: z.string(),
-  sessionKey: z.enum(['test', 'normative', 'informative']), // main1, main2를 normative, informative로 변경
-  turnIndex: z.number().min(0).max(3),
-  userMessage: z.string().min(1),
-});
+import { saveTurnResponse } from '@/lib/supabase';
 
 export async function POST(request: NextRequest) {
   try {
-    // 환경 변수 체크
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    const { participant_id, session_id, cycle, response_index, opinion, confidence, response_time_ms } = await request.json();
+
+    if (!participant_id || !session_id || !cycle || !response_index || opinion === undefined || confidence === undefined || !response_time_ms) {
       return NextResponse.json(
-        { error: 'Supabase 설정이 완료되지 않았습니다.' },
+        { error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+
+    // Validate opinion range (-50 to 50)
+    if (opinion < -50 || opinion > 50) {
+      return NextResponse.json(
+        { error: 'Opinion must be between -50 and 50' },
+        { status: 400 }
+      );
+    }
+
+    // Validate confidence range (0 to 100)
+    if (confidence < 0 || confidence > 100) {
+      return NextResponse.json(
+        { error: 'Confidence must be between 0 and 100' },
+        { status: 400 }
+      );
+    }
+
+    // Validate response_index (1-4 for T1-T4)
+    if (response_index < 1 || response_index > 4) {
+      return NextResponse.json(
+        { error: 'Response index must be between 1 and 4' },
+        { status: 400 }
+      );
+    }
+
+    // Save turn response
+    const response = await saveTurnResponse({
+      participant_id,
+      session_id,
+      cycle,
+      response_index,
+      opinion,
+      confidence,
+      response_time_ms,
+    });
+
+    if (!response) {
+      return NextResponse.json(
+        { error: 'Failed to save turn response' },
         { status: 500 }
       );
     }
 
-    const body = await request.json();
-    const { participantId, sessionKey, turnIndex, userMessage } = turnRequestSchema.parse(body);
-
-    // 레이트 리미팅 체크 (3초당 1회)
-    const rateLimitKey = `${participantId}:${sessionKey}`;
-    const now = Date.now();
-    const lastRequest = rateLimitMap.get(rateLimitKey);
-    
-    if (lastRequest && now - lastRequest < 3000) {
-      return NextResponse.json(
-        { error: 'Too many requests. Please wait 3 seconds.' },
-        { status: 429 }
-      );
-    }
-    rateLimitMap.set(rateLimitKey, now);
-
-    // 멱등성 체크: 이미 존재하는 턴인지 확인
-    const { data: existingTurn } = await supabase
-      .from('turns')
-      .select('*')
-      .eq('participant_id', participantId)
-      .eq('session_key', sessionKey)
-      .eq('t_idx', turnIndex)
-      .single();
-
-    if (existingTurn) {
-      // 기존 턴의 메시지들 가져오기
-      const { data: messages } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('participant_id', participantId)
-        .eq('session_key', sessionKey)
-        .eq('t_idx', turnIndex)
-        .order('ts', { ascending: true });
-
-      return NextResponse.json({
-        agent1: messages?.find((m: any) => m.role === 'agent1'),
-        agent2: messages?.find((m: any) => m.role === 'agent2'),
-        agent3: messages?.find((m: any) => m.role === 'agent3'),
-        meta: {
-          turn_index: turnIndex,
-          session_key: sessionKey,
-          participant_id: participantId,
-        }
-      });
-    }
-
-    // 사용자 메시지 저장
-    const { error: userMsgError } = await supabase
-      .from('messages')
-      .insert({
-        id: crypto.randomUUID(),
-        participant_id: participantId,
-        session_key: sessionKey,
-        t_idx: turnIndex,
-        role: 'user',
-        content: userMessage,
-      });
-
-    if (userMsgError) {
-      console.error('User message save error:', userMsgError);
-    }
-
-    // 새로운 오케스트레이터로 에이전트 응답 생성
-    const result = await runTurn({
-      participantId,
-      sessionKey,
-      turnIndex,
-      userMessage,
-    });
-
-    // 세션의 현재 턴 업데이트
-    const { error: sessionError } = await supabase
-      .from('sessions')
-      .update({ current_turn: turnIndex + 1 })
-      .eq('participant_id', participantId)
-      .eq('key', sessionKey);
-
-    if (sessionError) {
-      console.error('Session update error:', sessionError);
-    }
-
-    // 4턴 완료 시 세션 완료 처리
-    if (turnIndex === 4) {
-      const { error: completeError } = await supabase
-        .from('sessions')
-        .update({ completed_at: new Date().toISOString() })
-        .eq('participant_id', participantId)
-        .eq('key', sessionKey);
-
-      if (completeError) {
-        console.error('Session completion error:', completeError);
-      }
-    }
-
-    return NextResponse.json({
-      agent1: result.agent1,
-      agent2: result.agent2,
-      agent3: result.agent3,
-      meta: {
-        turn_index: turnIndex,
-        session_key: sessionKey,
-        participant_id: participantId,
-        stances: result.meta.stances,
-        latencies: result.meta.latencies,
-      }
-    });
-
+    return NextResponse.json(response);
   } catch (error) {
-    console.error('Turn API error:', error);
+    console.error('Error saving turn response:', error);
     return NextResponse.json(
-      { error: 'Server error occurred.' },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }
