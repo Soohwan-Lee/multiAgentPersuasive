@@ -61,12 +61,12 @@ export function selectTaskForSession(sessionKey: "test" | "normative" | "informa
 // Task 정보를 포함한 응답 객체
 export interface TaskInfo {
   task: string;
-  taskType: "informative" | "normative";
+  taskType: "informative" | "normative" | "test";
   sessionKey: "test" | "normative" | "informative";
 }
 
 export function getTaskInfo(sessionKey: "test" | "normative" | "informative"): TaskInfo {
-  const task = selectTaskForSession(sessionKey);
+  const task = getCurrentSessionTask(sessionKey);
   const taskType = getTaskType(task);
   
   return {
