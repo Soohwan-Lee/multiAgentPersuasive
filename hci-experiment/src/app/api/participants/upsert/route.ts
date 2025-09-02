@@ -156,8 +156,8 @@ export async function POST(request: NextRequest) {
       informative_task_index: assignedCondition.informative_task_index,
       normative_task_index: assignedCondition.normative_task_index,
       browser_info: {
-        language: navigator?.language || 'unknown',
-        userAgent: navigator?.userAgent || 'unknown'
+        language: request.headers.get('accept-language') || 'unknown',
+        userAgent: request.headers.get('user-agent') || 'unknown'
       },
       device_info: {}
     };
