@@ -396,7 +396,7 @@ export default function SessionPage() {
         </div>
       </div>
 
-      {/* Experiment Progress Indicator (Debug Mode - Remove in production) */}
+      {/* Experiment Progress Indicator (Debug Mode) */}
       {process.env.NODE_ENV === 'development' && (
         <div className="mt-6 p-4 bg-gray-50 rounded-lg">
           <div className="text-center mb-4">
@@ -448,20 +448,23 @@ export default function SessionPage() {
               <span className="font-medium"> 응답 단계:</span> T{currentResponseIndex} | 
               <span className="font-medium"> 채팅 사이클:</span> {currentCycle}
             </div>
-            
-            <Button 
-              onClick={handleSkip}
-              variant="outline"
-              className="text-orange-600 border-orange-300 hover:bg-orange-50"
-            >
-              <SkipForward className="h-4 w-4 mr-2" />
-              Skip to Next Step (Test Mode) - {currentState === 't0' ? 'Complete T0' : 
-                currentState === 'chat' ? 'Skip Chat' : 
-                currentState === 'response' ? 'Complete Response' : 'Next'}
-            </Button>
           </div>
         </div>
       )}
+
+      {/* Skip Button - Always Visible */}
+      <div className="mt-6 text-center">
+        <Button 
+          onClick={handleSkip}
+          variant="outline"
+          className="text-orange-600 border-orange-300 hover:bg-orange-50"
+        >
+          <SkipForward className="h-4 w-4 mr-2" />
+          Skip to Next Step (Test Mode) - {currentState === 't0' ? 'Complete T0' : 
+            currentState === 'chat' ? 'Skip Chat' : 
+            currentState === 'response' ? 'Complete Response' : 'Next'}
+        </Button>
+      </div>
     </div>
   );
 }
