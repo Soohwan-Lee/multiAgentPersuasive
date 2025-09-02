@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createParticipant, getParticipant, assignNextConditionAtomic, cleanupAbandonedAssignments, supabase } from '@/lib/supabase';
+import { createParticipant, getParticipant, assignNextConditionAtomic, getNextAvailableCondition, assignConditionToParticipant, cleanupAbandonedAssignments, supabase } from '@/lib/supabase';
 
 export async function POST(request: NextRequest) {
   try {
@@ -52,24 +52,46 @@ export async function POST(request: NextRequest) {
           throw new Error('Failed to create participant');
         }
 
-        // 원자적 조건 배정
+        // 원자적 조건 배정 (디버깅 로그 추가)
+        console.log(`Attempting to assign condition for participant ${tempParticipant.id} (attempt ${attempt})`);
         condition = await assignNextConditionAtomic(tempParticipant.id);
         
         if (!condition) {
-          // 조건 배정 실패 시 참가자 삭제
-          await supabase.from('participants').delete().eq('id', tempParticipant.id);
+          console.log(`Atomic condition assignment failed, trying fallback method...`);
           
-          if (attempt === maxRetries) {
-            return NextResponse.json(
-              { error: 'No available conditions. Experiment is full.' },
-              { status: 503 }
-            );
+          // 백업 방법: 기존 방식 사용
+          const fallbackCondition = await getNextAvailableCondition();
+          if (fallbackCondition) {
+            console.log(`Fallback condition found: ${fallbackCondition.id}`);
+            const assignmentSuccess = await assignConditionToParticipant(fallbackCondition.id, tempParticipant.id);
+            if (assignmentSuccess) {
+              condition = fallbackCondition;
+              console.log(`Fallback condition assignment successful`);
+            } else {
+              console.log(`Fallback condition assignment failed`);
+            }
           }
           
-          // 잠시 대기 후 재시도
-          await new Promise(resolve => setTimeout(resolve, 100 * attempt));
-          continue;
+          if (!condition) {
+            console.log(`All condition assignment methods failed for participant ${tempParticipant.id}, attempt ${attempt}`);
+            // 조건 배정 실패 시 참가자 삭제
+            await supabase.from('participants').delete().eq('id', tempParticipant.id);
+            
+            if (attempt === maxRetries) {
+              console.log(`All attempts failed for participant ${tempParticipant.id}`);
+              return NextResponse.json(
+                { error: 'No available conditions. Experiment is full.' },
+                { status: 503 }
+              );
+            }
+            
+            // 잠시 대기 후 재시도
+            await new Promise(resolve => setTimeout(resolve, 100 * attempt));
+            continue;
+          }
         }
+        
+        console.log(`Successfully assigned condition ${condition.id} to participant ${tempParticipant.id}`);
 
         // 참가자 정보를 실제 조건으로 업데이트
         const { error: updateError } = await supabase
