@@ -217,10 +217,8 @@ export default function SessionPage() {
       
       setMessages(prev => [...prev, ...agentMessages]);
       
-      // 다음 응답으로 이동
-      const nextResponseIndex = currentResponseIndex + 1;
-      console.log(`Moving to response ${nextResponseIndex} after chat in cycle ${currentCycle}`);
-      setCurrentResponseIndex(nextResponseIndex);
+      // 채팅 완료 후 응답 단계로 이동 (응답 인덱스는 증가하지 않음)
+      console.log(`Chat in cycle ${currentCycle} completed, moving to response ${currentResponseIndex}`);
       setCurrentState('response');
       
     } catch (error) {
@@ -244,8 +242,10 @@ export default function SessionPage() {
     if (currentResponseIndex < 4) {
       // T0, T1, T2, T3 완료 후 다음 사이클로 이동
       const nextCycle = currentCycle + 1;
-      console.log(`Moving to next cycle: ${nextCycle}`);
+      const nextResponseIndex = currentResponseIndex + 1;
+      console.log(`Moving to next cycle: ${nextCycle} and response index: ${nextResponseIndex}`);
       setCurrentCycle(nextCycle);
+      setCurrentResponseIndex(nextResponseIndex);
       setCurrentState('chat');
     } else {
       // T4 완료 후 세션 완료
@@ -396,70 +396,72 @@ export default function SessionPage() {
         </div>
       </div>
 
-      {/* Experiment Progress Indicator */}
-      <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-        <div className="text-center mb-4">
-          <h3 className="text-lg font-semibold text-gray-700">실험 진행 상황</h3>
-          <p className="text-sm text-gray-600">현재 단계와 다음 단계를 확인하세요</p>
-        </div>
-        
-        <div className="grid grid-cols-5 gap-2 mb-4">
-          {['T0', 'Chat1', 'T1', 'Chat2', 'T2', 'Chat3', 'T3', 'Chat4', 'T4'].map((step, index) => {
-            let stepStatus = 'pending';
-            let stepLabel = step;
-            
-            if (step.startsWith('T')) {
-              const stepIndex = parseInt(step.substring(1));
-              if (currentResponseIndex > stepIndex) {
-                stepStatus = 'completed';
-              } else if (currentResponseIndex === stepIndex) {
-                stepStatus = 'current';
-              }
-            } else if (step.startsWith('Chat')) {
-              const chatNum = parseInt(step.substring(4));
-              if (currentCycle > chatNum) {
-                stepStatus = 'completed';
-              } else if (currentCycle === chatNum && currentState === 'chat') {
-                stepStatus = 'current';
-              }
-            }
-            
-            return (
-              <div
-                key={step}
-                className={`p-2 rounded text-xs font-medium text-center ${
-                  stepStatus === 'completed' 
-                    ? 'bg-green-100 text-green-800 border border-green-200' 
-                    : stepStatus === 'current'
-                    ? 'bg-blue-100 text-blue-800 border border-blue-200 ring-2 ring-blue-300'
-                    : 'bg-gray-100 text-gray-500 border border-gray-200'
-                }`}
-              >
-                {stepLabel}
-              </div>
-            );
-          })}
-        </div>
-        
-        <div className="text-center">
-          <div className="text-sm text-gray-600 mb-2">
-            <span className="font-medium">현재 상태:</span> {currentState} | 
-            <span className="font-medium"> 응답 단계:</span> T{currentResponseIndex} | 
-            <span className="font-medium"> 채팅 사이클:</span> {currentCycle}
+      {/* Experiment Progress Indicator (Debug Mode - Remove in production) */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+          <div className="text-center mb-4">
+            <h3 className="text-lg font-semibold text-gray-700">실험 진행 상황 (디버그 모드)</h3>
+            <p className="text-sm text-gray-600">현재 단계와 다음 단계를 확인하세요</p>
           </div>
           
-          <Button 
-            onClick={handleSkip}
-            variant="outline"
-            className="text-orange-600 border-orange-300 hover:bg-orange-50"
-          >
-            <SkipForward className="h-4 w-4 mr-2" />
-            Skip to Next Step (Test Mode) - {currentState === 't0' ? 'Complete T0' : 
-              currentState === 'chat' ? 'Skip Chat' : 
-              currentState === 'response' ? 'Complete Response' : 'Next'}
-          </Button>
+          <div className="grid grid-cols-5 gap-2 mb-4">
+            {['T0', 'Chat1', 'T1', 'Chat2', 'T2', 'Chat3', 'T3', 'Chat4', 'T4'].map((step, index) => {
+              let stepStatus = 'pending';
+              let stepLabel = step;
+              
+              if (step.startsWith('T')) {
+                const stepIndex = parseInt(step.substring(1));
+                if (currentResponseIndex > stepIndex) {
+                  stepStatus = 'completed';
+                } else if (currentResponseIndex === stepIndex && currentState === 'response') {
+                  stepStatus = 'current';
+                }
+              } else if (step.startsWith('Chat')) {
+                const chatNum = parseInt(step.substring(4));
+                if (currentCycle > chatNum) {
+                  stepStatus = 'completed';
+                } else if (currentCycle === chatNum && currentState === 'chat') {
+                  stepStatus = 'current';
+                }
+              }
+              
+              return (
+                <div
+                  key={step}
+                  className={`p-2 rounded text-xs font-medium text-center ${
+                    stepStatus === 'completed' 
+                      ? 'bg-green-100 text-green-800 border border-green-200' 
+                      : stepStatus === 'current'
+                      ? 'bg-blue-100 text-blue-800 border border-blue-200 ring-2 ring-blue-300'
+                      : 'bg-gray-100 text-gray-500 border border-gray-200'
+                  }`}
+                >
+                  {stepLabel}
+                </div>
+              );
+            })}
+          </div>
+          
+          <div className="text-center">
+            <div className="text-sm text-gray-600 mb-2">
+              <span className="font-medium">현재 상태:</span> {currentState} | 
+              <span className="font-medium"> 응답 단계:</span> T{currentResponseIndex} | 
+              <span className="font-medium"> 채팅 사이클:</span> {currentCycle}
+            </div>
+            
+            <Button 
+              onClick={handleSkip}
+              variant="outline"
+              className="text-orange-600 border-orange-300 hover:bg-orange-50"
+            >
+              <SkipForward className="h-4 w-4 mr-2" />
+              Skip to Next Step (Test Mode) - {currentState === 't0' ? 'Complete T0' : 
+                currentState === 'chat' ? 'Skip Chat' : 
+                currentState === 'response' ? 'Complete Response' : 'Next'}
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
