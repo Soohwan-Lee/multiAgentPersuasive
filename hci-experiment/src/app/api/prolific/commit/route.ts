@@ -21,6 +21,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log('Marking participant as finished:', participantId);
+
     // 참가자의 finished_at 업데이트
     const { error: updateError } = await supabase
       .from('participants')
@@ -35,23 +37,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log('Successfully updated participant finished_at');
+
     // 완료 이벤트 기록
     const { error: eventError } = await supabase
       .from('events')
       .insert({
-        id: crypto.randomUUID(),
         participant_id: participantId,
-        type: 'experiment_completed',
-        payload: { completed_at: new Date().toISOString() },
+        event_type: 'experiment_completed',
+        payload: { 
+          completed_at: new Date().toISOString(),
+          participant_id: participantId
+        },
       });
 
     if (eventError) {
       console.error('Event logging error:', eventError);
+    } else {
+      console.log('Successfully logged completion event');
+    }
+
+    // 참가자 완료 통계 업데이트
+    try {
+      const { data: stats } = await supabase.rpc('get_condition_stats');
+      if (stats && stats.length > 0) {
+        console.log('Current experiment stats:', stats[0]);
+      }
+    } catch (statsError) {
+      console.warn('Could not fetch experiment stats:', statsError);
     }
 
     return NextResponse.json({ 
       success: true,
-      completionCode: process.env.PROLIFIC_COMPLETION_CODE 
+      completionCode: process.env.NEXT_PUBLIC_PROLIFIC_COMPLETION_CODE || 'COMPLETION_CODE'
     });
 
   } catch (error) {
