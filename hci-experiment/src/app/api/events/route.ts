@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
         participant_id: participantId,
         event_type: type, // Use event_type instead of type
         payload: payload || {},
-        ts: new Date().toISOString(),
+        // ts 컬럼 제거 - events 테이블에 존재하지 않음
       })
       .select()
       .single();

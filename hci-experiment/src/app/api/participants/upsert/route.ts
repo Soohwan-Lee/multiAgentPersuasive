@@ -102,47 +102,88 @@ export async function POST(request: NextRequest) {
     let assignedCondition = null;
     
     if (isTestMode) {
-      // 테스트 모드에서는 첫 번째 사용 가능한 조건을 강제로 찾기
-      console.log('Test mode: Searching for any available condition...');
-      try {
-        const { data: testCondition, error: testError } = await supabase
-          .from('experiment_conditions')
-          .select('*')
-          .eq('is_assigned', false)
-          .order('id')
-          .limit(1)
-          .single();
-        
-        if (testError) {
-          console.error('Test mode condition fetch error:', testError);
-          // 테스트 모드에서는 기본값 사용
-          assignedCondition = {
-            condition_type: 'majority',
-            task_order: 'normative_first',
-            informative_task_index: 1,
-            normative_task_index: 0
-          };
-          console.log('Using fallback test condition:', assignedCondition);
-        } else if (testCondition) {
-          console.log('Found test condition:', testCondition);
-          assignedCondition = testCondition;
-        } else {
-          console.log('No test condition found, using fallback');
-          assignedCondition = {
-            condition_type: 'majority',
-            task_order: 'normative_first',
-            informative_task_index: 1,
-            normative_task_index: 0
-          };
+      // 테스트 모드에서도 실제 Supabase 조건 사용 (Prolific 배포와 동일하게)
+      console.log('Test mode: Using real Supabase conditions (same as production)...');
+      let retryCount = 0;
+      const maxRetries = 3;
+
+      while (retryCount < maxRetries && !assignedCondition) {
+        try {
+          console.log(`Test mode attempt ${retryCount + 1} to assign condition...`);
+          
+          const { data: condition, error: assignError } = await supabase
+            .from('experiment_conditions')
+            .select('*')
+            .eq('is_assigned', false)
+            .order('id')
+            .limit(1)
+            .single();
+
+          if (assignError) {
+            console.error('Test mode error fetching available condition:', assignError);
+            throw assignError;
+          }
+
+          if (!condition) {
+            console.error('Test mode: No available conditions found');
+            return NextResponse.json(
+              { error: 'No available experiment conditions for test mode' },
+              { status: 500 }
+            );
+          }
+
+          console.log('Test mode found available condition:', condition);
+
+          // 원자적 업데이트로 조건 할당
+          const { data: updatedCondition, error: updateError } = await supabase
+            .from('experiment_conditions')
+            .update({
+              is_assigned: true,
+              assigned_participant_id: prolific_pid,
+              assigned_at: new Date().toISOString()
+            })
+            .eq('id', condition.id)
+            .eq('is_assigned', false) // 동시 할당 방지
+            .select()
+            .single();
+
+          if (updateError) {
+            console.error('Test mode error updating condition:', updateError);
+            throw updateError;
+          }
+
+          if (!updatedCondition) {
+            console.log('Test mode: Condition was already assigned by another process, retrying...');
+            retryCount++;
+            continue;
+          }
+
+          assignedCondition = updatedCondition;
+          console.log('Test mode successfully assigned condition:', assignedCondition);
+
+        } catch (error) {
+          console.error(`Test mode attempt ${retryCount + 1} failed:`, error);
+          retryCount++;
+          
+          if (retryCount >= maxRetries) {
+            console.error('Test mode max retries reached, giving up');
+            return NextResponse.json(
+              { error: 'Failed to assign experiment condition in test mode after multiple attempts' },
+              { status: 500 }
+            );
+          }
+          
+          // 잠시 대기 후 재시도
+          await new Promise(resolve => setTimeout(resolve, 100 * retryCount));
         }
-      } catch (error) {
-        console.error('Test mode condition assignment error:', error);
-        assignedCondition = {
-          condition_type: 'majority',
-          task_order: 'normative_first',
-          informative_task_index: 1,
-          normative_task_index: 0
-        };
+      }
+      
+      if (!assignedCondition) {
+        console.error('Test mode: Failed to assign condition after all retries');
+        return NextResponse.json(
+          { error: 'Failed to assign experiment condition in test mode' },
+          { status: 500 }
+        );
       }
     } else {
       // 프로덕션 모드에서만 실제 조건 할당
