@@ -3,9 +3,13 @@ import { createParticipant, getParticipant, assignNextConditionAtomic, getNextAv
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('Participant upsert API called');
+    
     const { prolific_pid, study_id, session_id } = await request.json();
+    console.log('Request data:', { prolific_pid, study_id, session_id });
 
     if (!prolific_pid || !study_id || !session_id) {
+      console.error('Missing required fields:', { prolific_pid, study_id, session_id });
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -13,13 +17,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if participant already exists
+    console.log('Checking if participant already exists...');
     const existingParticipant = await getParticipant(prolific_pid);
     if (existingParticipant) {
+      console.log('Existing participant found:', existingParticipant.id);
       return NextResponse.json({ participant: existingParticipant });
     }
 
+    console.log('No existing participant found, creating new one...');
+
     // 중도 이탈자 정리 (새로운 참가자 등록 전에 실행)
     try {
+      console.log('Cleaning up abandoned assignments...');
       await cleanupAbandonedAssignments();
     } catch (cleanupError) {
       console.warn('Cleanup failed, continuing with assignment:', cleanupError);
@@ -32,6 +41,8 @@ export async function POST(request: NextRequest) {
     
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
+        console.log(`Attempt ${attempt}: Creating participant...`);
+        
         // 임시 참가자 생성 (조건 없이)
         const tempParticipant = await createParticipant({
           prolific_pid,
@@ -49,8 +60,11 @@ export async function POST(request: NextRequest) {
         });
 
         if (!tempParticipant) {
+          console.error('Failed to create participant');
           throw new Error('Failed to create participant');
         }
+
+        console.log('Temporary participant created:', tempParticipant.id);
 
         // 원자적 조건 배정 (디버깅 로그 추가)
         console.log(`Attempting to assign condition for participant ${tempParticipant.id} (attempt ${attempt})`);
@@ -94,6 +108,7 @@ export async function POST(request: NextRequest) {
         console.log(`Successfully assigned condition ${condition.id} to participant ${tempParticipant.id}`);
 
         // 참가자 정보를 실제 조건으로 업데이트
+        console.log('Updating participant with actual condition...');
         const { error: updateError } = await supabase
           .from('participants')
           .update({
@@ -136,6 +151,7 @@ export async function POST(request: NextRequest) {
           normative_task_index: condition.normative_task_index,
         };
         
+        console.log('Participant creation and condition assignment completed successfully');
         break; // 성공시 루프 종료
 
       } catch (attemptError) {
@@ -154,12 +170,14 @@ export async function POST(request: NextRequest) {
     }
 
     if (!participant) {
+      console.error('Failed to create participant after all attempts');
       return NextResponse.json(
         { error: 'Failed to create participant' },
         { status: 500 }
       );
     }
 
+    console.log('Returning successful participant data:', participant.id);
     return NextResponse.json({ participant });
 
   } catch (error) {
