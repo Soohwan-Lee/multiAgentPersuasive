@@ -33,73 +33,58 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { participantId, sessionKey, responseIndex, opinion, confidence, rtMs } = responseRequestSchema.parse(body);
 
+    console.log('Response API called:', { participantId, sessionKey, responseIndex, opinion, confidence, rtMs });
+
     // Check if this is test mode by looking at the participant data
     let isTestMode = false;
     
     try {
       const { data: participant } = await supabase
         .from('participants')
-        .select('prolific_pid')
+        .select('prolific_pid, study_id')
         .eq('id', participantId)
         .single();
       
-      isTestMode = participant?.prolific_pid === 'TEST_PID';
+      // Test mode detection: check if prolific_pid starts with 'test' or study_id is 'test'
+      isTestMode = participant?.prolific_pid?.startsWith('test') || 
+                   participant?.study_id === 'test' ||
+                   participant?.prolific_pid === 'TEST_PID';
+      
+      console.log('Participant found:', participant, 'isTestMode:', isTestMode);
     } catch (error) {
+      console.error('Error checking participant:', error);
       // If participant not found, assume test mode
       isTestMode = true;
     }
 
-    if (isTestMode) {
-      // For test mode, just return success without saving to database
-      console.log('Test mode response:', { participantId, sessionKey, responseIndex, opinion, confidence, rtMs });
-      
-      return NextResponse.json({
-        success: true,
-        response: {
-          id: `test-${Date.now()}`,
-          participant_id: participantId,
-          session_key: sessionKey,
-          response_index: responseIndex,
-          opinion: opinion,
-          confidence: confidence,
-          rt_ms: rtMs,
-          created_at: new Date().toISOString(),
-        }
-      });
-    }
-
-    // Check environment variables for production mode
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    // For both test and production modes, save to database
+    // This ensures test data is also properly stored for verification
+    
+    // Check if response already exists (idempotency)
+    const sessionId = await getSessionId(participantId, sessionKey);
+    if (!sessionId) {
+      console.error('Session not found for:', { participantId, sessionKey });
       return NextResponse.json(
-        { error: 'Supabase configuration is incomplete.' },
-        { status: 500 }
+        { error: 'Session not found.' },
+        { status: 404 }
       );
     }
 
-    // Check if response already exists (idempotency)
     const { data: existingResponse } = await supabase
       .from('turn_responses')
       .select('*')
       .eq('participant_id', participantId)
-      .eq('session_id', (await getSessionId(participantId, sessionKey)))
+      .eq('session_id', sessionId)
       .eq('response_index', responseIndex)
       .single();
 
     if (existingResponse) {
+      console.log('Response already exists:', existingResponse);
       return NextResponse.json({
         success: true,
         message: 'Response already exists',
         response: existingResponse
       });
-    }
-
-    // Get session ID for the session key
-    const sessionId = await getSessionId(participantId, sessionKey);
-    if (!sessionId) {
-      return NextResponse.json(
-        { error: 'Session not found.' },
-        { status: 404 }
-      );
     }
 
     // Create new response
@@ -127,6 +112,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log('Response saved successfully:', newResponse);
+
     // Update session current_response
     const { error: sessionError } = await supabase
       .from('sessions')
@@ -148,7 +135,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      response: newResponse
+      response: newResponse,
+      message: isTestMode ? 'Test response saved successfully' : 'Response saved successfully'
     });
 
   } catch (error) {

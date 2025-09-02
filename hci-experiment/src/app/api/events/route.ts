@@ -13,42 +13,35 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { participantId, type, payload } = eventRequestSchema.parse(body);
 
+    console.log('Events API called:', { participantId, type, payload });
+
     // Check if this is test mode by looking at the participant data
     let isTestMode = false;
     
     try {
       const { data: participant } = await supabase
         .from('participants')
-        .select('prolific_pid')
+        .select('prolific_pid, study_id')
         .eq('id', participantId)
         .single();
       
-      isTestMode = participant?.prolific_pid === 'TEST_PID';
+      // Test mode detection: check if prolific_pid starts with 'test' or study_id is 'test'
+      isTestMode = participant?.prolific_pid?.startsWith('test') || 
+                   participant?.study_id === 'test' ||
+                   participant?.prolific_pid === 'TEST_PID';
+      
+      console.log('Participant found:', participant, 'isTestMode:', isTestMode);
     } catch (error) {
+      console.error('Error checking participant:', error);
       // If participant not found, assume test mode
       isTestMode = true;
     }
 
-    if (isTestMode) {
-      // For test mode, just log the event
-      console.log('Test mode event:', { participantId, type, payload });
-      
-      return NextResponse.json({
-        success: true,
-        message: 'Event logged (test mode)'
-      });
-    }
-
-    // Check environment variables for production mode
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      return NextResponse.json(
-        { error: 'Supabase configuration is incomplete.' },
-        { status: 500 }
-      );
-    }
-
+    // For both test and production modes, save to database
+    // This ensures test data is also properly stored for verification
+    
     // Save event to database
-    const { error: eventError } = await supabase
+    const { data: newEvent, error: eventError } = await supabase
       .from('events')
       .insert({
         id: crypto.randomUUID(),
@@ -56,7 +49,9 @@ export async function POST(request: NextRequest) {
         event_type: type, // Use event_type instead of type
         payload: payload || {},
         ts: new Date().toISOString(),
-      });
+      })
+      .select()
+      .single();
 
     if (eventError) {
       console.error('Event save error:', eventError);
@@ -66,9 +61,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log('Event saved successfully:', newEvent);
+
     return NextResponse.json({
       success: true,
-      message: 'Event saved successfully'
+      message: isTestMode ? 'Test event saved successfully' : 'Event saved successfully',
+      event: newEvent
     });
 
   } catch (error) {
