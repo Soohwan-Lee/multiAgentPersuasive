@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     console.log('Request body:', JSON.stringify(body, null, 2));
     
-    const { prolific_pid, study_id, session_id } = body;
+    const { prolific_pid, study_id, session_id, testMode, testParticipantId } = body;
     
     if (!prolific_pid || !study_id || !session_id) {
       console.error('Missing required fields:', { prolific_pid, study_id, session_id });
@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('Processing participant:', { prolific_pid, study_id, session_id });
+    console.log('Processing participant:', { prolific_pid, study_id, session_id, testMode, testParticipantId });
 
     // 1. 기존 참가자 확인
     const { data: existingParticipant, error: fetchError } = await supabase
@@ -147,6 +147,7 @@ export async function POST(request: NextRequest) {
     // 4. 새 참가자 생성
     console.log('Creating new participant...');
     const newParticipant = {
+      ...(testMode && testParticipantId && { id: testParticipantId }), // Use provided ID for test mode
       prolific_pid,
       study_id,
       session_id,

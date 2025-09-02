@@ -13,6 +13,36 @@ function EntryPageContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const createTestParticipantInSupabase = async (testParticipantId: string) => {
+    try {
+      console.log('Creating test participant in Supabase:', testParticipantId);
+      
+      const response = await fetch('/api/participants/upsert', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prolific_pid: 'TEST_PID',
+          study_id: 'TEST_STUDY',
+          session_id: 'TEST_SESSION',
+          testMode: true,
+          testParticipantId: testParticipantId
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Failed to create test participant:', errorData);
+      } else {
+        const result = await response.json();
+        console.log('Test participant created successfully:', result);
+      }
+    } catch (error) {
+      console.error('Error creating test participant:', error);
+    }
+  };
+
   useEffect(() => {
     const initializeParticipant = async () => {
       const prolificPid = searchParams.get('PROLIFIC_PID');
@@ -22,19 +52,24 @@ function EntryPageContent() {
       // Check if we're in test mode (no Prolific parameters)
       const isTestMode = !prolificPid || !studyId || !sessionId;
 
-      if (isTestMode) {
-        // For testing, create a dummy participant
-        const testParticipantId = 'test-' + Date.now();
-        sessionStorage.setItem('participantId', testParticipantId);
-        sessionStorage.setItem('prolificPid', 'TEST_PID');
-        sessionStorage.setItem('studyId', 'TEST_STUDY');
-        sessionStorage.setItem('sessionId', 'TEST_SESSION');
-        sessionStorage.setItem('isTestMode', 'true');
-        
-        // Go directly to introduction
-        router.push('/introduction');
-        return;
-      }
+              if (isTestMode) {
+          // For testing, create a dummy participant with proper UUID
+          const testParticipantId = crypto.randomUUID(); // Generate proper UUID
+          
+          // Create test participant in Supabase
+          createTestParticipantInSupabase(testParticipantId);
+          
+          // Store in session storage
+          sessionStorage.setItem('participantId', testParticipantId);
+          sessionStorage.setItem('prolificPid', 'TEST_PID');
+          sessionStorage.setItem('studyId', 'TEST_STUDY');
+          sessionStorage.setItem('sessionId', 'TEST_SESSION');
+          sessionStorage.setItem('isTestMode', 'true');
+          
+          // Go directly to introduction
+          router.push('/introduction');
+          return;
+        }
 
       setIsLoading(true);
       setError(null);
@@ -101,7 +136,12 @@ function EntryPageContent() {
 
   const handleSkip = () => {
     // Create test participant and skip to introduction
-    const testParticipantId = 'test-' + Date.now();
+    const testParticipantId = crypto.randomUUID(); // Generate proper UUID
+    
+    // Create test participant in Supabase
+    createTestParticipantInSupabase(testParticipantId);
+    
+    // Store in session storage
     sessionStorage.setItem('participantId', testParticipantId);
     sessionStorage.setItem('prolificPid', 'TEST_PID');
     sessionStorage.setItem('studyId', 'TEST_STUDY');
