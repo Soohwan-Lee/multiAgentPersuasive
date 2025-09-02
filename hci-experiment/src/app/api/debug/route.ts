@@ -98,32 +98,64 @@ export async function GET(request: NextRequest) {
             .limit(1);
 
           // 3. RLS 정책 확인 (간접적으로)
-          // 실제 존재하는 participant_id를 사용하여 테스트
+          // events 테이블 테스트를 위해 임시 테스트 참가자 생성
           let eventsInsertable = false;
           let eventsError = null;
+          let tempParticipantId = null;
           
-          if (participants && participants.length > 0) {
-            // 실제 참가자가 있으면 해당 ID로 테스트
-            const { data: testInsert, error: insertError } = await supabase
-              .from('events')
-              .insert({
-                participant_id: participants[0].id,
-                event_type: 'test',
-                payload: { test: true }
-              })
-              .select();
+          try {
+            // 임시 테스트 참가자 생성
+            const tempParticipant = {
+              prolific_pid: 'temp-test-' + Date.now(),
+              study_id: 'temp-test',
+              session_id: 'temp-session-' + Date.now(),
+              condition_type: 'majority',
+              task_order: 'informativeFirst',
+              informative_task_index: 0,
+              normative_task_index: 0,
+              browser_info: { test: true },
+              device_info: { test: true }
+            };
 
-            // 테스트 데이터 삭제
-            if (testInsert && testInsert.length > 0) {
-              await supabase.from('events').delete().eq('id', testInsert[0].id);
+            const { data: tempParticipantData, error: tempInsertError } = await supabase
+              .from('participants')
+              .insert([tempParticipant])
+              .select()
+              .single();
+
+            if (tempInsertError) {
+              eventsInsertable = false;
+              eventsError = `Failed to create temp participant: ${tempInsertError.message}`;
+            } else {
+              tempParticipantId = tempParticipantData.id;
+              
+              // events 테이블에 테스트 데이터 삽입
+              const { data: testInsert, error: insertError } = await supabase
+                .from('events')
+                .insert({
+                  participant_id: tempParticipantId,
+                  event_type: 'test',
+                  payload: { test: true }
+                })
+                .select();
+
+              // 테스트 데이터 삭제
+              if (testInsert && testInsert.length > 0) {
+                await supabase.from('events').delete().eq('id', testInsert[0].id);
+              }
+              
+              eventsInsertable = !insertError;
+              eventsError = insertError?.message || null;
             }
-            
-            eventsInsertable = !insertError;
-            eventsError = insertError?.message || null;
-          } else {
-            // 참가자가 없으면 테스트 불가
+
+            // 임시 참가자 정리
+            if (tempParticipantId) {
+              await supabase.from('participants').delete().eq('id', tempParticipantId);
+            }
+
+          } catch (testError) {
             eventsInsertable = false;
-            eventsError = 'No participants available for testing';
+            eventsError = `Events test failed: ${testError instanceof Error ? testError.message : 'Unknown error'}`;
           }
 
           return NextResponse.json({

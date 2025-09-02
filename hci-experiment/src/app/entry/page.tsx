@@ -54,10 +54,26 @@ function EntryPageContent() {
         });
 
         if (!response.ok) {
-          throw new Error('Failed to initialize participant.');
+          const errorData = await response.json();
+          console.error('Participant upsert failed:', errorData);
+          throw new Error(`Failed to initialize participant: ${errorData.error || 'Unknown error'}`);
         }
 
-        const { participant } = await response.json();
+        const result = await response.json();
+        console.log('Participant upsert response:', result);
+
+        if (!result.participant || !result.participant.id) {
+          console.error('Invalid participant data received:', result);
+          throw new Error('Invalid participant data received from server');
+        }
+
+        const { participant } = result;
+        console.log('Participant created/retrieved:', {
+          id: participant.id,
+          prolific_pid: participant.prolific_pid,
+          condition_type: participant.condition_type,
+          task_order: participant.task_order
+        });
 
         // Store participant info in session storage
         sessionStorage.setItem('participantId', participant.id);
@@ -65,6 +81,9 @@ function EntryPageContent() {
         sessionStorage.setItem('studyId', studyId);
         sessionStorage.setItem('sessionId', sessionId);
         sessionStorage.setItem('isTestMode', 'false');
+        sessionStorage.setItem('participantData', JSON.stringify(participant));
+
+        console.log('Session storage updated with participant ID:', participant.id);
 
         // Go to introduction page
         router.push('/introduction');

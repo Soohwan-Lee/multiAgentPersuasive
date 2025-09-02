@@ -16,10 +16,28 @@ export default function FinishPage() {
 
   useEffect(() => {
     const id = sessionStorage.getItem('participantId');
+    const participantData = sessionStorage.getItem('participantData');
+    
+    console.log('Finish page - sessionStorage data:', {
+      participantId: id,
+      participantData: participantData ? JSON.parse(participantData) : null,
+      allKeys: Object.keys(sessionStorage)
+    });
+
     if (!id) {
-      router.push('/entry');
+      console.error('No participant ID found in sessionStorage');
+      setErrorMessage('Participant ID not found. Please return to the entry page.');
       return;
     }
+
+    // UUID 형식 검증
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(id)) {
+      console.error('Invalid participant ID format:', id);
+      setErrorMessage(`Invalid participant ID format: ${id}. Please return to the entry page.`);
+      return;
+    }
+
     setParticipantId(id);
 
     // Mark participant as finished
