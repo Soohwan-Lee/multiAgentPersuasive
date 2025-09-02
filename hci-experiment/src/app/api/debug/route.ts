@@ -101,7 +101,7 @@ export async function GET(request: NextRequest) {
           const { data: testInsert, error: insertError } = await supabase
             .from('events')
             .insert({
-              participant_id: 'test-' + Date.now(),
+              participant_id: '00000000-0000-0000-0000-000000000000', // Valid UUID format
               event_type: 'test',
               payload: { test: true }
             })
@@ -181,6 +181,108 @@ export async function GET(request: NextRequest) {
           }, { status: 500 });
         }
 
+      case 'test-data-insertion':
+        // 실제 데이터 삽입 테스트
+        try {
+          // 1. 테스트 참가자 생성
+          const testParticipant = {
+            prolific_pid: 'test-insert-' + Date.now(),
+            study_id: 'test-study',
+            session_id: 'test-session-' + Date.now(),
+            condition_type: 'majority',
+            task_order: 'informativeFirst',
+            informative_task_index: 0,
+            normative_task_index: 0,
+            browser_info: { test: true },
+            device_info: { test: true }
+          };
+
+          const { data: participant, error: participantError } = await supabase
+            .from('participants')
+            .insert([testParticipant])
+            .select()
+            .single();
+
+          if (participantError) {
+            return NextResponse.json({ 
+              error: 'Failed to create test participant',
+              details: participantError
+            }, { status: 500 });
+          }
+
+          // 2. 테스트 세션 생성
+          const testSession = {
+            participant_id: participant.id,
+            session_key: 'test',
+            session_order: 1,
+            task_content: 'Test task',
+            task_type: 'test',
+            task_index: 0
+          };
+
+          const { data: session, error: sessionError } = await supabase
+            .from('sessions')
+            .insert([testSession])
+            .select()
+            .single();
+
+          if (sessionError) {
+            // 세션 생성 실패 시 참가자도 삭제
+            await supabase.from('participants').delete().eq('id', participant.id);
+            return NextResponse.json({ 
+              error: 'Failed to create test session',
+              details: sessionError
+            }, { status: 500 });
+          }
+
+          // 3. 테스트 응답 생성
+          const testResponse = {
+            participant_id: participant.id,
+            session_id: session.id,
+            cycle: null,
+            response_index: 0,
+            opinion: 0,
+            confidence: 50,
+            response_time_ms: 1000
+          };
+
+          const { data: response, error: responseError } = await supabase
+            .from('turn_responses')
+            .insert([testResponse])
+            .select()
+            .single();
+
+          if (responseError) {
+            // 응답 생성 실패 시 세션과 참가자도 삭제
+            await supabase.from('sessions').delete().eq('id', session.id);
+            await supabase.from('participants').delete().eq('id', participant.id);
+            return NextResponse.json({ 
+              error: 'Failed to create test response',
+              details: responseError
+            }, { status: 500 });
+          }
+
+          // 4. 테스트 데이터 정리
+          await supabase.from('turn_responses').delete().eq('id', response.id);
+          await supabase.from('sessions').delete().eq('id', session.id);
+          await supabase.from('participants').delete().eq('id', participant.id);
+
+          return NextResponse.json({ 
+            message: 'All data insertion tests passed',
+            testResults: {
+              participant: participant.id,
+              session: session.id,
+              response: response.id
+            }
+          });
+
+        } catch (error) {
+          return NextResponse.json({ 
+            error: 'Data insertion test failed',
+            details: error instanceof Error ? error.message : 'Unknown error'
+          }, { status: 500 });
+        }
+
       default:
         return NextResponse.json({ 
           message: 'Debug API available',
@@ -190,7 +292,8 @@ export async function GET(request: NextRequest) {
             'stats', 
             'test-assignment',
             'database-status',
-            'test-participant-creation'
+            'test-participant-creation',
+            'test-data-insertion'
           ],
           timestamp: new Date().toISOString()
         });
