@@ -71,17 +71,9 @@ export async function POST(request: NextRequest) {
 
     console.log('Successfully updated participant finished_at');
 
-    // 3. 완료 이벤트 기록 (UUID 형식 오류 수정)
+    // 3. 완료 이벤트 기록 (에러가 발생해도 계속 진행)
     try {
       console.log('Logging completion event...');
-      
-      // UUID 형식 검증
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-      if (!uuidRegex.test(participantId)) {
-        console.error('Invalid UUID format for participantId:', participantId);
-        throw new Error('Invalid participant ID format');
-      }
-
       const { error: eventError } = await supabase
         .from('events')
         .insert({
