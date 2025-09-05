@@ -3,17 +3,19 @@ import { createParticipant, getParticipant, assignNextConditionAtomic, getNextAv
 
 export async function POST(request: NextRequest) {
   try {
-    const { prolific_pid, study_id, session_id } = await request.json();
+    const body = await request.json();
+    let { prolific_pid, study_id, session_id } = body as { prolific_pid?: string; study_id?: string; session_id?: string };
 
-    if (!prolific_pid || !study_id || !session_id) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      );
+    // Allow missing Prolific params by generating test-friendly values
+    const isTestMode = !prolific_pid || !study_id || !session_id;
+    if (isTestMode) {
+      prolific_pid = prolific_pid ?? `test-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      study_id = study_id ?? 'TEST_STUDY';
+      session_id = session_id ?? 'TEST_SESSION';
     }
 
     // Check if participant already exists
-    const existingParticipant = await getParticipant(prolific_pid);
+    const existingParticipant = await getParticipant(prolific_pid!);
     if (existingParticipant) {
       return NextResponse.json({ participant: existingParticipant });
     }
@@ -34,9 +36,9 @@ export async function POST(request: NextRequest) {
       try {
         // 임시 참가자 생성 (조건 없이)
         const tempParticipant = await createParticipant({
-          prolific_pid,
-          study_id,
-          session_id,
+          prolific_pid: prolific_pid!,
+          study_id: study_id!,
+          session_id: session_id!,
           condition_type: 'majority', // 임시값
           task_order: 'informativeFirst', // 임시값
           informative_task_index: 0, // 임시값

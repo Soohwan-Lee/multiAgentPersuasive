@@ -254,9 +254,23 @@ export async function saveBackgroundSurvey(data: {
   political_views?: string;
   social_media_usage?: string;
 }): Promise<BackgroundSurvey | null> {
+  const payload = {
+    participant_id: data.participant_id,
+    session_key: null,
+    survey_type: 'background',
+    payload: {
+      age: data.age,
+      gender: data.gender,
+      education: data.education,
+      occupation: data.occupation ?? null,
+      political_views: data.political_views ?? null,
+      social_media_usage: data.social_media_usage ?? null,
+    }
+  };
+
   const { data: survey, error } = await supabase
-    .from('background_surveys')
-    .insert([data])
+    .from('surveys')
+    .insert([payload])
     .select()
     .single();
 
@@ -265,7 +279,7 @@ export async function saveBackgroundSurvey(data: {
     return null;
   }
 
-  return survey;
+  return survey as unknown as BackgroundSurvey;
 }
 
 // 3. Session Management
@@ -505,9 +519,49 @@ export async function savePostSelfSurvey(data: {
   agent3_affect?: number;
   agent3_trust?: number;
 }): Promise<PostSelfSurvey | null> {
+  const payload = {
+    participant_id: data.participant_id,
+    session_key: null,
+    survey_type: 'post_self',
+    payload: {
+      session_id: data.session_id,
+      survey_number: data.survey_number,
+      perceived_compliance_1: data.perceived_compliance_1,
+      perceived_compliance_2: data.perceived_compliance_2,
+      perceived_compliance_3: data.perceived_compliance_3,
+      perceived_compliance_4: data.perceived_compliance_4,
+      perceived_conversion_1: data.perceived_conversion_1,
+      perceived_conversion_2: data.perceived_conversion_2,
+      perceived_conversion_3: data.perceived_conversion_3,
+      perceived_conversion_4: data.perceived_conversion_4,
+      concentration_test: data.concentration_test,
+      agent_competence: data.agent_competence ?? null,
+      agent_predictability: data.agent_predictability ?? null,
+      agent_integrity: data.agent_integrity ?? null,
+      agent_understanding: data.agent_understanding ?? null,
+      agent_utility: data.agent_utility ?? null,
+      agent_affect: data.agent_affect ?? null,
+      agent_trust: data.agent_trust ?? null,
+      agent1_competence: data.agent1_competence ?? null,
+      agent1_predictability: data.agent1_predictability ?? null,
+      agent1_integrity: data.agent1_integrity ?? null,
+      agent1_understanding: data.agent1_understanding ?? null,
+      agent1_utility: data.agent1_utility ?? null,
+      agent1_affect: data.agent1_affect ?? null,
+      agent1_trust: data.agent1_trust ?? null,
+      agent3_competence: data.agent3_competence ?? null,
+      agent3_predictability: data.agent3_predictability ?? null,
+      agent3_integrity: data.agent3_integrity ?? null,
+      agent3_understanding: data.agent3_understanding ?? null,
+      agent3_utility: data.agent3_utility ?? null,
+      agent3_affect: data.agent3_affect ?? null,
+      agent3_trust: data.agent3_trust ?? null,
+    }
+  };
+
   const { data: survey, error } = await supabase
-    .from('post_self_surveys')
-    .insert([data])
+    .from('surveys')
+    .insert([payload])
     .select()
     .single();
 
@@ -516,7 +570,7 @@ export async function savePostSelfSurvey(data: {
     return null;
   }
 
-  return survey;
+  return survey as unknown as PostSelfSurvey;
 }
 
 // 8. Post-Open Surveys
@@ -528,9 +582,22 @@ export async function savePostOpenSurvey(data: {
   agent_comparison?: string;
   suggestions?: string;
 }): Promise<PostOpenSurvey | null> {
+  const payload = {
+    participant_id: data.participant_id,
+    session_key: null,
+    survey_type: 'post_open',
+    payload: {
+      session_id: data.session_id,
+      survey_number: data.survey_number,
+      thoughts_on_experiment: data.thoughts_on_experiment ?? null,
+      agent_comparison: data.agent_comparison ?? null,
+      suggestions: data.suggestions ?? null,
+    }
+  };
+
   const { data: survey, error } = await supabase
-    .from('post_open_surveys')
-    .insert([data])
+    .from('surveys')
+    .insert([payload])
     .select()
     .single();
 
@@ -539,7 +606,7 @@ export async function savePostOpenSurvey(data: {
     return null;
   }
 
-  return survey;
+  return survey as unknown as PostOpenSurvey;
 }
 
 // 9. Events

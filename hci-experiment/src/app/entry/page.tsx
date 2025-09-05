@@ -19,37 +19,20 @@ function EntryPageContent() {
       const studyId = searchParams.get('STUDY_ID');
       const sessionId = searchParams.get('SESSION_ID');
 
-      // Check if we're in test mode (no Prolific parameters)
-      const isTestMode = !prolificPid || !studyId || !sessionId;
-
-      if (isTestMode) {
-        // For testing, create a dummy participant
-        const testParticipantId = 'test-' + Date.now();
-        sessionStorage.setItem('participantId', testParticipantId);
-        sessionStorage.setItem('prolificPid', 'TEST_PID');
-        sessionStorage.setItem('studyId', 'TEST_STUDY');
-        sessionStorage.setItem('sessionId', 'TEST_SESSION');
-        sessionStorage.setItem('isTestMode', 'true');
-        
-        // Go directly to introduction
-        router.push('/introduction');
-        return;
-      }
-
       setIsLoading(true);
       setError(null);
 
       try {
-        // Create/retrieve participant
+        // Always call upsert: when Prolific params missing, send dummy values
         const response = await fetch('/api/participants/upsert', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            prolific_pid: prolificPid,
-            study_id: studyId,
-            session_id: sessionId,
+            prolific_pid: prolificPid ?? `test-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            study_id: studyId ?? 'TEST_STUDY',
+            session_id: sessionId ?? 'TEST_SESSION',
           }),
         });
 
@@ -61,10 +44,10 @@ function EntryPageContent() {
 
         // Store participant info in session storage
         sessionStorage.setItem('participantId', participant.id);
-        sessionStorage.setItem('prolificPid', prolificPid);
-        sessionStorage.setItem('studyId', studyId);
-        sessionStorage.setItem('sessionId', sessionId);
-        sessionStorage.setItem('isTestMode', 'false');
+        sessionStorage.setItem('prolificPid', prolificPid ?? 'TEST_PID');
+        sessionStorage.setItem('studyId', studyId ?? 'TEST_STUDY');
+        sessionStorage.setItem('sessionId', sessionId ?? 'TEST_SESSION');
+        sessionStorage.setItem('isTestMode', (!prolificPid || !studyId || !sessionId) ? 'true' : 'false');
 
         // Go to introduction page
         router.push('/introduction');
@@ -80,15 +63,33 @@ function EntryPageContent() {
     initializeParticipant();
   }, [searchParams, router]);
 
-  const handleSkip = () => {
-    // Create test participant and skip to introduction
-    const testParticipantId = 'test-' + Date.now();
-    sessionStorage.setItem('participantId', testParticipantId);
-    sessionStorage.setItem('prolificPid', 'TEST_PID');
-    sessionStorage.setItem('studyId', 'TEST_STUDY');
-    sessionStorage.setItem('sessionId', 'TEST_SESSION');
-    sessionStorage.setItem('isTestMode', 'true');
-    router.push('/introduction');
+  const handleSkip = async () => {
+    // Create a dummy participant via upsert, then proceed
+    try {
+      setIsLoading(true);
+      const response = await fetch('/api/participants/upsert', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prolific_pid: `test-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          study_id: 'TEST_STUDY',
+          session_id: 'TEST_SESSION',
+        }),
+      });
+      if (!response.ok) throw new Error('Failed to initialize test participant');
+      const { participant } = await response.json();
+      sessionStorage.setItem('participantId', participant.id);
+      sessionStorage.setItem('prolificPid', 'TEST_PID');
+      sessionStorage.setItem('studyId', 'TEST_STUDY');
+      sessionStorage.setItem('sessionId', 'TEST_SESSION');
+      sessionStorage.setItem('isTestMode', 'true');
+      router.push('/introduction');
+    } catch (e) {
+      console.error(e);
+      setError('Failed to start test mode');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

@@ -19,8 +19,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { participantId, sessionKey, cycle, userMessage, currentTask } = cycleRequestSchema.parse(body);
 
-    // Check if this is test mode
-    const isTestMode = participantId.startsWith('test-');
+    // Test participants are allowed; we still save to DB for consistency
 
     // Check environment variables for OpenAI API
     console.log('Environment check:', {
@@ -34,7 +33,7 @@ export async function POST(request: NextRequest) {
       console.error('OpenAI API key not configured in environment');
       
       // Test mode에서 API 키가 없을 때 fallback 응답 제공
-      if (isTestMode) {
+      if (true) {
         console.log('Providing fallback responses for test mode');
         return NextResponse.json({
           agent1: { content: "I understand your perspective on this topic." },
@@ -56,35 +55,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (isTestMode) {
-      // For test mode, use actual OpenAI API but skip database operations
-      console.log('Test mode cycle:', { participantId, sessionKey, cycle, userMessage });
-      
-      // Use orchestrator to get real agent responses
-      const result = await runCycle({
-        participantId,
-        sessionKey,
-        cycle,
-        userMessage,
-        currentTask: currentTask,
-        isTestMode: true,
-      });
+    // Always persist; no special-casing test participants
 
-      return NextResponse.json({
-        agent1: result.agent1,
-        agent2: result.agent2,
-        agent3: result.agent3,
-        meta: result.meta
-      });
-    }
-
-    // Check environment variables for production mode
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      return NextResponse.json(
-        { error: 'Supabase configuration is incomplete.' },
-        { status: 500 }
-      );
-    }
+    // Environment check removed to allow unified saving in all modes
 
     // Rate limiting check (3 seconds per request)
     const rateLimitKey = `${participantId}:${sessionKey}`;
