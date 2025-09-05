@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import { getCurrentSessionTask } from '@/lib/task-example';
-import { getCurrentSessionOrder } from '@/config/session-order';
 import { z } from 'zod';
 
 const responseRequestSchema = z.object({
@@ -63,26 +61,13 @@ export async function POST(request: NextRequest) {
     // This ensures test data is also properly stored for verification
     
     // Check if response already exists (idempotency)
-    let sessionId = await getSessionId(participantId, sessionKey);
+    const sessionId = await getSessionId(participantId, sessionKey);
     if (!sessionId) {
-      console.warn('Session not found. Creating one on-the-fly:', { participantId, sessionKey });
-      // Create minimal session identical to /api/sessions
-      const task_content = getCurrentSessionTask(sessionKey);
-      const task_type = sessionKey;
-      const session_order = sessionKey === 'test' ? 0 : (sessionKey === getCurrentSessionOrder()[0] ? 1 : 2);
-      const task_index = sessionKey === 'test' ? undefined : 0;
-
-      const { data: created, error: createErr } = await supabase
-        .from('sessions')
-        .insert([{ participant_id: participantId, session_key: sessionKey, session_order, task_content, task_type, task_index }])
-        .select('id')
-        .single();
-      if (createErr || !created?.id) {
-        console.error('Failed to create session on-the-fly:', createErr);
-        return NextResponse.json({ error: 'Session not found.' }, { status: 404 });
-      }
-      sessionId = created.id;
-      console.log('Created session on-the-fly:', sessionId);
+      console.error('Session not found for:', { participantId, sessionKey });
+      return NextResponse.json(
+        { error: 'Session not found.' },
+        { status: 404 }
+      );
     }
 
     const { data: existingResponse } = await supabase
