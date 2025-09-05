@@ -88,42 +88,28 @@ export async function GET(request: NextRequest) {
           // 1. experiment_conditions 테이블 확인
           const { data: conditions, error: condError } = await supabase
             .from('experiment_conditions')
-            .select('id')
+            .select('count')
             .limit(1);
 
           // 2. participants 테이블 확인
           const { data: participants, error: partError } = await supabase
             .from('participants')
-            .select('id')
+            .select('count')
             .limit(1);
 
           // 3. RLS 정책 확인 (간접적으로)
-          // 실제 존재하는 participant_id를 사용하여 테스트
-          let eventsInsertable = false;
-          let eventsError = null;
-          
-          if (participants && participants.length > 0) {
-            // 실제 참가자가 있으면 해당 ID로 테스트
-            const { data: testInsert, error: insertError } = await supabase
-              .from('events')
-              .insert({
-                participant_id: participants[0].id,
-                event_type: 'test',
-                payload: { test: true }
-              })
-              .select();
+          const { data: testInsert, error: insertError } = await supabase
+            .from('events')
+            .insert({
+              participant_id: '00000000-0000-0000-0000-000000000000', // Valid UUID format
+              event_type: 'test',
+              payload: { test: true }
+            })
+            .select();
 
-            // 테스트 데이터 삭제
-            if (testInsert && testInsert.length > 0) {
-              await supabase.from('events').delete().eq('id', testInsert[0].id);
-            }
-            
-            eventsInsertable = !insertError;
-            eventsError = insertError?.message || null;
-          } else {
-            // 참가자가 없으면 테스트 불가
-            eventsInsertable = false;
-            eventsError = 'No participants available for testing';
+          // 테스트 데이터 삭제
+          if (testInsert && testInsert.length > 0) {
+            await supabase.from('events').delete().eq('id', testInsert[0].id);
           }
 
           return NextResponse.json({
@@ -138,8 +124,8 @@ export async function GET(request: NextRequest) {
                 error: partError?.message || null
               },
               events: {
-                insertable: eventsInsertable,
-                error: eventsError
+                insertable: !insertError,
+                error: insertError?.message || null
               }
             },
             timestamp: new Date().toISOString()

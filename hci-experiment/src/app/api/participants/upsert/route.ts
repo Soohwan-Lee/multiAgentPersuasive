@@ -1,211 +1,189 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createParticipant, getParticipant, assignNextConditionAtomic, getNextAvailableCondition, assignConditionToParticipant, cleanupAbandonedAssignments, supabase } from '@/lib/supabase';
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('=== Participant Upsert API Called ===');
+    console.log('Participant upsert API called');
     
-    const body = await request.json();
-    console.log('Request body:', JSON.stringify(body, null, 2));
-    
-    const { prolific_pid, study_id, session_id } = body;
-    
+    const { prolific_pid, study_id, session_id } = await request.json();
+    console.log('Request data:', { prolific_pid, study_id, session_id });
+
     if (!prolific_pid || !study_id || !session_id) {
       console.error('Missing required fields:', { prolific_pid, study_id, session_id });
       return NextResponse.json(
-        { error: 'Missing required fields: prolific_pid, study_id, session_id' },
+        { error: 'Missing required fields' },
         { status: 400 }
       );
     }
 
-    console.log('Processing participant:', { prolific_pid, study_id, session_id });
-
-    // 1. 기존 참가자 확인
-    const { data: existingParticipant, error: fetchError } = await supabase
-      .from('participants')
-      .select('*')
-      .eq('prolific_pid', prolific_pid)
-      .eq('study_id', study_id)
-      .single();
-
-    if (fetchError && fetchError.code !== 'PGRST116') {
-      console.error('Error fetching existing participant:', fetchError);
-      return NextResponse.json(
-        { error: 'Failed to check existing participant' },
-        { status: 500 }
-      );
-    }
-
+    // Check if participant already exists
+    console.log('Checking if participant already exists...');
+    const existingParticipant = await getParticipant(prolific_pid);
     if (existingParticipant) {
       console.log('Existing participant found:', existingParticipant.id);
-      return NextResponse.json({ 
-        participant: existingParticipant,
-        message: 'Participant already exists'
-      });
+      return NextResponse.json({ participant: existingParticipant });
     }
 
     console.log('No existing participant found, creating new one...');
 
-    // 2. 중도 이탈자 정리
-    console.log('Cleaning up abandoned assignments...');
+    // 중도 이탈자 정리 (새로운 참가자 등록 전에 실행)
     try {
-      const { data: cleanupResult, error: cleanupError } = await supabase.rpc('cleanup_abandoned_assignments');
-      if (cleanupError) {
-        console.warn('Cleanup warning (non-critical):', cleanupError);
-      } else {
-        console.log('Cleanup completed, result:', cleanupResult);
-      }
+      console.log('Cleaning up abandoned assignments...');
+      await cleanupAbandonedAssignments();
     } catch (cleanupError) {
-      console.warn('Cleanup failed (non-critical):', cleanupError);
+      console.warn('Cleanup failed, continuing with assignment:', cleanupError);
     }
 
-    // 3. 조건 할당 (재시도 로직 포함)
-    console.log('Assigning condition...');
-    let assignedCondition = null;
-    let retryCount = 0;
+    // 재시도 로직을 포함한 조건 배정 및 참가자 생성
+    let participant = null;
+    let condition = null;
     const maxRetries = 3;
-
-    while (retryCount < maxRetries && !assignedCondition) {
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        console.log(`Attempt ${retryCount + 1} to assign condition...`);
+        console.log(`Attempt ${attempt}: Creating participant...`);
         
-        const { data: condition, error: assignError } = await supabase
-          .from('experiment_conditions')
-          .select('*')
-          .eq('is_assigned', false)
-          .order('id')
-          .limit(1)
-          .single();
+        // 임시 참가자 생성 (조건 없이)
+        const tempParticipant = await createParticipant({
+          prolific_pid,
+          study_id,
+          session_id,
+          condition_type: 'majority', // 임시값
+          task_order: 'informativeFirst', // 임시값
+          informative_task_index: 0, // 임시값
+          normative_task_index: 0, // 임시값
+          browser_info: {
+            userAgent: request.headers.get('user-agent'),
+            language: request.headers.get('accept-language'),
+          },
+          device_info: {},
+        });
 
-        if (assignError) {
-          console.error('Error fetching available condition:', assignError);
-          throw assignError;
+        if (!tempParticipant) {
+          console.error('Failed to create participant');
+          throw new Error('Failed to create participant');
         }
 
+        console.log('Temporary participant created:', tempParticipant.id);
+
+        // 원자적 조건 배정 (디버깅 로그 추가)
+        console.log(`Attempting to assign condition for participant ${tempParticipant.id} (attempt ${attempt})`);
+        condition = await assignNextConditionAtomic(tempParticipant.id);
+        
         if (!condition) {
-          console.error('No available conditions found');
-          return NextResponse.json(
-            { error: 'No available experiment conditions' },
-            { status: 500 }
-          );
+          console.log(`Atomic condition assignment failed, trying fallback method...`);
+          
+          // 백업 방법: 기존 방식 사용
+          const fallbackCondition = await getNextAvailableCondition();
+          if (fallbackCondition) {
+            console.log(`Fallback condition found: ${fallbackCondition.id}`);
+            const assignmentSuccess = await assignConditionToParticipant(fallbackCondition.id, tempParticipant.id);
+            if (assignmentSuccess) {
+              condition = fallbackCondition;
+              console.log(`Fallback condition assignment successful`);
+            } else {
+              console.log(`Fallback condition assignment failed`);
+            }
+          }
+          
+          if (!condition) {
+            console.log(`All condition assignment methods failed for participant ${tempParticipant.id}, attempt ${attempt}`);
+            // 조건 배정 실패 시 참가자 삭제
+            await supabase.from('participants').delete().eq('id', tempParticipant.id);
+            
+            if (attempt === maxRetries) {
+              console.log(`All attempts failed for participant ${tempParticipant.id}`);
+              return NextResponse.json(
+                { error: 'No available conditions. Experiment is full.' },
+                { status: 503 }
+              );
+            }
+            
+            // 잠시 대기 후 재시도
+            await new Promise(resolve => setTimeout(resolve, 100 * attempt));
+            continue;
+          }
         }
+        
+        console.log(`Successfully assigned condition ${condition.id} to participant ${tempParticipant.id}`);
 
-        console.log('Found available condition:', condition);
-
-        // 원자적 업데이트로 조건 할당
-        const { data: updatedCondition, error: updateError } = await supabase
-          .from('experiment_conditions')
+        // 참가자 정보를 실제 조건으로 업데이트
+        console.log('Updating participant with actual condition...');
+        const { error: updateError } = await supabase
+          .from('participants')
           .update({
-            is_assigned: true,
-            assigned_participant_id: prolific_pid,
-            assigned_at: new Date().toISOString()
+            condition_type: condition.condition_type,
+            task_order: condition.task_order,
+            informative_task_index: condition.informative_task_index,
+            normative_task_index: condition.normative_task_index,
           })
-          .eq('id', condition.id)
-          .eq('is_assigned', false) // 동시 할당 방지
-          .select()
-          .single();
+          .eq('id', tempParticipant.id);
 
         if (updateError) {
-          console.error('Error updating condition:', updateError);
-          throw updateError;
-        }
-
-        if (!updatedCondition) {
-          console.log('Condition was already assigned by another process, retrying...');
-          retryCount++;
+          console.error('Failed to update participant with condition:', updateError);
+          // 롤백: 조건 배정 해제
+          await supabase
+            .from('experiment_conditions')
+            .update({ 
+              is_assigned: false, 
+              assigned_participant_id: null, 
+              assigned_at: null 
+            })
+            .eq('id', condition.id);
+          
+          await supabase.from('participants').delete().eq('id', tempParticipant.id);
+          
+          if (attempt === maxRetries) {
+            return NextResponse.json(
+              { error: 'Failed to assign condition to participant' },
+              { status: 500 }
+            );
+          }
           continue;
         }
 
-        assignedCondition = updatedCondition;
-        console.log('Successfully assigned condition:', assignedCondition);
-
-      } catch (error) {
-        console.error(`Attempt ${retryCount + 1} failed:`, error);
-        retryCount++;
+        // 성공적으로 배정된 참가자 정보 반환
+        participant = {
+          ...tempParticipant,
+          condition_type: condition.condition_type,
+          task_order: condition.task_order,
+          informative_task_index: condition.informative_task_index,
+          normative_task_index: condition.normative_task_index,
+        };
         
-        if (retryCount >= maxRetries) {
-          console.error('Max retries reached, giving up');
+        console.log('Participant creation and condition assignment completed successfully');
+        break; // 성공시 루프 종료
+
+      } catch (attemptError) {
+        console.error(`Assignment attempt ${attempt} failed:`, attemptError);
+        
+        if (attempt === maxRetries) {
           return NextResponse.json(
-            { error: 'Failed to assign condition after multiple attempts' },
+            { error: 'Failed to create participant after multiple attempts' },
             { status: 500 }
           );
         }
         
         // 잠시 대기 후 재시도
-        await new Promise(resolve => setTimeout(resolve, 100 * retryCount));
+        await new Promise(resolve => setTimeout(resolve, 200 * attempt));
       }
     }
 
-    if (!assignedCondition) {
-      console.error('Failed to assign condition after all retries');
-      return NextResponse.json(
-        { error: 'Failed to assign experiment condition' },
-        { status: 500 }
-      );
-    }
-
-    // 4. 새 참가자 생성
-    console.log('Creating new participant...');
-    const newParticipant = {
-      prolific_pid,
-      study_id,
-      session_id,
-      condition_type: assignedCondition.condition_type,
-      task_order: assignedCondition.task_order,
-      informative_task_index: assignedCondition.informative_task_index,
-      normative_task_index: assignedCondition.normative_task_index,
-      browser_info: {
-        language: navigator?.language || 'unknown',
-        userAgent: navigator?.userAgent || 'unknown'
-      },
-      device_info: {}
-    };
-
-    console.log('New participant data:', JSON.stringify(newParticipant, null, 2));
-
-    const { data: participant, error: insertError } = await supabase
-      .from('participants')
-      .insert([newParticipant])
-      .select()
-      .single();
-
-    if (insertError) {
-      console.error('Error inserting participant:', insertError);
-      
-      // 조건 할당 취소
-      await supabase
-        .from('experiment_conditions')
-        .update({
-          is_assigned: false,
-          assigned_participant_id: null,
-          assigned_at: null
-        })
-        .eq('id', assignedCondition.id);
-      
+    if (!participant) {
+      console.error('Failed to create participant after all attempts');
       return NextResponse.json(
         { error: 'Failed to create participant' },
         { status: 500 }
       );
     }
 
-    console.log('=== Participant Created Successfully ===');
-    console.log('Participant ID:', participant.id);
-    console.log('Assigned condition:', {
-      type: participant.condition_type,
-      order: participant.task_order,
-      informativeIndex: participant.informative_task_index,
-      normativeIndex: participant.normative_task_index
-    });
-
-    return NextResponse.json({ 
-      participant,
-      message: 'Participant created successfully'
-    });
+    console.log('Returning successful participant data:', participant.id);
+    return NextResponse.json({ participant });
 
   } catch (error) {
-    console.error('Unexpected error in participant upsert:', error);
+    console.error('Participant upsert error:', error);
     return NextResponse.json(
-      { error: 'Internal server error occurred' },
+      { error: 'Server error occurred.' },
       { status: 500 }
     );
   }
