@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { z } from 'zod';
 import { runCycle } from '@/lib/orchestrator';
+import { setTaskIndices } from '@/lib/prompts';
 
 // Simple in-memory rate limiter (use Redis in production)
 const rateLimitMap = new Map<string, number>();
@@ -141,6 +142,14 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // set task indices from participant assignment
+    const { data: participant } = await supabase
+      .from('participants')
+      .select('informative_task_index, normative_task_index')
+      .eq('id', participantId)
+      .single();
+    setTaskIndices({ informative: participant?.informative_task_index, normative: participant?.normative_task_index });
 
     // Save user message (include condition_id)
     const { data: ec } = await supabase

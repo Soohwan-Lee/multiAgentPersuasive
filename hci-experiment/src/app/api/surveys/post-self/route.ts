@@ -6,7 +6,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const {
       participant_id,
-      session_id,
       survey_number,
       perceived_compliance_1,
       perceived_compliance_2,
@@ -42,7 +41,7 @@ export async function POST(request: NextRequest) {
       agent3_trust,
     } = body;
 
-    if (!participant_id || !session_id || !survey_number) {
+    if (!participant_id || !survey_number) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -95,7 +94,7 @@ export async function POST(request: NextRequest) {
     // Save post-self survey
     const survey = await savePostSelfSurvey({
       participant_id,
-      session_id,
+      session_id: '00000000-0000-0000-0000-000000000000',
       survey_number,
       perceived_compliance_1,
       perceived_compliance_2,

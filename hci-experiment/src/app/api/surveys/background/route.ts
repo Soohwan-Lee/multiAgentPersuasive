@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     // Save background survey
     const survey = await saveBackgroundSurvey({
       participant_id,
-      age,
+      age: Number(age),
       gender,
       education,
       occupation,

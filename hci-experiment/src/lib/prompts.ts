@@ -38,10 +38,15 @@ export const NORMATIVE_TASKS = [
   "Short and frequent meetings are more helpful than long and infrequent meetings."
 ];
 
-// Task 선택 인덱스 (0~5 사이, 현재는 0으로 하드코딩)
-// TODO: 나중에 랜덤하게 변경하거나 환경변수로 설정 가능하도록 수정
-const NORMATIVE_TASK_INDEX = 0; // 0~5 사이의 값으로 변경 가능
-const INFORMATIVE_TASK_INDEX = 0; // 0~5 사이의 값으로 변경 가능
+// Task 선택 인덱스 (participants에 저장된 인덱스를 우선 사용하도록 라우트에서 주입)
+// 기본값은 0
+export let NORMATIVE_TASK_INDEX = 0; // 0~5 사이의 값으로 변경 가능
+export let INFORMATIVE_TASK_INDEX = 0; // 0~5 사이의 값으로 변경 가능
+
+export function setTaskIndices({ informative, normative }: { informative?: number; normative?: number }) {
+  if (typeof informative === 'number') INFORMATIVE_TASK_INDEX = informative;
+  if (typeof normative === 'number') NORMATIVE_TASK_INDEX = normative;
+}
 
 // Task 타입에 따른 프롬프트 조정 함수
 function getTaskSpecificInstructions(taskType: "informative" | "normative" | "test" | undefined, sessionKey: string) {
