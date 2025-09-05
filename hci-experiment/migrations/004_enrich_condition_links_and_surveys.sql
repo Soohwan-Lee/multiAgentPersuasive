@@ -17,16 +17,16 @@ alter table if exists messages add column if not exists condition_id bigint refe
 -- backfill condition_id
 update responses r
    set condition_id = ec.id
-  from experiment_conditions ec
-  join participants p on p.id = r.participant_id
- where ec.assigned_participant_id = p.id
+  from participants p
+  join experiment_conditions ec on ec.assigned_participant_id = p.id
+ where r.participant_id = p.id
    and r.condition_id is null;
 
 update messages m
    set condition_id = ec.id
-  from experiment_conditions ec
-  join participants p on p.id = m.participant_id
- where ec.assigned_participant_id = p.id
+  from participants p
+  join experiment_conditions ec on ec.assigned_participant_id = p.id
+ where m.participant_id = p.id
    and m.condition_id is null;
 
 -- 3) create dedicated survey tables
