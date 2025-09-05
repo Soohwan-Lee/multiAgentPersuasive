@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { z } from 'zod';
 import { runCycle } from '@/lib/orchestrator';
-import { getCurrentSessionTask } from '@/lib/task-example';
-import { getCurrentSessionOrder } from '@/config/session-order';
 
 // Simple in-memory rate limiter (use Redis in production)
 const rateLimitMap = new Map<string, number>();
@@ -101,47 +99,28 @@ export async function POST(request: NextRequest) {
     }
     rateLimitMap.set(rateLimitKey, now);
 
-    // Ensure session exists and get sessionId
-    let sessionId: string | null = null;
-    {
-      const { data: s } = await supabase
-        .from('sessions')
-        .select('id')
+    // Check if cycle already exists (idempotency)
+    const { data: existingTurn } = await supabase
+      .from('turns')
+      .select('*')
+      .eq('participant_id', participantId)
+      .eq('session_key', sessionKey)
+      .eq('cycle', cycle)
+      .single();
+
+    if (existingTurn) {
+      // Get existing messages for this cycle
+      const { data: messages } = await supabase
+        .from('messages')
+        .select('*')
         .eq('participant_id', participantId)
         .eq('session_key', sessionKey)
-        .single();
-      sessionId = s?.id ?? null;
-    }
+        .eq('cycle', cycle)
+        .order('ts', { ascending: true });
 
-    if (!sessionId) {
-      // Create minimal session (same logic as /api/sessions)
-      const task_content = getCurrentSessionTask(sessionKey);
-      const task_type = sessionKey;
-      const session_order = sessionKey === 'test' ? 0 : (sessionKey === getCurrentSessionOrder()[0] ? 1 : 2);
-      const task_index = sessionKey === 'test' ? undefined : 0;
-      const { data: created, error: createErr } = await supabase
-        .from('sessions')
-        .insert([{ participant_id: participantId, session_key: sessionKey, session_order, task_content, task_type, task_index }])
-        .select('id')
-        .single();
-      if (createErr || !created?.id) {
-        return NextResponse.json({ error: 'Failed to initialize session.' }, { status: 400 });
-      }
-      sessionId = created.id;
-    }
-
-    // Idempotency: if agents already responded for this cycle, return them
-    const { data: priorMessages } = await supabase
-      .from('messages')
-      .select('*')
-      .eq('session_id', sessionId)
-      .eq('cycle', cycle)
-      .order('created_at', { ascending: true });
-
-    if (priorMessages && priorMessages.length > 0) {
-      const agent1Msg = priorMessages.find((m: any) => m.role === 'agent1');
-      const agent2Msg = priorMessages.find((m: any) => m.role === 'agent2');
-      const agent3Msg = priorMessages.find((m: any) => m.role === 'agent3');
+      const agent1Msg = messages?.find((m: any) => m.role === 'agent1');
+      const agent2Msg = messages?.find((m: any) => m.role === 'agent2');
+      const agent3Msg = messages?.find((m: any) => m.role === 'agent3');
 
       return NextResponse.json({
         agent1: agent1Msg ? {
@@ -176,9 +155,10 @@ export async function POST(request: NextRequest) {
     // Check guard: cycle k can only be called after response k-1 is saved
     const requiredResponseIndex = cycle - 1;
     const { data: requiredResponse } = await supabase
-      .from('turn_responses')
-      .select('id')
-      .eq('session_id', sessionId)
+      .from('responses')
+      .select('*')
+      .eq('participant_id', participantId)
+      .eq('session_key', sessionKey)
       .eq('response_index', requiredResponseIndex)
       .single();
 
@@ -195,7 +175,7 @@ export async function POST(request: NextRequest) {
       .insert({
         id: crypto.randomUUID(),
         participant_id: participantId,
-        session_id: sessionId,
+        session_key: sessionKey,
         cycle: cycle,
         role: 'user',
         content: userMessage,
@@ -225,7 +205,8 @@ export async function POST(request: NextRequest) {
     const { error: sessionError } = await supabase
       .from('sessions')
       .update({ current_cycle: cycle })
-      .eq('id', sessionId);
+      .eq('participant_id', participantId)
+      .eq('key', sessionKey);
 
     if (sessionError) {
       console.error('Session update error:', sessionError);
