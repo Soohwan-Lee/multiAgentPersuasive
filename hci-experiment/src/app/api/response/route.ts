@@ -11,43 +11,13 @@ const responseRequestSchema = z.object({
   rtMs: z.number().int().min(0),
 });
 
-// Helper function to get session ID from session key
-async function getSessionId(participantId: string, sessionKey: string): Promise<string | null> {
-  try {
-    const { data: session } = await supabase
-      .from('sessions')
-      .select('id')
-      .eq('participant_id', participantId)
-      .eq('session_key', sessionKey)
-      .single();
-    
-    return session?.id || null;
-  } catch (error) {
-    console.error('Error getting session ID:', error);
-    return null;
-  }
-}
-
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { participantId, sessionKey, responseIndex, opinion, confidence, rtMs } = responseRequestSchema.parse(body);
 
-    // Check if this is test mode by looking at the participant data
-    let isTestMode = false;
-    
-    try {
-      const { data: participant } = await supabase
-        .from('participants')
-        .select('prolific_pid')
-        .eq('id', participantId)
-        .single();
-      
-      isTestMode = participant?.prolific_pid === 'TEST_PID';
-    } catch (error) {
-      // If participant not found, assume test mode
-      isTestMode = true;
-    }
+    // Check if this is test mode
+    const isTestMode = participantId.startsWith('test-');
 
     if (isTestMode) {
       // For test mode, just return success without saving to database
@@ -78,10 +48,10 @@ export async function POST(request: NextRequest) {
 
     // Check if response already exists (idempotency)
     const { data: existingResponse } = await supabase
-      .from('turn_responses')
+      .from('responses')
       .select('*')
       .eq('participant_id', participantId)
-      .eq('session_id', (await getSessionId(participantId, sessionKey)))
+      .eq('session_key', sessionKey)
       .eq('response_index', responseIndex)
       .single();
 
@@ -93,28 +63,18 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Get session ID for the session key
-    const sessionId = await getSessionId(participantId, sessionKey);
-    if (!sessionId) {
-      return NextResponse.json(
-        { error: 'Session not found.' },
-        { status: 404 }
-      );
-    }
-
     // Create new response
     const responseId = crypto.randomUUID();
     const { data: newResponse, error: responseError } = await supabase
-      .from('turn_responses')
+      .from('responses')
       .insert({
         id: responseId,
         participant_id: participantId,
-        session_id: sessionId,
-        cycle: null, // T0 responses don't have cycles
+        session_key: sessionKey,
         response_index: responseIndex,
         opinion: opinion,
         confidence: confidence,
-        response_time_ms: rtMs,
+        rt_ms: rtMs,
       })
       .select()
       .single();
@@ -131,7 +91,8 @@ export async function POST(request: NextRequest) {
     const { error: sessionError } = await supabase
       .from('sessions')
       .update({ current_response: responseIndex + 1 })
-      .eq('id', sessionId);
+      .eq('participant_id', participantId)
+      .eq('key', sessionKey);
 
     if (sessionError) {
       console.error('Session update error:', sessionError);
@@ -142,7 +103,8 @@ export async function POST(request: NextRequest) {
       await supabase
         .from('sessions')
         .update({ started_at: new Date().toISOString() })
-        .eq('id', sessionId)
+        .eq('participant_id', participantId)
+        .eq('key', sessionKey)
         .is('started_at', null);
     }
 

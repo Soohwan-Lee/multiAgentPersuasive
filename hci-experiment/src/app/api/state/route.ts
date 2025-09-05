@@ -13,22 +13,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Check if this is test mode by looking at the participant data
-    // Test mode participants will have TEST_PID as prolific_pid
-    let isTestMode = false;
-    
-    try {
-      const { data: participant } = await supabase
-        .from('participants')
-        .select('prolific_pid')
-        .eq('id', participantId)
-        .single();
-      
-      isTestMode = participant?.prolific_pid === 'TEST_PID';
-    } catch (error) {
-      // If participant not found, assume test mode
-      isTestMode = true;
-    }
+    // Check if this is test mode
+    const isTestMode = participantId.startsWith('test-');
 
     if (isTestMode) {
       // For test mode, return mock state
