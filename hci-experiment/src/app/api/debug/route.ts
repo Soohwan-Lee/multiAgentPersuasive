@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
           .order('id');
 
         if (conditionsError) {
-          return NextResponse.json({ error: 'Failed to fetch conditions', details: conditionsError }, { status: 500 });
+          return NextResponse.json({ error: 'Failed to fetch conditions' }, { status: 500 });
         }
 
         const conditionStats = {
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
           .limit(20);
 
         if (participantsError) {
-          return NextResponse.json({ error: 'Failed to fetch participants', details: participantsError }, { status: 500 });
+          return NextResponse.json({ error: 'Failed to fetch participants' }, { status: 500 });
         }
 
         return NextResponse.json({ participants });
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
           const { data: stats } = await supabase.rpc('get_condition_stats');
           return NextResponse.json({ stats: stats?.[0] || null });
         } catch (error) {
-          return NextResponse.json({ error: 'Failed to fetch stats', details: error }, { status: 500 });
+          return NextResponse.json({ error: 'Failed to fetch stats' }, { status: 500 });
         }
 
       case 'test-assignment':
@@ -79,130 +79,19 @@ export async function GET(request: NextRequest) {
             testParticipantId 
           });
         } catch (error) {
-          return NextResponse.json({ error: 'Test assignment failed', details: error }, { status: 500 });
-        }
-
-      case 'database-status':
-        // 데이터베이스 연결 및 테이블 상태 확인
-        try {
-          // 1. experiment_conditions 테이블 확인
-          const { data: conditions, error: condError } = await supabase
-            .from('experiment_conditions')
-            .select('count')
-            .limit(1);
-
-          // 2. participants 테이블 확인
-          const { data: participants, error: partError } = await supabase
-            .from('participants')
-            .select('count')
-            .limit(1);
-
-          // 3. RLS 정책 확인 (간접적으로)
-          const { data: testInsert, error: insertError } = await supabase
-            .from('events')
-            .insert({
-              participant_id: 'test-' + Date.now(),
-              event_type: 'test',
-              payload: { test: true }
-            })
-            .select();
-
-          // 테스트 데이터 삭제
-          if (testInsert && testInsert.length > 0) {
-            await supabase.from('events').delete().eq('id', testInsert[0].id);
-          }
-
-          return NextResponse.json({
-            databaseStatus: 'connected',
-            tables: {
-              experiment_conditions: {
-                accessible: !condError,
-                error: condError?.message || null
-              },
-              participants: {
-                accessible: !partError,
-                error: partError?.message || null
-              },
-              events: {
-                insertable: !insertError,
-                error: insertError?.message || null
-              }
-            },
-            timestamp: new Date().toISOString()
-          });
-
-        } catch (error) {
-          return NextResponse.json({ 
-            databaseStatus: 'error',
-            error: error instanceof Error ? error.message : 'Unknown error',
-            timestamp: new Date().toISOString()
-          }, { status: 500 });
-        }
-
-      case 'test-participant-creation':
-        // 참가자 생성 테스트
-        try {
-          const testData = {
-            prolific_pid: 'test-' + Date.now(),
-            study_id: 'test-study',
-            session_id: 'test-session-' + Date.now()
-          };
-
-          const response = await fetch(`${request.nextUrl.origin}/api/participants/upsert`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(testData)
-          });
-
-          const result = await response.json();
-
-          if (response.ok) {
-            // 테스트 참가자 정리
-            if (result.participant?.id) {
-              await supabase.from('participants').delete().eq('id', result.participant.id);
-            }
-            return NextResponse.json({ 
-              message: 'Test participant creation successful',
-              participant: result.participant,
-              testData
-            });
-          } else {
-            return NextResponse.json({ 
-              error: 'Test participant creation failed',
-              details: result,
-              testData
-            }, { status: 500 });
-          }
-
-        } catch (error) {
-          return NextResponse.json({ 
-            error: 'Test participant creation failed',
-            details: error instanceof Error ? error.message : 'Unknown error'
-          }, { status: 500 });
+          return NextResponse.json({ error: 'Test assignment failed' }, { status: 500 });
         }
 
       default:
         return NextResponse.json({ 
           message: 'Debug API available',
-          actions: [
-            'conditions', 
-            'participants', 
-            'stats', 
-            'test-assignment',
-            'database-status',
-            'test-participant-creation'
-          ],
-          timestamp: new Date().toISOString()
+          actions: ['conditions', 'participants', 'stats', 'test-assignment']
         });
     }
 
   } catch (error) {
     console.error('Debug API error:', error);
-    return NextResponse.json({ 
-      error: 'Internal server error',
-      details: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date().toISOString()
-    }, { status: 500 });
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -223,7 +112,7 @@ export async function POST(request: NextRequest) {
           });
 
         if (resetError) {
-          return NextResponse.json({ error: 'Failed to reset conditions', details: resetError }, { status: 500 });
+          return NextResponse.json({ error: 'Failed to reset conditions' }, { status: 500 });
         }
 
         return NextResponse.json({ message: 'Conditions reset successfully' });
@@ -237,7 +126,7 @@ export async function POST(request: NextRequest) {
             cleanedCount: cleanupResult || 0
           });
         } catch (error) {
-          return NextResponse.json({ error: 'Cleanup failed', details: error }, { status: 500 });
+          return NextResponse.json({ error: 'Cleanup failed' }, { status: 500 });
         }
 
       default:
@@ -246,9 +135,6 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Debug API POST error:', error);
-    return NextResponse.json({ 
-      error: 'Internal server error',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
