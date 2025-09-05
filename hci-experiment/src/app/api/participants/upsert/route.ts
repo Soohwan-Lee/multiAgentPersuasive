@@ -177,17 +177,15 @@ export async function POST(request: NextRequest) {
     if (insertError) {
       console.error('Error inserting participant:', insertError);
       
-      // 조건 할당 취소 (프로덕션 모드에서만)
-      if (!isTestMode && assignedCondition && assignedCondition.id) {
-        await supabase
-          .from('experiment_conditions')
-          .update({
-            is_assigned: false,
-            assigned_participant_id: null,
-            assigned_at: null
-          })
-          .eq('id', assignedCondition.id);
-      }
+      // 조건 할당 취소
+      await supabase
+        .from('experiment_conditions')
+        .update({
+          is_assigned: false,
+          assigned_participant_id: null,
+          assigned_at: null
+        })
+        .eq('id', assignedCondition.id);
       
       return NextResponse.json(
         { error: 'Failed to create participant' },
