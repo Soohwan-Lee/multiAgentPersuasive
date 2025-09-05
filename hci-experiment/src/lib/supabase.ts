@@ -628,69 +628,32 @@ export async function getNextAvailableCondition(): Promise<ExperimentCondition |
 
 // 원자적 조건 배정 함수 (동시성 문제 해결)
 export async function assignNextConditionAtomic(participantId: string): Promise<ExperimentCondition | null> {
-  try {
-    // 먼저 사용 가능한 조건이 있는지 확인
-    const { data: availableConditions, error: checkError } = await supabase
-      .from('experiment_conditions')
-      .select('*')
-      .eq('is_assigned', false)
-      .order('id', { ascending: true })
-      .limit(1);
+  const { data, error } = await supabase.rpc('assign_next_condition', {
+    p_participant_id: participantId
+  });
 
-    if (checkError) {
-      console.error('Error checking available conditions:', checkError);
-      return null;
-    }
-
-    if (!availableConditions || availableConditions.length === 0) {
-      console.log('No available conditions found');
-      return null;
-    }
-
-    const availableCondition = availableConditions[0];
-    console.log('Found available condition:', availableCondition.id);
-
-    // 조건을 원자적으로 할당
-    const { data: assignedCondition, error: assignError } = await supabase
-      .from('experiment_conditions')
-      .update({
-        is_assigned: true,
-        assigned_participant_id: participantId,
-        assigned_at: new Date().toISOString()
-      })
-      .eq('id', availableCondition.id)
-      .eq('is_assigned', false) // 동시성 보호
-      .select()
-      .single();
-
-    if (assignError) {
-      console.error('Error assigning condition:', assignError);
-      return null;
-    }
-
-    if (!assignedCondition) {
-      console.log('Condition assignment failed - condition was already assigned');
-      return null;
-    }
-
-    console.log('Successfully assigned condition:', assignedCondition.id);
-
-    return {
-      id: assignedCondition.id,
-      condition_type: assignedCondition.condition_type,
-      task_order: assignedCondition.task_order,
-      informative_task_index: assignedCondition.informative_task_index,
-      normative_task_index: assignedCondition.normative_task_index,
-      is_assigned: true,
-      assigned_participant_id: participantId,
-      assigned_at: new Date().toISOString(),
-      created_at: assignedCondition.created_at
-    };
-
-  } catch (error) {
-    console.error('Error in assignNextConditionAtomic:', error);
+  if (error) {
+    console.error('Error assigning condition atomically:', error);
     return null;
   }
+
+  if (!data || data.length === 0) {
+    console.log('No available conditions for assignment');
+    return null;
+  }
+
+  const condition = data[0];
+  return {
+    id: condition.condition_id,
+    condition_type: condition.condition_type,
+    task_order: condition.task_order,
+    informative_task_index: condition.informative_task_index,
+    normative_task_index: condition.normative_task_index,
+    is_assigned: true,
+    assigned_participant_id: participantId,
+    assigned_at: new Date().toISOString(),
+    created_at: new Date().toISOString()
+  };
 }
 
 export async function assignConditionToParticipant(conditionId: number, participantId: string): Promise<boolean> {
