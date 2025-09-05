@@ -65,23 +65,6 @@ export async function POST(request: NextRequest) {
 
     // 3. 조건 할당 (테스트 모드에서도 실제와 동일하게)
     console.log('Assigning condition...');
-    
-    // 먼저 테이블 상태 확인
-    console.log('Checking experiment_conditions table status...');
-    const { data: allConditions, error: statusError } = await supabase
-      .from('experiment_conditions')
-      .select('id, condition_type, is_assigned, assigned_participant_id')
-      .order('id');
-    
-    if (statusError) {
-      console.error('Error checking table status:', statusError);
-    } else {
-      console.log('All conditions in table:', allConditions);
-      const availableCount = allConditions?.filter(c => !c.is_assigned).length || 0;
-      const assignedCount = allConditions?.filter(c => c.is_assigned).length || 0;
-      console.log(`Available conditions: ${availableCount}, Assigned conditions: ${assignedCount}`);
-    }
-    
     let assignedCondition = null;
     let retryCount = 0;
     const maxRetries = 3;
@@ -194,15 +177,17 @@ export async function POST(request: NextRequest) {
     if (insertError) {
       console.error('Error inserting participant:', insertError);
       
-      // 조건 할당 취소
-      await supabase
-        .from('experiment_conditions')
-        .update({
-          is_assigned: false,
-          assigned_participant_id: null,
-          assigned_at: null
-        })
-        .eq('id', assignedCondition.id);
+      // 조건 할당 취소 (프로덕션 모드에서만)
+      if (!isTestMode && assignedCondition && assignedCondition.id) {
+        await supabase
+          .from('experiment_conditions')
+          .update({
+            is_assigned: false,
+            assigned_participant_id: null,
+            assigned_at: null
+          })
+          .eq('id', assignedCondition.id);
+      }
       
       return NextResponse.json(
         { error: 'Failed to create participant' },
