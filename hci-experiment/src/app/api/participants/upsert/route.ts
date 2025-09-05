@@ -64,174 +64,106 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. 조건 할당 (테스트 모드에서도 실제와 동일하게)
-    console.log('=== CONDITION ASSIGNMENT START ===');
-    console.log('Test mode:', isTestMode);
+    console.log('Assigning condition...');
     
     // 먼저 테이블 상태 확인
     console.log('Checking experiment_conditions table status...');
-    try {
-      const { data: allConditions, error: statusError } = await supabase
-        .from('experiment_conditions')
-        .select('id, condition_type, is_assigned, assigned_participant_id')
-        .order('id');
-      
-      if (statusError) {
-        console.error('Error checking table status:', statusError);
-      } else {
-        console.log('Total conditions in table:', allConditions?.length || 0);
-        console.log('All conditions:', JSON.stringify(allConditions, null, 2));
-        
-        if (allConditions && allConditions.length > 0) {
-          const availableCount = allConditions.filter(c => !c.is_assigned).length;
-          const assignedCount = allConditions.filter(c => c.is_assigned).length;
-          console.log(`Available conditions: ${availableCount}, Assigned conditions: ${assignedCount}`);
-          
-          // 사용 가능한 첫 번째 조건 확인
-          const firstAvailable = allConditions.find(c => !c.is_assigned);
-          if (firstAvailable) {
-            console.log('First available condition:', firstAvailable);
-          } else {
-            console.log('No available conditions found in the list');
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error during table status check:', error);
+    const { data: allConditions, error: statusError } = await supabase
+      .from('experiment_conditions')
+      .select('id, condition_type, is_assigned, assigned_participant_id')
+      .order('id');
+    
+    if (statusError) {
+      console.error('Error checking table status:', statusError);
+    } else {
+      console.log('All conditions in table:', allConditions);
+      const availableCount = allConditions?.filter(c => !c.is_assigned).length || 0;
+      const assignedCount = allConditions?.filter(c => c.is_assigned).length || 0;
+      console.log(`Available conditions: ${availableCount}, Assigned conditions: ${assignedCount}`);
     }
     
     let assignedCondition = null;
-    
-    if (isTestMode) {
-      // 테스트 모드에서는 첫 번째 사용 가능한 조건을 강제로 찾기
-      console.log('Test mode: Searching for any available condition...');
+    let retryCount = 0;
+    const maxRetries = 3;
+
+    while (retryCount < maxRetries && !assignedCondition) {
       try {
-        const { data: testCondition, error: testError } = await supabase
+        console.log(`Attempt ${retryCount + 1} to assign condition...`);
+        
+        const { data: condition, error: assignError } = await supabase
           .from('experiment_conditions')
           .select('*')
           .eq('is_assigned', false)
           .order('id')
           .limit(1)
           .single();
-        
-        if (testError) {
-          console.error('Test mode condition fetch error:', testError);
-          // 테스트 모드에서는 기본값 사용
-          assignedCondition = {
-            condition_type: 'majority',
-            task_order: 'normative_first',
-            informative_task_index: 1,
-            normative_task_index: 0
-          };
-          console.log('Using fallback test condition:', assignedCondition);
-        } else if (testCondition) {
-          console.log('Found test condition:', testCondition);
-          assignedCondition = testCondition;
-        } else {
-          console.log('No test condition found, using fallback');
-          assignedCondition = {
-            condition_type: 'majority',
-            task_order: 'normative_first',
-            informative_task_index: 1,
-            normative_task_index: 0
-          };
+
+        if (assignError) {
+          console.error('Error fetching available condition:', assignError);
+          throw assignError;
         }
-      } catch (error) {
-        console.error('Test mode condition assignment error:', error);
-        assignedCondition = {
-          condition_type: 'majority',
-          task_order: 'normative_first',
-          informative_task_index: 1,
-          normative_task_index: 0
-        };
-      }
-    } else {
-      // 프로덕션 모드에서만 실제 조건 할당
-      console.log('Production mode: Using standard condition assignment...');
-      let retryCount = 0;
-      const maxRetries = 3;
 
-      while (retryCount < maxRetries && !assignedCondition) {
-        try {
-          console.log(`Attempt ${retryCount + 1} to assign condition...`);
-          
-          const { data: condition, error: assignError } = await supabase
-            .from('experiment_conditions')
-            .select('*')
-            .eq('is_assigned', false)
-            .order('id')
-            .limit(1)
-            .single();
+        if (!condition) {
+          console.error('No available conditions found');
+          return NextResponse.json(
+            { error: 'No available experiment conditions' },
+            { status: 500 }
+          );
+        }
 
-          if (assignError) {
-            console.error('Error fetching available condition:', assignError);
-            throw assignError;
-          }
+        console.log('Found available condition:', condition);
 
-          if (!condition) {
-            console.error('No available conditions found');
-            return NextResponse.json(
-              { error: 'No available experiment conditions' },
-              { status: 500 }
-            );
-          }
+        // 원자적 업데이트로 조건 할당
+        const { data: updatedCondition, error: updateError } = await supabase
+          .from('experiment_conditions')
+          .update({
+            is_assigned: true,
+            assigned_participant_id: prolific_pid,
+            assigned_at: new Date().toISOString()
+          })
+          .eq('id', condition.id)
+          .eq('is_assigned', false) // 동시 할당 방지
+          .select()
+          .single();
 
-          console.log('Found available condition:', condition);
+        if (updateError) {
+          console.error('Error updating condition:', updateError);
+          throw updateError;
+        }
 
-          // 원자적 업데이트로 조건 할당
-          const { data: updatedCondition, error: updateError } = await supabase
-            .from('experiment_conditions')
-            .update({
-              is_assigned: true,
-              assigned_participant_id: prolific_pid,
-              assigned_at: new Date().toISOString()
-            })
-            .eq('id', condition.id)
-            .eq('is_assigned', false) // 동시 할당 방지
-            .select()
-            .single();
-
-          if (updateError) {
-            console.error('Error updating condition:', updateError);
-            throw updateError;
-          }
-
-          if (!updatedCondition) {
-            console.log('Condition was already assigned by another process, retrying...');
-            retryCount++;
-            continue;
-          }
-
-          assignedCondition = updatedCondition;
-          console.log('Successfully assigned condition:', assignedCondition);
-
-        } catch (error) {
-          console.error(`Attempt ${retryCount + 1} failed:`, error);
+        if (!updatedCondition) {
+          console.log('Condition was already assigned by another process, retrying...');
           retryCount++;
-          
-          if (retryCount >= maxRetries) {
-            console.error('Max retries reached, giving up');
-            return NextResponse.json(
-              { error: 'Failed to assign condition after multiple attempts' },
-              { status: 500 }
-            );
-          }
-          
-          // 잠시 대기 후 재시도
-          await new Promise(resolve => setTimeout(resolve, 100 * retryCount));
+          continue;
         }
-      }
-      
-      if (!assignedCondition) {
-        console.error('Failed to assign condition after all retries');
-        return NextResponse.json(
-          { error: 'Failed to assign experiment condition' },
-          { status: 500 }
-        );
+
+        assignedCondition = updatedCondition;
+        console.log('Successfully assigned condition:', assignedCondition);
+
+      } catch (error) {
+        console.error(`Attempt ${retryCount + 1} failed:`, error);
+        retryCount++;
+        
+        if (retryCount >= maxRetries) {
+          console.error('Max retries reached, giving up');
+          return NextResponse.json(
+            { error: 'Failed to assign condition after multiple attempts' },
+            { status: 500 }
+          );
+        }
+        
+        // 잠시 대기 후 재시도
+        await new Promise(resolve => setTimeout(resolve, 100 * retryCount));
       }
     }
-    
-    console.log('=== CONDITION ASSIGNMENT COMPLETE ===');
-    console.log('Final assigned condition:', assignedCondition);
+
+    if (!assignedCondition) {
+      console.error('Failed to assign condition after all retries');
+      return NextResponse.json(
+        { error: 'Failed to assign experiment condition' },
+        { status: 500 }
+      );
+    }
 
     // 4. 새 참가자 생성
     console.log('Creating new participant...');
