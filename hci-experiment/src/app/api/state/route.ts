@@ -13,8 +13,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log('State API called for participant:', participantId);
-
     // Check if this is test mode by looking at the participant data
     // Test mode participants will have TEST_PID as prolific_pid
     let isTestMode = false;
@@ -22,18 +20,12 @@ export async function GET(request: NextRequest) {
     try {
       const { data: participant } = await supabase
         .from('participants')
-        .select('prolific_pid, study_id')
+        .select('prolific_pid')
         .eq('id', participantId)
         .single();
       
-      // Test mode detection: check if prolific_pid starts with 'test' or study_id is 'test'
-      isTestMode = participant?.prolific_pid?.startsWith('test') || 
-                   participant?.study_id === 'test' ||
-                   participant?.prolific_pid === 'TEST_PID';
-      
-      console.log('Participant found:', participant, 'isTestMode:', isTestMode);
+      isTestMode = participant?.prolific_pid === 'TEST_PID';
     } catch (error) {
-      console.error('Error checking participant:', error);
       // If participant not found, assume test mode
       isTestMode = true;
     }
@@ -98,8 +90,14 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Production mode - get data from database
-    
+    // Check environment variables for production mode
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json(
+        { error: 'Supabase configuration is incomplete.' },
+        { status: 500 }
+      );
+    }
+
     // Get participant
     const { data: participant, error: participantError } = await supabase
       .from('participants')
@@ -108,7 +106,6 @@ export async function GET(request: NextRequest) {
       .single();
 
     if (participantError || !participant) {
-      console.error('Participant not found:', participantError);
       return NextResponse.json(
         { error: 'Participant not found.' },
         { status: 404 }
@@ -130,12 +127,12 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get responses from turn_responses table (not responses table)
+    // Get responses
     const { data: responses, error: responsesError } = await supabase
-      .from('turn_responses')
+      .from('responses')
       .select('*')
       .eq('participant_id', participantId)
-      .order('response_index');
+      .order('session_key, response_index');
 
     if (responsesError) {
       console.error('Responses fetch error:', responsesError);
@@ -175,8 +172,6 @@ export async function GET(request: NextRequest) {
       
       lastMessages = messages || [];
     }
-
-    console.log('State retrieved successfully for participant:', participantId);
 
     return NextResponse.json({
       participant,

@@ -34,81 +34,12 @@ function EntryPageContent() {
       if (!response.ok) {
         const errorData = await response.json();
         console.error('Failed to create test participant:', errorData);
-        return false;
       } else {
         const result = await response.json();
         console.log('Test participant created successfully:', result);
-        
-        // Create sessions for test participant
-        await createTestSessions(testParticipantId);
-        return true;
       }
     } catch (error) {
       console.error('Error creating test participant:', error);
-      return false;
-    }
-  };
-
-  const createTestSessions = async (participantId: string) => {
-    try {
-      console.log('Creating test sessions for participant:', participantId);
-      
-      // Create test session
-      const testSessionResponse = await fetch('/api/sessions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          participant_id: participantId,
-          session_key: 'test'
-        }),
-      });
-
-      if (!testSessionResponse.ok) {
-        console.error('Failed to create test session');
-      } else {
-        console.log('Test session created successfully');
-      }
-
-      // Create normative session
-      const normativeSessionResponse = await fetch('/api/sessions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          participant_id: participantId,
-          session_key: 'normative'
-        }),
-      });
-
-      if (!normativeSessionResponse.ok) {
-        console.error('Failed to create normative session');
-      } else {
-        console.log('Normative session created successfully');
-      }
-
-      // Create informative session
-      const informativeSessionResponse = await fetch('/api/sessions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          participant_id: participantId,
-          session_key: 'informative'
-        }),
-      });
-
-      if (!informativeSessionResponse.ok) {
-        console.error('Failed to create informative session');
-      } else {
-        console.log('Informative session created successfully');
-      }
-
-    } catch (error) {
-      console.error('Error creating test sessions:', error);
     }
   };
 
