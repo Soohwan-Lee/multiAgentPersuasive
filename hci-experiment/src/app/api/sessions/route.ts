@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSession, getParticipantSessions } from '@/lib/supabase';
-import { getSelectedTask } from '@/lib/prompts';
+import { getSelectedTask, setTaskIndices } from '@/lib/prompts';
 import { getCurrentSessionOrder } from '@/config/session-order';
 import { supabase } from '@/lib/supabase';
 
@@ -22,8 +22,12 @@ export async function POST(request: NextRequest) {
       .eq('id', participant_id)
       .single();
 
-    const session_order = session_key === 'test' ? 0 : 
-                         session_key === getCurrentSessionOrder()[0] ? 1 : 2;
+    // Determine session order by participant.task_order (not global env)
+    const firstOfOrder = p?.task_order === 'informativeFirst' ? 'informative' : 'normative';
+    const session_order = session_key === 'test' ? 0 : (session_key === firstOfOrder ? 1 : 2);
+
+    // Apply participant task indices to prompt selectors
+    setTaskIndices({ informative: p?.informative_task_index, normative: p?.normative_task_index });
 
     const task_index = session_key === 'test' 
       ? undefined 
@@ -32,6 +36,9 @@ export async function POST(request: NextRequest) {
     const task_content = session_key === 'test' 
       ? 'Should we turn on cameras during online video meetings as a courtesy?'
       : getSelectedTask(session_key);
+
+    // task_type mirrors session_key for now (test/normative/informative)
+    const task_type = session_key;
 
     // Create session
     const session = await createSession({
