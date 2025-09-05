@@ -37,6 +37,13 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Enrich with condition_id
+    const { data: ec } = await supabase
+      .from('experiment_conditions')
+      .select('id')
+      .eq('assigned_participant_id', participantId)
+      .single();
+
     // Create new response
     const responseId = crypto.randomUUID();
     const { data: newResponse, error: responseError } = await supabase
@@ -45,6 +52,7 @@ export async function POST(request: NextRequest) {
         id: responseId,
         participant_id: participantId,
         session_key: sessionKey,
+        condition_id: ec?.id ?? null,
         response_index: responseIndex,
         opinion: opinion,
         confidence: confidence,

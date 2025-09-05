@@ -204,6 +204,13 @@ export async function runCycle(opts: {
       console.error('Turn upsert error:', turnError);
     }
 
+    // Insert agent messages (include condition_id)
+    const { data: ec } = await supabase
+      .from('experiment_conditions')
+      .select('id')
+      .eq('assigned_participant_id', opts.participantId)
+      .single();
+
     // Insert agent messages
     for (const r of results) {
       await supabase
@@ -212,6 +219,7 @@ export async function runCycle(opts: {
           id: crypto.randomUUID(),
           participant_id: opts.participantId,
           session_key: opts.sessionKey,
+          condition_id: ec?.id ?? null,
           cycle: opts.cycle,
           role: `agent${r.agentId}`,
           content: r.text,

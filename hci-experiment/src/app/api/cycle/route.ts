@@ -142,13 +142,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Save user message
+    // Save user message (include condition_id)
+    const { data: ec } = await supabase
+      .from('experiment_conditions')
+      .select('id')
+      .eq('assigned_participant_id', participantId)
+      .single();
+
     const { error: userMsgError } = await supabase
       .from('messages')
       .insert({
         id: crypto.randomUUID(),
         participant_id: participantId,
         session_key: sessionKey,
+        condition_id: ec?.id ?? null,
         cycle: cycle,
         role: 'user',
         content: userMessage,

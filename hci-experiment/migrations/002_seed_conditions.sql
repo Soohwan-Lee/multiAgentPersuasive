@@ -4,7 +4,7 @@
 -- task indices cycling 0..5
 
 with seq as (
-  select generate_series(1, 300) as n
+  select generate_series(1, 150) as n
 ), typed as (
   select
     n,
