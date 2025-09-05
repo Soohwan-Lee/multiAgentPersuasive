@@ -106,11 +106,9 @@ export async function POST(request: NextRequest) {
     {
       const { data: s } = await supabase
         .from('sessions')
-        .select('id, started_at')
+        .select('id')
         .eq('participant_id', participantId)
         .eq('session_key', sessionKey)
-        .order('started_at', { ascending: false })
-        .limit(1)
         .single();
       sessionId = s?.id ?? null;
     }

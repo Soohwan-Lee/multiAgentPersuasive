@@ -18,11 +18,9 @@ async function getSessionId(participantId: string, sessionKey: string): Promise<
   try {
     const { data: session } = await supabase
       .from('sessions')
-      .select('id, started_at')
+      .select('id')
       .eq('participant_id', participantId)
       .eq('session_key', sessionKey)
-      .order('started_at', { ascending: false })
-      .limit(1)
       .single();
     
     return session?.id || null;
