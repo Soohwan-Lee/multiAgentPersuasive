@@ -46,7 +46,7 @@ export default function FinishPage() {
         console.log('Successfully marked participant as finished');
         setSubmissionStatus('success');
         
-        // Additional data cleanup
+        // 추가 데이터 정리 작업
         await cleanupSessionData(pid);
         
       } else {
@@ -65,11 +65,11 @@ export default function FinishPage() {
 
   const cleanupSessionData = async (pid: string) => {
     try {
-      // Session data cleanup (if needed)
+      // 세션 데이터 정리 (필요한 경우)
       console.log('Cleaning up session data for participant:', pid);
       
-      // Add additional cleanup tasks here if needed
-      // e.g., local storage cleanup, cache cleanup, etc.
+      // 여기에 추가적인 정리 작업을 추가할 수 있습니다
+      // 예: 로컬 스토리지 정리, 캐시 정리 등
       
     } catch (error) {
       console.warn('Session cleanup failed:', error);
