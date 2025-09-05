@@ -13,21 +13,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { participantId, type, payload } = eventRequestSchema.parse(body);
 
-    // Check if this is test mode by looking at the participant data
-    let isTestMode = false;
-    
-    try {
-      const { data: participant } = await supabase
-        .from('participants')
-        .select('prolific_pid')
-        .eq('id', participantId)
-        .single();
-      
-      isTestMode = participant?.prolific_pid === 'TEST_PID';
-    } catch (error) {
-      // If participant not found, assume test mode
-      isTestMode = true;
-    }
+    // Check if this is test mode
+    const isTestMode = participantId.startsWith('test-');
 
     if (isTestMode) {
       // For test mode, just log the event
@@ -53,7 +40,7 @@ export async function POST(request: NextRequest) {
       .insert({
         id: crypto.randomUUID(),
         participant_id: participantId,
-        event_type: type, // Use event_type instead of type
+        type: type,
         payload: payload || {},
         ts: new Date().toISOString(),
       });
