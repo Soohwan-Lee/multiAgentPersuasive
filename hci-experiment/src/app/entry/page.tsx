@@ -13,9 +13,9 @@ function EntryPageContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const createTestParticipantInSupabase = async (proposedTestId: string): Promise<string | null> => {
+  const createTestParticipantInSupabase = async (testParticipantId: string) => {
     try {
-      console.log('Creating test participant in Supabase:', proposedTestId);
+      console.log('Creating test participant in Supabase:', testParticipantId);
       
       const response = await fetch('/api/participants/upsert', {
         method: 'POST',
@@ -27,31 +27,25 @@ function EntryPageContent() {
           study_id: 'TEST_STUDY',
           session_id: 'TEST_SESSION',
           testMode: true,
-          testParticipantId: proposedTestId
+          testParticipantId: testParticipantId
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
         console.error('Failed to create test participant:', errorData);
-        return null;
+        return false;
+      } else {
+        const result = await response.json();
+        console.log('Test participant created successfully:', result);
+        
+        // Create sessions for test participant
+        await createTestSessions(testParticipantId);
+        return true;
       }
-
-      const result = await response.json();
-      console.log('Test participant created successfully:', result);
-
-      const createdId: string | undefined = result?.participant?.id;
-      if (!createdId) {
-        console.error('Participant ID missing in upsert response');
-        return null;
-      }
-
-      // Create sessions for the actual created participant id (DB source of truth)
-      await createTestSessions(createdId);
-      return createdId;
     } catch (error) {
       console.error('Error creating test participant:', error);
-      return null;
+      return false;
     }
   };
 
@@ -129,22 +123,18 @@ function EntryPageContent() {
 
               if (isTestMode) {
           // For testing, create a dummy participant with proper UUID
-          const proposedTestId = crypto.randomUUID(); // Generate proper UUID
-
-          // Create test participant in Supabase and wait for actual created id
-          const createdId = await createTestParticipantInSupabase(proposedTestId);
-          if (!createdId) {
-            setError('Failed to create test participant. Please refresh the page.');
-            return;
-          }
-
-          // Store in session storage using the actual DB participant id
-          sessionStorage.setItem('participantId', createdId);
+          const testParticipantId = crypto.randomUUID(); // Generate proper UUID
+          
+          // Create test participant in Supabase
+          createTestParticipantInSupabase(testParticipantId);
+          
+          // Store in session storage
+          sessionStorage.setItem('participantId', testParticipantId);
           sessionStorage.setItem('prolificPid', 'TEST_PID');
           sessionStorage.setItem('studyId', 'TEST_STUDY');
           sessionStorage.setItem('sessionId', 'TEST_SESSION');
           sessionStorage.setItem('isTestMode', 'true');
-
+          
           // Go directly to introduction
           router.push('/introduction');
           return;
@@ -213,19 +203,15 @@ function EntryPageContent() {
     initializeParticipant();
   }, [searchParams, router]);
 
-  const handleSkip = async () => {
+  const handleSkip = () => {
     // Create test participant and skip to introduction
-    const proposedTestId = crypto.randomUUID(); // Generate proper UUID
-
-    // Create test participant in Supabase and wait for actual created id
-    const createdId = await createTestParticipantInSupabase(proposedTestId);
-    if (!createdId) {
-      setError('Failed to create test participant. Please refresh the page.');
-      return;
-    }
-
-    // Store in session storage using the actual DB participant id
-    sessionStorage.setItem('participantId', createdId);
+    const testParticipantId = crypto.randomUUID(); // Generate proper UUID
+    
+    // Create test participant in Supabase
+    createTestParticipantInSupabase(testParticipantId);
+    
+    // Store in session storage
+    sessionStorage.setItem('participantId', testParticipantId);
     sessionStorage.setItem('prolificPid', 'TEST_PID');
     sessionStorage.setItem('studyId', 'TEST_STUDY');
     sessionStorage.setItem('sessionId', 'TEST_SESSION');
