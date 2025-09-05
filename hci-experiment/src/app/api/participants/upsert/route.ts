@@ -39,15 +39,10 @@ export async function POST(request: NextRequest) {
           prolific_pid: prolific_pid!,
           study_id: study_id!,
           session_id: session_id!,
-          condition_type: 'majority', // 임시값
-          task_order: 'informativeFirst', // 임시값
-          informative_task_index: 0, // 임시값
-          normative_task_index: 0, // 임시값
-          browser_info: {
-            userAgent: request.headers.get('user-agent'),
-            language: request.headers.get('accept-language'),
-          },
-          device_info: {},
+          condition_type: 'majority',
+          task_order: 'informativeFirst',
+          informative_task_index: 0,
+          normative_task_index: 0,
         });
 
         if (!tempParticipant) {

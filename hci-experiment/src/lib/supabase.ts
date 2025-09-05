@@ -191,9 +191,20 @@ export async function createParticipant(data: {
   browser_info?: any;
   device_info?: any;
 }): Promise<Participant | null> {
+  // Insert only columns that exist in the minimal schema
+  const insertPayload = {
+    prolific_pid: data.prolific_pid,
+    study_id: data.study_id,
+    session_id: data.session_id,
+    condition_type: data.condition_type,
+    task_order: data.task_order,
+    informative_task_index: data.informative_task_index,
+    normative_task_index: data.normative_task_index,
+  };
+
   const { data: participant, error } = await supabase
     .from('participants')
-    .insert([data])
+    .insert([insertPayload])
     .select()
     .single();
 
@@ -206,31 +217,37 @@ export async function createParticipant(data: {
 }
 
 export async function getParticipant(prolificPidOrId: string): Promise<Participant | null> {
-  // Try by prolific_pid first, then by id
-  let { data: participant, error } = await supabase
+  // Try by prolific_pid first
+  const byProlific = await supabase
     .from('participants')
     .select('*')
     .eq('prolific_pid', prolificPidOrId)
     .single();
 
-  if (error && error.code === 'PGRST116') {
-    // If not found by prolific_pid, try by id
-    const result = await supabase
-      .from('participants')
-      .select('*')
-      .eq('id', prolificPidOrId)
-      .single();
-    
-    participant = result.data;
-    error = result.error;
-  }
-
-  if (error) {
-    console.error('Error fetching participant:', error);
+  if (byProlific.data) return byProlific.data as Participant;
+  if (byProlific.error && byProlific.error.code && byProlific.error.code !== 'PGRST116') {
+    console.error('Error fetching participant by prolific_pid:', byProlific.error);
     return null;
   }
 
-  return participant;
+  // If the input looks like a UUID, try by id
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(prolificPidOrId)) {
+    return null;
+  }
+
+  const byId = await supabase
+    .from('participants')
+    .select('*')
+    .eq('id', prolificPidOrId)
+    .single();
+
+  if (byId.error) {
+    console.error('Error fetching participant by id:', byId.error);
+    return null;
+  }
+
+  return byId.data as Participant;
 }
 
 export async function updateParticipantFinished(participantId: string): Promise<void> {
