@@ -320,9 +320,26 @@ export async function saveBackgroundSurvey(data: {
     multi_agent_types: data.multi_agent_types ?? null,
     multi_agent_other: data.multi_agent_other ?? null,
     multi_agent_open_ended: data.multi_agent_open_ended ?? null,
+    // keep arrays for reference if needed
     sii: data.sii ?? null,
     nfc: data.nfc ?? null,
     ai_acceptance: data.ai_acceptance ?? null,
+    // also write into split columns when provided
+    sii_1: data.sii?.[0] ?? null,
+    sii_2: data.sii?.[1] ?? null,
+    sii_3: data.sii?.[2] ?? null,
+    sii_4: data.sii?.[3] ?? null,
+    nfc_1: data.nfc?.[0] ?? null,
+    nfc_2: data.nfc?.[1] ?? null,
+    nfc_3: data.nfc?.[2] ?? null,
+    nfc_4: data.nfc?.[3] ?? null,
+    nfc_5: data.nfc?.[4] ?? null,
+    nfc_6: data.nfc?.[5] ?? null,
+    ai_acceptance_1: data.ai_acceptance?.[0] ?? null,
+    ai_acceptance_2: data.ai_acceptance?.[1] ?? null,
+    ai_acceptance_3: data.ai_acceptance?.[2] ?? null,
+    ai_acceptance_4: data.ai_acceptance?.[3] ?? null,
+    ai_acceptance_5: data.ai_acceptance?.[4] ?? null,
   };
 
   const { data: survey, error } = await supabase

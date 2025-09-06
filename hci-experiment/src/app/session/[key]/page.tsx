@@ -80,8 +80,12 @@ export default function SessionPage() {
         const order = state.participant?.task_order === 'informativeFirst' ? 'informative' : 'normative';
         setFirstSessionKey(order);
 
-        // Use server-created session task if available
-        if (state.current_session?.task_content) {
+        // Use server-created session task for THIS session key if available
+        const thisSession = (state.sessions || []).find((s: any) => s.key === sessionKey);
+        if (thisSession?.task_content) {
+          setSessionTask(thisSession.task_content);
+        } else if (state.current_session?.task_content) {
+          // fallback to current_session
           setSessionTask(state.current_session.task_content);
         }
 
