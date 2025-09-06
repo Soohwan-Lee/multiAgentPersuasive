@@ -70,6 +70,9 @@ export default function PostOpenSurvey2Page() {
           participant_id: participantId,
           survey_number: 2,
           thoughts_on_experiment: basisOfDecision,
+          reason_for_change: reasonForChange,
+          internal_inconsistency: internalInconsistency,
+          pattern_experience: experienceByPattern,
           agent_comparison: experienceByPattern,
           suggestions: other,
         })

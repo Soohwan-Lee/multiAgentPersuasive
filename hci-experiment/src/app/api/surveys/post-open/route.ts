@@ -3,7 +3,7 @@ import { savePostOpenSurvey } from '@/lib/supabase';
 
 export async function POST(request: NextRequest) {
   try {
-    const { participant_id, survey_number, thoughts_on_experiment, agent_comparison, suggestions } = await request.json();
+    const { participant_id, survey_number, thoughts_on_experiment, agent_comparison, suggestions, reason_for_change, internal_inconsistency, pattern_experience } = await request.json();
 
     if (!participant_id || !survey_number) {
       return NextResponse.json(
@@ -28,6 +28,9 @@ export async function POST(request: NextRequest) {
       thoughts_on_experiment,
       agent_comparison,
       suggestions,
+      reason_for_change,
+      internal_inconsistency,
+      pattern_experience,
     });
 
     if (!survey) {

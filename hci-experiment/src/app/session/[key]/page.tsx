@@ -34,10 +34,12 @@ export default function SessionPage() {
   const [responses, setResponses] = useState<Response[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [agentResponseDelay, setAgentResponseDelay] = useState(2000); // 2초 지연
+  const [firstSessionKey, setFirstSessionKey] = useState<'normative'|'informative'>('normative');
+  const [sessionTask, setSessionTask] = useState<string | null>(null);
 
   // 현재 task 정보 가져오기
-  const currentTask = getCurrentSessionTask(sessionKey);
-  const currentTaskDisplay = getCurrentTaskDisplay(sessionKey);
+  const currentTask = sessionTask ?? getCurrentSessionTask(sessionKey);
+  const currentTaskDisplay = sessionTask ? getCurrentTaskDisplay(sessionKey).replace(getCurrentSessionTask(sessionKey), sessionTask) : getCurrentTaskDisplay(sessionKey);
 
   useEffect(() => {
     const storedParticipantId = sessionStorage.getItem('participantId');
@@ -74,6 +76,15 @@ export default function SessionPage() {
         const state = await response.json();
         setResponses(state.responses || []);
         setMessages(state.last_messages || []);
+
+        // Determine first session from participant.task_order (participant-specific)
+        const order = state.participant?.task_order === 'informativeFirst' ? 'informative' : 'normative';
+        setFirstSessionKey(order);
+
+        // Use server-created session task if available
+        if (state.current_session?.task_content) {
+          setSessionTask(state.current_session.task_content);
+        }
 
         // Check if T0 exists
         const t0Response = state.responses?.find((r: Response) => r.session_key === sessionKey && r.response_index === 0);
@@ -267,12 +278,12 @@ export default function SessionPage() {
       // T4 완료 후 세션 완료
       console.log('All responses completed. Moving to next page.');
       setCurrentState('complete');
-      // 다음 페이지로 이동
+      // 다음 페이지로 이동 (participant.task_order 반영)
       if (sessionKey === 'test') {
         router.push('/session-transition');
-      } else if (sessionKey === getFirstSession()) {
+      } else if (sessionKey === firstSessionKey) {
         router.push('/survey/post-self-1');
-      } else if (sessionKey === getSecondSession()) {
+      } else {
         router.push('/survey/post-self-2');
       }
     }

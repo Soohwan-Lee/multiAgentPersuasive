@@ -624,6 +624,9 @@ export async function savePostOpenSurvey(data: {
   thoughts_on_experiment?: string;
   agent_comparison?: string;
   suggestions?: string;
+  reason_for_change?: string;
+  internal_inconsistency?: string;
+  pattern_experience?: string;
 }): Promise<PostOpenSurvey | null> {
   const { data: p } = await supabase
     .from('participants')
@@ -648,6 +651,9 @@ export async function savePostOpenSurvey(data: {
     thoughts_on_experiment: data.thoughts_on_experiment ?? null,
     agent_comparison: data.agent_comparison ?? null,
     suggestions: data.suggestions ?? null,
+    reason_for_change: data.reason_for_change ?? null,
+    internal_inconsistency: data.internal_inconsistency ?? null,
+    pattern_experience: data.pattern_experience ?? null,
   };
 
   const { data: survey, error } = await supabase
