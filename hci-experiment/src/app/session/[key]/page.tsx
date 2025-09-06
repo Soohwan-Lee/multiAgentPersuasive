@@ -13,6 +13,7 @@ import { Message, Response } from '@/lib/types';
 import { Info, Lightbulb, MessageSquare, SkipForward } from 'lucide-react';
 import { getFirstSession, getSecondSession } from '@/config/session-order';
 import { getCurrentSessionTask, getCurrentTaskDisplay } from '@/lib/task-example';
+import { setTaskIndices, getSelectedTask } from '@/lib/prompts';
 
 type SessionState = 't0' | 'chat' | 'agents-responding' | 'response' | 'complete';
 
@@ -36,20 +37,24 @@ export default function SessionPage() {
   const [agentResponseDelay, setAgentResponseDelay] = useState(2000); // 2초 지연
   const [firstSessionKey, setFirstSessionKey] = useState<'normative'|'informative'>('normative');
   const [sessionTask, setSessionTask] = useState<string | null>(null);
+  const [indicesReady, setIndicesReady] = useState(false);
 
-  // 현재 task 정보 표시: 서버 세션의 task_content가 준비될 때까지는 표시하지 않음
-  const currentTaskTitle = sessionTask || undefined;
+  // 현재 task 정보 표시: 서버 task_content 우선, 없으면 참가자 인덱스가 준비된 후 선택
+  const currentTaskTitle =
+    sessionKey === 'test'
+      ? getCurrentSessionTask('test')
+      : (sessionTask ?? (indicesReady ? getSelectedTask(sessionKey) : undefined));
 
   useEffect(() => {
-    const storedParticipantId = sessionStorage.getItem('participantId');
-    if (!storedParticipantId) {
-      router.push('/entry');
-      return;
-    }
-    setParticipantId(storedParticipantId);
+    const init = async () => {
+      const storedParticipantId = sessionStorage.getItem('participantId');
+      if (!storedParticipantId) {
+        router.push('/entry');
+        return;
+      }
+      setParticipantId(storedParticipantId);
 
-    // Ensure a DB session row exists for this participant/session
-    (async () => {
+      // 세션 생성 후 상태 로드(순차 수행하여 task_content race 방지)
       try {
         await fetch('/api/sessions', {
           method: 'POST',
@@ -62,10 +67,11 @@ export default function SessionPage() {
       } catch (e) {
         console.error('Failed to create session row (non-fatal):', e);
       }
-    })();
 
-    // Load initial state
-    loadSessionState(storedParticipantId);
+      await loadSessionState(storedParticipantId);
+    };
+
+    init();
   }, [router, sessionKey]);
 
   const loadSessionState = async (pid: string) => {
@@ -80,6 +86,17 @@ export default function SessionPage() {
         const order = state.participant?.task_order === 'informativeFirst' ? 'informative' : 'normative';
         setFirstSessionKey(order);
 
+        // 참가자별 task 인덱스를 클라이언트 프롬프트 모듈에 주입
+        try {
+          setTaskIndices({
+            informative: state.participant?.informative_task_index,
+            normative: state.participant?.normative_task_index,
+          });
+          setIndicesReady(true);
+        } catch (e) {
+          console.error('Failed to set task indices on client:', e);
+        }
+
         // Use server-created session task for THIS session key if available
         const thisSession = (state.sessions || []).find((s: any) => s.key === sessionKey);
         if (thisSession?.task_content) {
@@ -87,6 +104,12 @@ export default function SessionPage() {
         } else if (state.current_session?.task_content && state.current_session?.key === sessionKey) {
           // fallback to current_session
           setSessionTask(state.current_session.task_content);
+        } else {
+          // 서버 task_content가 아직 없으면, 참가자 인덱스 기반으로 안전하게 추론
+          if (sessionKey !== 'test') {
+            const inferred = getSelectedTask(sessionKey);
+            setSessionTask(inferred);
+          }
         }
 
         // Check if T0 exists
@@ -170,7 +193,7 @@ export default function SessionPage() {
       
       // 현재 세션의 task: 서버에서 세션 생성 시 계산된 task_content를 우선 사용
       const { getCurrentSessionTask } = await import('@/lib/task-example');
-      const currentTask = sessionTask ?? getCurrentSessionTask(sessionKey);
+      const currentTask = sessionKey === 'test' ? getCurrentSessionTask('test') : (sessionTask ?? (indicesReady ? getSelectedTask(sessionKey) : undefined));
 
       const response = await fetch('/api/cycle', {
         method: 'POST',
@@ -319,7 +342,11 @@ export default function SessionPage() {
       <ProgressHeader
         currentStep={sessionMeta.name}
         totalSteps={13}
-        currentStepIndex={sessionKey === 'test' ? 3 : sessionKey === 'normative' ? 5 : 9}
+        currentStepIndex={
+          sessionKey === 'test'
+            ? 3
+            : (sessionKey === firstSessionKey ? 5 : 9)
+        }
       />
 
       {/* Session Banner */}
