@@ -183,7 +183,7 @@ export default function BackgroundSurveyPage() {
         })
       });
 
-      // Persist minimal background survey to dedicated table
+      // Persist background survey to dedicated table (all fields)
       await fetch('/api/surveys/background', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -193,9 +193,21 @@ export default function BackgroundSurveyPage() {
           gender,
           education,
           occupation,
-          // Optional fields not present in this UI can be omitted
-          political_views: undefined,
-          social_media_usage: undefined,
+          country,
+          languages,
+          englishProficiency,
+          raceEthnicity,
+          raceOther,
+          llmUsage,
+          toolsUsed,
+          toolsOther,
+          multiAgentExperience,
+          multiAgentTypes,
+          multiAgentOther,
+          multiAgentOpenEnded,
+          sii: [sii1, sii2, sii3, sii4],
+          nfc: [nfc1, nfc2, nfc3, nfc4, nfc5, nfc6],
+          aiAcceptance: [aiAcceptance1, aiAcceptance2, aiAcceptance3, aiAcceptance4, aiAcceptance5],
         })
       });
 

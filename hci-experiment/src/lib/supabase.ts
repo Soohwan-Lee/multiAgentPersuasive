@@ -269,8 +269,21 @@ export async function saveBackgroundSurvey(data: {
   gender: string;
   education: string;
   occupation?: string;
-  political_views?: string;
-  social_media_usage?: string;
+  country?: string;
+  languages?: string[];
+  english_proficiency?: number;
+  race_ethnicity?: string;
+  race_other?: string;
+  llm_usage?: number;
+  tools_used?: string[];
+  tools_other?: string;
+  multi_agent_experience?: string;
+  multi_agent_types?: string[];
+  multi_agent_other?: string;
+  multi_agent_open_ended?: string;
+  sii?: number[];
+  nfc?: number[];
+  ai_acceptance?: number[];
 }): Promise<BackgroundSurvey | null> {
   // fetch participant to enrich with condition info and participant_no
   const { data: p } = await supabase
@@ -295,8 +308,21 @@ export async function saveBackgroundSurvey(data: {
     gender: data.gender,
     education: data.education,
     occupation: data.occupation ?? null,
-    political_views: data.political_views ?? null,
-    social_media_usage: data.social_media_usage ?? null,
+    country: data.country ?? null,
+    languages: data.languages ?? null,
+    english_proficiency: data.english_proficiency ?? null,
+    race_ethnicity: data.race_ethnicity ?? null,
+    race_other: data.race_other ?? null,
+    llm_usage: data.llm_usage ?? null,
+    tools_used: data.tools_used ?? null,
+    tools_other: data.tools_other ?? null,
+    multi_agent_experience: data.multi_agent_experience ?? null,
+    multi_agent_types: data.multi_agent_types ?? null,
+    multi_agent_other: data.multi_agent_other ?? null,
+    multi_agent_open_ended: data.multi_agent_open_ended ?? null,
+    sii: data.sii ?? null,
+    nfc: data.nfc ?? null,
+    ai_acceptance: data.ai_acceptance ?? null,
   };
 
   const { data: survey, error } = await supabase

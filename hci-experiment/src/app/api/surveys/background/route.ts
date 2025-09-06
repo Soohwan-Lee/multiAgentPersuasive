@@ -3,7 +3,8 @@ import { saveBackgroundSurvey } from '@/lib/supabase';
 
 export async function POST(request: NextRequest) {
   try {
-    const { participant_id, age, gender, education, occupation, political_views, social_media_usage } = await request.json();
+    const body = await request.json();
+    const { participant_id, age, gender, education, occupation } = body;
 
     if (!participant_id || !age || !gender || !education) {
       return NextResponse.json(
@@ -27,8 +28,21 @@ export async function POST(request: NextRequest) {
       gender,
       education,
       occupation,
-      political_views,
-      social_media_usage,
+      country: body.country,
+      languages: body.languages,
+      english_proficiency: body.englishProficiency,
+      race_ethnicity: body.raceEthnicity,
+      race_other: body.raceOther,
+      llm_usage: body.llmUsage,
+      tools_used: body.toolsUsed,
+      tools_other: body.toolsOther,
+      multi_agent_experience: body.multiAgentExperience,
+      multi_agent_types: body.multiAgentTypes,
+      multi_agent_other: body.multiAgentOther,
+      multi_agent_open_ended: body.multiAgentOpenEnded,
+      sii: body.sii,
+      nfc: body.nfc,
+      ai_acceptance: body.aiAcceptance,
     });
 
     if (!survey) {
