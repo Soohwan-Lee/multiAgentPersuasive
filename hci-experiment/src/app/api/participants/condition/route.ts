@@ -37,10 +37,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get participant condition
+    // Get participant condition_type
     const { data: participant, error: participantError } = await supabase
       .from('participants')
-      .select('condition')
+      .select('condition_type')
       .eq('id', participantId)
       .single();
 
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({
-      condition: participant.condition
+      condition: participant.condition_type
     });
 
   } catch (error) {

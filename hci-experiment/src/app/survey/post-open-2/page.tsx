@@ -16,8 +16,8 @@ export default function PostOpenSurvey2Page() {
   const [participantId, setParticipantId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // patterns.ts에서 현재 패턴을 동적으로 가져오기
-  const condition: string = CURRENT_PATTERN;
+  // 참가자의 실제 condition_type을 우선 사용, 없으면 CURRENT_PATTERN 사용
+  const [condition, setCondition] = useState<string>(CURRENT_PATTERN);
   
   // Survey responses
   const [basisOfDecision, setBasisOfDecision] = useState('');
@@ -29,6 +29,20 @@ export default function PostOpenSurvey2Page() {
   useEffect(() => {
     const id = sessionStorage.getItem('participantId');
     setParticipantId(id);
+
+    if (id) {
+      (async () => {
+        try {
+          const res = await fetch(`/api/participants/condition?participantId=${id}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data?.condition) setCondition(data.condition);
+          }
+        } catch (e) {
+          console.error('Failed to load participant condition_type:', e);
+        }
+      })();
+    }
   }, []);
 
   const handleSubmit = async () => {

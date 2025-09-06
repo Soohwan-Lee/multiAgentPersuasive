@@ -37,8 +37,8 @@ export default function SessionPage() {
   const [firstSessionKey, setFirstSessionKey] = useState<'normative'|'informative'>('normative');
   const [sessionTask, setSessionTask] = useState<string | null>(null);
 
-  // 현재 task 정보 가져오기 (서버 생성 세션 task가 있으면 우선 사용)
-  const currentTaskTitle = sessionTask ?? getCurrentSessionTask(sessionKey);
+  // 현재 task 정보 표시: 서버 세션의 task_content가 준비될 때까지는 표시하지 않음
+  const currentTaskTitle = sessionTask || undefined;
 
   useEffect(() => {
     const storedParticipantId = sessionStorage.getItem('participantId');
@@ -84,7 +84,7 @@ export default function SessionPage() {
         const thisSession = (state.sessions || []).find((s: any) => s.key === sessionKey);
         if (thisSession?.task_content) {
           setSessionTask(thisSession.task_content);
-        } else if (state.current_session?.task_content) {
+        } else if (state.current_session?.task_content && state.current_session?.key === sessionKey) {
           // fallback to current_session
           setSessionTask(state.current_session.task_content);
         }
@@ -168,9 +168,9 @@ export default function SessionPage() {
       
       setMessages(prev => [...prev, userMessage]);
       
-      // 현재 세션의 task 가져오기
+      // 현재 세션의 task: 서버에서 세션 생성 시 계산된 task_content를 우선 사용
       const { getCurrentSessionTask } = await import('@/lib/task-example');
-      const currentTask = getCurrentSessionTask(sessionKey);
+      const currentTask = sessionTask ?? getCurrentSessionTask(sessionKey);
 
       const response = await fetch('/api/cycle', {
         method: 'POST',
