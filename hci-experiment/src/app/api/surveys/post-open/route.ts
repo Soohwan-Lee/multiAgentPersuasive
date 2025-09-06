@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { savePostOpenSurvey } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,6 +19,14 @@ export async function POST(request: NextRequest) {
         { error: 'Survey number must be 1 or 2' },
         { status: 400 }
       );
+    }
+
+    // Quick DB connectivity check (optional, logs only)
+    try {
+      const { error: pingErr } = await supabaseAdmin.from('post_open_surveys').select('id').limit(1);
+      if (pingErr) console.warn('Supabase admin ping failed (non-fatal):', pingErr.message);
+    } catch (e) {
+      console.warn('Supabase admin quick check error:', e);
     }
 
     // Save post-open survey
