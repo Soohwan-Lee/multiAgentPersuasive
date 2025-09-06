@@ -12,7 +12,7 @@ const cycleRequestSchema = z.object({
   sessionKey: z.enum(['test', 'normative', 'informative']), // main1, main2를 normative, informative로 변경
   cycle: z.number().min(1).max(4),
   userMessage: z.string().min(1),
-  currentTask: z.string().optional(), // 현재 논의할 주제
+  currentTask: z.string().optional(), // 현재 논의할 주제 (클라이언트는 전달하지 않아도 됨)
 });
 
 export async function POST(request: NextRequest) {
@@ -151,6 +151,20 @@ export async function POST(request: NextRequest) {
       .single();
     setTaskIndices({ informative: participant?.informative_task_index, normative: participant?.normative_task_index });
 
+    // Determine task server-side using participant indices
+    let resolvedTask: string | undefined = undefined;
+    if (sessionKey === 'informative') {
+      const idx = participant?.informative_task_index ?? 0;
+      const tasks = ['dummy'];
+      // lazy import to avoid circular
+      const { INFORMATIVE_TASKS } = await import('@/lib/prompts');
+      resolvedTask = INFORMATIVE_TASKS[idx];
+    } else if (sessionKey === 'normative') {
+      const idx = participant?.normative_task_index ?? 0;
+      const { NORMATIVE_TASKS } = await import('@/lib/prompts');
+      resolvedTask = NORMATIVE_TASKS[idx];
+    }
+
     // Save user message (include condition_id)
     const { data: ec } = await supabase
       .from('experiment_conditions')
@@ -180,7 +194,7 @@ export async function POST(request: NextRequest) {
       sessionKey,
       cycle,
       userMessage,
-      currentTask: currentTask,
+      currentTask: resolvedTask ?? currentTask,
     });
 
     console.log('Cycle result:', {

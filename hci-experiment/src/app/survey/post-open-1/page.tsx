@@ -62,6 +62,19 @@ export default function PostOpenSurvey1Page() {
         })
       });
 
+      // Persist to dedicated table
+      await fetch('/api/surveys/post-open', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          participant_id: participantId,
+          survey_number: 1,
+          thoughts_on_experiment: basisOfDecision,
+          agent_comparison: experienceByPattern,
+          suggestions: other,
+        })
+      });
+
       // Navigate to next page
       router.push('/session-transition-2');
     } catch (error) {

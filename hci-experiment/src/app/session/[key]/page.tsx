@@ -47,6 +47,22 @@ export default function SessionPage() {
     }
     setParticipantId(storedParticipantId);
 
+    // Ensure a DB session row exists for this participant/session
+    (async () => {
+      try {
+        await fetch('/api/sessions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            participant_id: storedParticipantId,
+            session_key: sessionKey,
+          })
+        });
+      } catch (e) {
+        console.error('Failed to create session row (non-fatal):', e);
+      }
+    })();
+
     // Load initial state
     loadSessionState(storedParticipantId);
   }, [router, sessionKey]);

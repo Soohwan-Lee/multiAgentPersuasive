@@ -183,6 +183,22 @@ export default function BackgroundSurveyPage() {
         })
       });
 
+      // Persist minimal background survey to dedicated table
+      await fetch('/api/surveys/background', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          participant_id: participantId,
+          age: Number(age),
+          gender,
+          education,
+          occupation,
+          // Optional fields not present in this UI can be omitted
+          political_views: undefined,
+          social_media_usage: undefined,
+        })
+      });
+
       // Navigate to practice session
       router.push('/session/test');
     } catch (error) {

@@ -175,6 +175,47 @@ export default function PostSelfSurvey1Page() {
         })
       });
 
+      // Persist to dedicated table
+      await fetch('/api/surveys/post-self', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          participant_id: participantId,
+          survey_number: 1,
+          perceived_compliance_1: responses.perceivedCompliance1,
+          perceived_compliance_2: responses.perceivedCompliance2,
+          perceived_compliance_3: responses.perceivedCompliance3,
+          perceived_compliance_4: responses.perceivedCompliance4,
+          perceived_conversion_1: responses.perceivedConversion1,
+          perceived_conversion_2: responses.perceivedConversion2,
+          perceived_conversion_3: responses.perceivedConversion3,
+          perceived_conversion_4: responses.perceivedConversion4,
+          concentration_test: responses.concentrationTest,
+          // condition-dependent optional fields
+          agent_competence: responses.agentCompetence ?? undefined,
+          agent_predictability: responses.agentPredictability ?? undefined,
+          agent_integrity: responses.agentIntegrity ?? undefined,
+          agent_understanding: responses.agentUnderstanding ?? undefined,
+          agent_utility: responses.agentUtility ?? undefined,
+          agent_affect: responses.agentAffect ?? undefined,
+          agent_trust: responses.agentTrust ?? undefined,
+          agent1_competence: responses.agent1Competence ?? undefined,
+          agent1_predictability: responses.agent1Predictability ?? undefined,
+          agent1_integrity: responses.agent1Integrity ?? undefined,
+          agent1_understanding: responses.agent1Understanding ?? undefined,
+          agent1_utility: responses.agent1Utility ?? undefined,
+          agent1_affect: responses.agent1Affect ?? undefined,
+          agent1_trust: responses.agent1Trust ?? undefined,
+          agent3_competence: responses.agent3Competence ?? undefined,
+          agent3_predictability: responses.agent3Predictability ?? undefined,
+          agent3_integrity: responses.agent3Integrity ?? undefined,
+          agent3_understanding: responses.agent3Understanding ?? undefined,
+          agent3_utility: responses.agent3Utility ?? undefined,
+          agent3_affect: responses.agent3Affect ?? undefined,
+          agent3_trust: responses.agent3Trust ?? undefined,
+        })
+      });
+
       // Navigate to next page
       router.push('/survey/post-open-1');
     } catch (error) {
