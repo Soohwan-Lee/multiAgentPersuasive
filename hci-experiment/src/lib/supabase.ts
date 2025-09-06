@@ -654,7 +654,10 @@ export async function savePostOpenSurvey(data: {
     reason_for_change: data.reason_for_change ?? null,
     internal_inconsistency: data.internal_inconsistency ?? null,
     pattern_experience: data.pattern_experience ?? null,
-  };
+    pattern_experience_majority: p?.condition_type === 'majority' ? (data.pattern_experience ?? null) : null,
+    pattern_experience_minority: p?.condition_type === 'minority' ? (data.pattern_experience ?? null) : null,
+    pattern_experience_diffusion: p?.condition_type === 'minorityDiffusion' ? (data.pattern_experience ?? null) : null,
+  } as any;
 
   const { data: survey, error } = await supabase
     .from('post_open_surveys')

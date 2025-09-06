@@ -73,7 +73,6 @@ export default function PostOpenSurvey1Page() {
           reason_for_change: reasonForChange,
           internal_inconsistency: internalInconsistency,
           pattern_experience: experienceByPattern,
-          agent_comparison: experienceByPattern,
           suggestions: other,
         })
       });
