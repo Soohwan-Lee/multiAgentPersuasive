@@ -37,9 +37,8 @@ export default function SessionPage() {
   const [firstSessionKey, setFirstSessionKey] = useState<'normative'|'informative'>('normative');
   const [sessionTask, setSessionTask] = useState<string | null>(null);
 
-  // 현재 task 정보 가져오기
-  const currentTask = sessionTask ?? getCurrentSessionTask(sessionKey);
-  const currentTaskDisplay = sessionTask ? getCurrentTaskDisplay(sessionKey).replace(getCurrentSessionTask(sessionKey), sessionTask) : getCurrentTaskDisplay(sessionKey);
+  // 현재 task 정보 가져오기 (서버 생성 세션 task가 있으면 우선 사용)
+  const currentTaskTitle = sessionTask ?? getCurrentSessionTask(sessionKey);
 
   useEffect(() => {
     const storedParticipantId = sessionStorage.getItem('participantId');
@@ -323,7 +322,7 @@ export default function SessionPage() {
       <SessionBanner 
         sessionKey={sessionKey} 
         isFirstMainSession={sessionKey === getFirstSession()}
-        currentTask={currentTaskDisplay}
+        currentTask={currentTaskTitle}
       />
 
       {/* Main Content */}
@@ -356,7 +355,7 @@ export default function SessionPage() {
                 sessionKey={sessionKey}
                 participantId={participantId}
                 isChatEnabled={currentState === 'chat'} // 채팅 상태일 때만 활성화
-                currentTask={currentTaskDisplay}
+                currentTask={currentTaskTitle}
               />
             </CardContent>
           </Card>
