@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -31,6 +31,28 @@ export function ResponsePanel({
   // 현재 task 주제 가져오기
   const currentTaskDisplay = getCurrentTaskDisplay(sessionKey);
 
+  // T1~T4에서는 바로 이전 응답값을 초기값으로 사용 (T0는 중앙값 유지)
+  useEffect(() => {
+    if (responseIndex > 0 && typeof window !== 'undefined') {
+      const key = `last-values:${participantId}:${sessionKey}`;
+      try {
+        const saved = window.sessionStorage.getItem(key);
+        if (saved) {
+          const parsed = JSON.parse(saved) as { opinion: number; confidence: number };
+          if (typeof parsed.opinion === 'number') {
+            setOpinion(parsed.opinion);
+          }
+          if (typeof parsed.confidence === 'number') {
+            setConfidence(parsed.confidence);
+          }
+          // 이전 값을 초기값으로만 세팅하므로, 이동 여부는 그대로 false 유지
+        }
+      } catch (e) {
+        // ignore JSON parse errors
+      }
+    }
+  }, [responseIndex, participantId, sessionKey]);
+
   const handleOpinionChange = (value: number) => {
     setOpinion(value);
     if (!opinionMoved) {
@@ -60,6 +82,15 @@ export function ResponsePanel({
     const rtMs = Date.now() - startTime;
 
     try {
+      // 제출 직전에 마지막 값을 세션 스토리지에 저장하여 다음 T에서 초기값으로 사용
+      if (typeof window !== 'undefined') {
+        const key = `last-values:${participantId}:${sessionKey}`;
+        window.sessionStorage.setItem(
+          key,
+          JSON.stringify({ opinion, confidence })
+        );
+      }
+
       const response = await fetch('/api/response', {
         method: 'POST',
         headers: {
