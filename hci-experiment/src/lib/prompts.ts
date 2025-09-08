@@ -164,6 +164,43 @@ export function buildSystemPrompt(ctx: PromptCtx) {
     conversationContext = "This is an ongoing conversation. Build naturally on previous exchanges and acknowledge the conversation flow.";
   }
 
+  // Cushioning / tone guidance for more natural one-sentence answers
+  let cushionGuidance = "";
+  if (ctx.pattern === "minority") {
+    if (ctx.agentId === 3) {
+      cushionGuidance = "Tone: Begin with a brief softening clause acknowledging others (e.g., 'I see your points, but...'), then state your stance in one sentence.";
+    } else {
+      cushionGuidance = "Tone: You may briefly acknowledge the participant before supporting them (e.g., 'I agree with your reasoning, so...'), still one sentence.";
+    }
+  } else if (ctx.pattern === "minorityDiffusion" && ctx.chatCycle) {
+    if (ctx.chatCycle <= 2) {
+      if (ctx.agentId === 3) {
+        cushionGuidance = "Tone: Use a softening preface before disagreeing (e.g., 'I see the rationale, yet...'), keep it one sentence.";
+      } else {
+        cushionGuidance = "Tone: A brief acknowledgment of the participant is fine before supporting them (e.g., 'That makes sense, so...'), still one sentence.";
+      }
+    } else if (ctx.chatCycle === 3 && ctx.agentId === 1) {
+      cushionGuidance = "Tone: Acknowledge your change succinctly (e.g., 'Thinking it through, I now...') and, if helpful, allude to Agent 3's earlier point; keep it one sentence.";
+    } else if (ctx.chatCycle === 4 && ctx.agentId === 2) {
+      cushionGuidance = "Tone: Recognize the shift briefly (e.g., 'After hearing the discussion, I now...') and you may reference Agent 1/3 implicitly; keep it one sentence.";
+    } else if (ctx.chatCycle >= 3) {
+      cushionGuidance = "Tone: You are now in the majority; be confident yet respectful; one sentence only.";
+    }
+  }
+
+  // Special handling for the 'Chauvinist' spelling informative task
+  const isChauvinistTask = typeof currentTask === 'string' && currentTask.includes("'Chauvinist' is the correct English spelling");
+  let chauvinistGuidance = "";
+  if (isChauvinistTask) {
+    if (ctx.stance === "oppose") {
+      chauvinistGuidance = "For this task, when disputing, propose a plausible but incorrect spelling (e.g., 'Chovinist' or 'Shauvinist') and focus strictly on spelling; do not argue about broader meanings.";
+    } else if (ctx.stance === "support") {
+      chauvinistGuidance = "For this task, affirm that 'Chauvinist' is the correct spelling, focusing on orthography; avoid semantic detours.";
+    } else {
+      chauvinistGuidance = "For this task, keep discussion strictly about spelling; you may note common misspellings while remaining balanced.";
+    }
+  }
+
   // 컨디션별 간단한 프롬프트
   let simplePrompt = "";
   if (ctx.pattern === "majority") {
@@ -196,6 +233,12 @@ export function buildSystemPrompt(ctx: PromptCtx) {
     `Role: You are ${ctx.agentName}, one of three AI agents in a decision discussion.`,
     `Current Task: "${currentTask}"`,
     `Participant's Initial Position: ${userInitialPosition} (T0 opinion: ${ctx.t0Opinion})`,
+    stanceLine,
+    conformityFocus,
+    patternContext,
+    conversationContext,
+    cushionGuidance,
+    chauvinistGuidance,
     simplePrompt,
     "IMPORTANT: Express your opinion clearly and concisely in ONE SENTENCE.",
     "Style: One clear sentence expressing your stance on the topic.",

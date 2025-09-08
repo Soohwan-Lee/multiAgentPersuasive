@@ -1,8 +1,4 @@
-import OpenAI from "openai";
-
-const client = new OpenAI({ 
-  apiKey: process.env.OPENAI_API_KEY || '' 
-});
+// Using fetch-based API call to avoid SDK/type coupling
 
 export async function callOpenAIChat({ 
   system, 
@@ -25,14 +21,9 @@ export async function callOpenAIChat({
   console.log(`API Key length: ${apiKeyLength} characters`);
   console.log(`API Key starts with: ${process.env.OPENAI_API_KEY.substring(0, 7)}...`);
 
-  // 에이전트별로 다른 temperature 적용
-  const getTemperature = (agentId: number): number => {
-    switch (agentId) {
-      case 1: return 1.0;  // Agent 1: 매우 높은 창의성 (최대)
-      case 2: return 0.7;  // Agent 2: 중간 창의성
-      case 3: return 0.3;  // Agent 3: 낮은 창의성 (일관성 중시)
-      default: return 0.7;
-    }
+  // 통일된 낮은 temperature 적용(일관성 확보)
+  const getTemperature = (_agentId: number): number => {
+    return 0.2; // 모든 에이전트 동일 적용
   };
 
   const temperature = getTemperature(agentId);
@@ -54,23 +45,34 @@ export async function callOpenAIChat({
       timedOut = true;
     }, 12000);
 
-    const response = await client.chat.completions.create({
-      model,
-      messages: [
-        { role: 'system', content: system },
-        { role: 'user', content: user }
-      ],
-      temperature: temperature, // 에이전트별 temperature 적용
-      max_tokens: 200,
-    }, {
-      signal: controller.signal
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: 'system', content: system },
+          { role: 'user', content: user }
+        ],
+        temperature: temperature,
+        max_tokens: 200,
+      }),
+      signal: controller.signal,
     });
 
     clearTimeout(timeoutId);
     const latencyMs = Date.now() - startTime;
-    const text = response.choices[0]?.message?.content || '';
-    const tokenIn = response.usage?.prompt_tokens;
-    const tokenOut = response.usage?.completion_tokens;
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`OpenAI API HTTP ${response.status}: ${errText}`);
+    }
+    const data = await response.json();
+    const text = data?.choices?.[0]?.message?.content || '';
+    const tokenIn = data?.usage?.prompt_tokens;
+    const tokenOut = data?.usage?.completion_tokens;
 
     console.log(`OpenAI response received in ${latencyMs}ms`);
     console.log(`Response length: ${text.length} chars`);
@@ -79,13 +81,7 @@ export async function callOpenAIChat({
     return { text, tokenIn, tokenOut, latencyMs, timedOut: false };
   } catch (e: any) {
     console.error('OpenAI API error:', e?.message || e);
-    console.error('Error type:', e?.name);
-    console.error('Error code:', e?.code);
-    console.error('Error status:', e?.status);
     console.error('Timed out:', timedOut);
-    console.error('Full error object:', JSON.stringify(e, null, 2));
-    
-    // 에러를 다시 throw하여 상위에서 처리할 수 있도록 함
-    throw new Error(`OpenAI API error: ${e?.message || 'Unknown error'} (Code: ${e?.code || 'N/A'}, Status: ${e?.status || 'N/A'})`);
+    throw new Error(`OpenAI API error: ${e?.message || 'Unknown error'}`);
   }
 }
