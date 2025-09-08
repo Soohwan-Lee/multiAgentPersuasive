@@ -38,7 +38,7 @@ const determineSessionOrder = async (participantId?: string): Promise<SessionOrd
   }
   
   // 기본값: normative-first
-  return SESSION_ORDER.INFORMATIVE_FIRST;
+  return SESSION_ORDER.NORMATIVE_FIRST;
 };
 
 // 향후 Supabase 연동을 위한 함수들 (현재는 주석 처리)

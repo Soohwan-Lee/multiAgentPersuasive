@@ -11,7 +11,7 @@ import { ResponsePanel } from '@/components/ResponsePanel';
 import { SESSION_META } from '@/config/sessions';
 import { Message, Response } from '@/lib/types';
 import { Info, Lightbulb, MessageSquare, SkipForward } from 'lucide-react';
-import { getFirstSession, getSecondSession } from '@/config/session-order';
+// Order is resolved per participant via state; avoid global order helpers here
 import { getCurrentSessionTask, getCurrentTaskDisplay } from '@/lib/task-example';
 import { setTaskIndices, getSelectedTask } from '@/lib/prompts';
 
@@ -156,9 +156,9 @@ export default function SessionPage() {
         // 다음 페이지로 이동
         if (sessionKey === 'test') {
           router.push('/session-transition');
-        } else if (sessionKey === getFirstSession()) {
+        } else if (sessionKey === firstSessionKey) {
           router.push('/survey/post-self-1');
-        } else if (sessionKey === getSecondSession()) {
+        } else {
           router.push('/survey/post-self-2');
         }
       }
@@ -352,7 +352,7 @@ export default function SessionPage() {
       {/* Session Banner */}
       <SessionBanner 
         sessionKey={sessionKey} 
-        isFirstMainSession={sessionKey === getFirstSession()}
+        isFirstMainSession={sessionKey === firstSessionKey}
         currentTask={currentTaskTitle}
       />
 

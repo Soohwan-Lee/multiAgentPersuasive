@@ -58,6 +58,11 @@ export default function PostOpenSurvey1Page() {
 
     try {
       // Log survey responses
+      // 참가자별 첫 세션 taskType 계산
+      const stateRes = await fetch(`/api/state?participantId=${participantId}`);
+      const state = stateRes.ok ? await stateRes.json() : null;
+      const firstSessionKey = state?.participant?.task_order === 'informativeFirst' ? 'informative' : 'normative';
+
       await fetch('/api/events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -71,7 +76,7 @@ export default function PostOpenSurvey1Page() {
             experienceByPattern,
             other,
             condition,
-            taskType: getFirstSession()
+            taskType: firstSessionKey
           }
         })
       });

@@ -6,12 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ProgressHeader } from '@/components/ProgressHeader';
 import { Target, CheckCircle, ArrowRight, AlertTriangle } from 'lucide-react';
-import { getFirstSession } from '@/config/session-order';
 
 export default function SessionTransitionPage() {
   const router = useRouter();
   const [participantId, setParticipantId] = useState<string | null>(null);
   const [countdown, setCountdown] = useState(5);
+  const [firstSessionKey, setFirstSessionKey] = useState<'normative' | 'informative' | null>(null);
 
   useEffect(() => {
     const storedParticipantId = sessionStorage.getItem('participantId');
@@ -20,24 +20,40 @@ export default function SessionTransitionPage() {
       return;
     }
     setParticipantId(storedParticipantId);
+
+    // 참가자별 task_order 기반으로 첫 세션 결정
+    (async () => {
+      try {
+        const res = await fetch(`/api/state?participantId=${storedParticipantId}`);
+        if (res.ok) {
+          const state = await res.json();
+          const order = state?.participant?.task_order === 'informativeFirst' ? 'informative' : 'normative';
+          setFirstSessionKey(order);
+        }
+      } catch (e) {
+        console.error('Failed to load participant task_order for transition:', e);
+      }
+    })();
   }, [router]);
 
   useEffect(() => {
     if (countdown > 0) {
       const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
       return () => clearTimeout(timer);
-    } else {
-      // 자동으로 다음 세션으로 이동
-      router.push(`/session/${getFirstSession()}`);
+    } else if (firstSessionKey) {
+      // 자동으로 다음 세션으로 이동 (참가자별 순서 반영)
+      router.push(`/session/${firstSessionKey}`);
     }
-  }, [countdown, router]);
+  }, [countdown, router, firstSessionKey]);
 
   const handleContinue = () => {
-    router.push(`/session/${getFirstSession()}`);
+    if (!firstSessionKey) return;
+    router.push(`/session/${firstSessionKey}`);
   };
 
   const handleSkip = () => {
-    router.push(`/session/${getFirstSession()}`);
+    if (!firstSessionKey) return;
+    router.push(`/session/${firstSessionKey}`);
   };
 
   if (!participantId) {
