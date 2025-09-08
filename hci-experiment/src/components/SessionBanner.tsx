@@ -13,12 +13,15 @@ export function SessionBanner({ sessionKey, isFirstMainSession = false, currentT
       case 'test':
         return {
           icon: TestTube,
-          title: '🧪 Test Session (Tutorial)',
-          description: 'This is a practice session to learn how to use the experiment interface.',
+          title: '🧪 Practice Session (Tutorial)',
+          description: 'Follow the steps below to learn how this experiment works.',
           tips: [
-            'This is not the actual experiment - it\'s a practice session',
-            'Please learn how to use the interface',
-            'Practice having conversations with AI agents'
+            '1) Set your initial stance and confidence using the sliders (T0).',
+            '2) Briefly explain your stance in one short sentence (why you think so).',
+            '3) Chat with three AI assistants. If your stance/confidence changes, adjust the sliders.',
+            '4) You must move each slider at least once per round. It\'s okay to move and return to your original values.',
+            '5) Keep your message consistent with your chosen stance (support vs. oppose).',
+            'Example (support): "I support it because ..." / (oppose): "I oppose it because ..."'
           ]
         };
       case 'normative':

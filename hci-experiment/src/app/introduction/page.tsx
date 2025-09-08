@@ -147,6 +147,11 @@ export default function IntroductionPage() {
           <div className="bg-yellow-50 p-4 rounded-lg">
             <h3 className="font-medium mb-2">⚠️ Important Notes</h3>
             <ul className="text-sm space-y-1">
+              <li>
+                <span className="font-semibold text-red-700">
+                  🚫 Decide on your own. Do NOT use internet search or other AIs (LLMs) during the study.
+                </span>
+              </li>
               <li>• Do not close the browser or refresh during the experiment</li>
               <li>• Please respond within the time limit for each cycle</li>
               <li>• Have honest and natural conversations</li>
