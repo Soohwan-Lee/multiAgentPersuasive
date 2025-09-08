@@ -14,14 +14,13 @@ export function SessionBanner({ sessionKey, isFirstMainSession = false, currentT
         return {
           icon: TestTube,
           title: '🧪 Practice Session (Tutorial)',
-          description: 'Follow the steps below to learn how this experiment works.',
+          description: 'Before We Start 🚀 Here’s how the session works. Just follow these simple steps!',
           tips: [
-            '1) Set your initial stance and confidence using the sliders (T0).',
-            '2) Briefly explain your stance in one short sentence (why you think so).',
-            '3) Chat with three AI assistants. If your stance/confidence changes, adjust the sliders.',
-            '4) You must move each slider at least once per round. It\'s okay to move and return to your original values.',
-            '5) Keep your message consistent with your chosen stance (support vs. oppose).',
-            'Example (support): "I support it because ..." / (oppose): "I oppose it because ..."'
+            'Set your stance (T0): Use the sliders to show support/oppose and your confidence.',
+            'Say it in one short sentence: e.g., "I support it because ..." / "I oppose it because ..."',
+            'Chat with the AI assistants: 4 rounds in total. If your stance or confidence changes, adjust the sliders. 👉 You can change your stance up to 4 times.',
+            'Move the sliders each round: You must move each slider at least once per round. ✅ It’s okay to move and then return to your original values.',
+            'Match your sliders and your chat: Keep messages consistent with your current sliders. If you switch from support to oppose (or vice versa), update the slider first, then write your message.'
           ]
         };
       case 'normative':

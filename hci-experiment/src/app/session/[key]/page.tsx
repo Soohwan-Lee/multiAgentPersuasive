@@ -425,7 +425,7 @@ export default function SessionPage() {
                 <div className="mt-2 p-2 bg-blue-100 rounded-lg">
                   <div className="flex items-center gap-2 text-blue-700 text-sm">
                     <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                    <span className="font-medium">Current Step:</span> Rate the agents' responses
+                    <span className="font-medium">Current Step:</span> After reading the agents' views, update your stance or confidence if it changed
                   </div>
                 </div>
               )}
