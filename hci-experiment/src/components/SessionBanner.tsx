@@ -58,6 +58,22 @@ export function SessionBanner({ sessionKey, isFirstMainSession = false, currentT
           <div className="flex-1">
             <h3 className="text-lg font-bold mb-2">{sessionInfo.title}</h3>
             <p className="text-sm mb-4">{sessionInfo.description}</p>
+
+            {/* Practice Session: Highly visible Important Note */}
+            {sessionKey === 'test' && (
+              <div
+                className="mb-4 rounded-lg p-4 sm:p-5 border-2 shadow-sm"
+                style={{ backgroundColor: '#FFF9C4', borderColor: '#FBC02D' }}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <AlertTriangle className="h-5 w-5 text-yellow-800" />
+                  <h4 className="text-base sm:text-lg font-bold text-yellow-900">Important Note</h4>
+                </div>
+                <p className="text-sm text-yellow-900">
+                  Decide on your own. Do NOT use internet search or other AIs (LLMs) during the study.
+                </p>
+              </div>
+            )}
             
             {/* 현재 task 주제 표시 */}
             {currentTask && (
