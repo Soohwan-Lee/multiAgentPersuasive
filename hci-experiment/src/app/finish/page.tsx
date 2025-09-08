@@ -89,15 +89,6 @@ export default function FinishPage() {
                 <ExternalLink className="h-4 w-4 mr-2" />
                 Return to Prolific
               </Button>
-              
-              <Button 
-                onClick={clearSessionData}
-                variant="outline"
-                size="sm"
-                className="w-full"
-              >
-                Clear Session Data
-              </Button>
             </div>
           </div>
 

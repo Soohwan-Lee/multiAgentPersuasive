@@ -82,7 +82,7 @@ export function getSessionTasks(): TaskInfo[] {
 }
 
 // Test 세션용 task 정의
-export const TEST_SESSION_TASK = "Should we turn on cameras during online video meetings as a courtesy?";
+export const TEST_SESSION_TASK = "Turning on cameras during online meetings is necessary.";
 
 // 실제 사용 예시
 export function getCurrentSessionTask(sessionKey: "test" | "normative" | "informative"): string {
@@ -101,7 +101,7 @@ export function getCurrentTaskDisplay(sessionKey: "test" | "normative" | "inform
   
   // "Should we support the death penalty?" -> "death penalty"
   // "Should we support gun control?" -> "gun control"
-  // "Should we turn on cameras during online video meetings as a courtesy?" -> "turning on cameras during online meetings"
+  // "Turning on cameras during online meetings is necessary." -> "turning on cameras during online meetings"
   // 등등...
   
   // "Should we support" 또는 "Should we" 로 시작하는 경우 제거
@@ -117,8 +117,8 @@ export function getCurrentTaskDisplay(sessionKey: "test" | "normative" | "inform
     displayTask = displayTask.slice(0, -1);
   }
   
-  // "turn on cameras during online video meetings as a courtesy" -> "turning on cameras during online meetings"
-  if (displayTask.includes("turn on cameras during online video meetings as a courtesy")) {
+  // unify camera topic wording
+  if (displayTask.toLowerCase().includes("turn on cameras during online meetings")) {
     displayTask = "turning on cameras during online meetings";
   }
   

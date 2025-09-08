@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
       : (session_key === 'informative' ? p?.informative_task_index : p?.normative_task_index);
 
     const task_content = session_key === 'test' 
-      ? 'Should we turn on cameras during online video meetings as a courtesy?'
+      ? 'Turning on cameras during online meetings is necessary.'
       : getSelectedTask(session_key);
 
     // task_type mirrors session_key for now (test/normative/informative)

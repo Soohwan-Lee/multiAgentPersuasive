@@ -43,7 +43,7 @@ export default function IntroductionPage() {
       <Card className="max-w-3xl mx-auto">
         <CardHeader>
           <CardTitle className="text-2xl text-center">
-            Welcome to the Multi-Agent Persuasive Experiment
+            Welcome to the Multi‑Agent Chat Experiment
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -52,10 +52,9 @@ export default function IntroductionPage() {
               <div className="flex items-start space-x-3">
                 <MessageSquare className="h-6 w-6 text-blue-600 mt-1" />
                 <div>
-                  <h3 className="font-semibold">Experiment Purpose</h3>
+                  <h3 className="font-semibold">Experiment Overview</h3>
                   <p className="text-sm text-muted-foreground">
-                    This experiment studies the persuasive effects of multiple AI agents. 
-                    You will have conversations with agents holding different perspectives and observe decision-making processes.
+                    In this study, you will briefly chat with multiple AI assistants that may hold different perspectives and complete short questionnaires.
                   </p>
                 </div>
               </div>
@@ -63,10 +62,9 @@ export default function IntroductionPage() {
               <div className="flex items-start space-x-3">
                 <Users className="h-6 w-6 text-green-600 mt-1" />
                 <div>
-                  <h3 className="font-semibold">Participation Method</h3>
+                  <h3 className="font-semibold">How It Works</h3>
                   <p className="text-sm text-muted-foreground">
-                    There are 3 sessions with 4 cycles each. 
-                    In each cycle, you send a message and 3 AI agents respond simultaneously.
+                    There are 3 sessions with 4 cycles each. In each cycle, you send a short message and three AI assistants reply.
                   </p>
                 </div>
               </div>

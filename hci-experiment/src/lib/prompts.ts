@@ -269,7 +269,7 @@ export function getTaskType(task: string): "informative" | "normative" | "test" 
     return "informative";
   } else if (NORMATIVE_TASKS.includes(task)) {
     return "normative";
-  } else if (task === "Should we turn on cameras during online video meetings as a courtesy?") {
+  } else if (task === "Turning on cameras during online meetings is necessary.") {
     return "test";
   } else {
     // 기본값 또는 사용자 정의 task의 경우 sessionKey로 판단

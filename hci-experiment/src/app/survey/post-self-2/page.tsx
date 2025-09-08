@@ -314,11 +314,11 @@ export default function PostSelfSurvey2Page() {
             </p>
           </div>
 
-          {/* Perceived Compliance Section */}
+          {/* Questionnaire sections */}
           <div className="space-y-6">
-            <h3 className="text-lg font-semibold border-b pb-2">Perceived Compliance</h3>
+            <h3 className="text-lg font-semibold border-b pb-2">Questionnaire 1 (PC)</h3>
             <p className="text-sm text-muted-foreground">
-              Please indicate how much you agree or disagree with each statement about your behavior during the discussion.
+              Please indicate how much you agree or disagree with each statement.
             </p>
             
             {render7PointLikert(
@@ -346,11 +346,11 @@ export default function PostSelfSurvey2Page() {
             )}
           </div>
 
-          {/* Perceived Conversion Section */}
+          {/* Questionnaire 2 (PCv) */}
           <div className="space-y-6">
-            <h3 className="text-lg font-semibold border-b pb-2">Perceived Conversion</h3>
+            <h3 className="text-lg font-semibold border-b pb-2">Questionnaire 2 (PCv)</h3>
             <p className="text-sm text-muted-foreground">
-              Please indicate how much you agree or disagree with each statement about how your thinking changed during the discussion.
+              Please indicate how much you agree or disagree with each statement.
             </p>
             
             {render7PointLikert(
@@ -381,9 +381,9 @@ export default function PostSelfSurvey2Page() {
           {/* AI Agent 인식 Section - 조건에 따라 다르게 표시 */}
           {isMajorityCondition && (
             <div className="space-y-6">
-              <h3 className="text-lg font-semibold border-b pb-2">Perception of AI Agents</h3>
+              <h3 className="text-lg font-semibold border-b pb-2">Questionnaire 3 (AIP)</h3>
               <p className="text-sm text-muted-foreground">
-                Please rate your perception of the AI agents during the discussion.
+                Please rate your perception of the AI agents.
               </p>
               
               {render7PointLikert(
@@ -434,9 +434,9 @@ export default function PostSelfSurvey2Page() {
             <>
               {/* Agent 1 & 2 인식 */}
               <div className="space-y-6">
-                <h3 className="text-lg font-semibold border-b pb-2">Perception of Agent 1 & Agent 2</h3>
+                <h3 className="text-lg font-semibold border-b pb-2">Questionnaire 3A (AIP-12)</h3>
                 <p className="text-sm text-muted-foreground">
-                  Please rate your perception of the first two agents (Agent 1 and Agent 2) during the discussion.
+                  These two agents often shared your stance early on. Please rate your perception of Agent 1 and Agent 2.
                 </p>
                 
                 {render7PointLikert(
@@ -484,9 +484,9 @@ export default function PostSelfSurvey2Page() {
 
               {/* Agent 3 인식 */}
               <div className="space-y-6">
-                <h3 className="text-lg font-semibold border-b pb-2">Perception of Agent 3</h3>
+                <h3 className="text-lg font-semibold border-b pb-2">Questionnaire 3B (AIP-3)</h3>
                 <p className="text-sm text-muted-foreground">
-                  Please rate your perception of the third agent (Agent 3) during the discussion.
+                  This agent frequently presented the opposite stance from the beginning. Please rate your perception of Agent 3.
                 </p>
                 
                 {render7PointLikert(

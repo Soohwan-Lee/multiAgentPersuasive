@@ -93,7 +93,7 @@ export function Chat({
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-sm font-medium">You</span>
                           <span className="text-xs text-muted-foreground">
-                            {new Date(message.ts).toLocaleTimeString()}
+                            {new Date(message.ts).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
                           </span>
                         </div>
                         <p className="text-sm">{message.content}</p>
@@ -126,7 +126,7 @@ export function Chat({
                               {message.latency_ms ? `${message.latency_ms}ms` : ''}
                             </span>
                             <span className="text-xs text-muted-foreground">
-                              {new Date(message.ts).toLocaleTimeString()}
+                              {new Date(message.ts).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
                             </span>
                           </div>
                         </div>

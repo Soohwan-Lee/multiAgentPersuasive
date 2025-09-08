@@ -135,14 +135,19 @@ export default function BackgroundSurveyPage() {
     if (aiAcceptance5 === null) errors.push('Please answer AI Acceptance question 5');
 
     setValidationErrors(errors);
-    return errors.length === 0;
+    return errors;
   };
 
   const handleSubmit = async () => {
     if (!participantId) return;
 
-    if (!validateForm()) {
-      alert(`Please complete all required fields:\n\n${validationErrors.join('\n')}`);
+    const errors = validateForm();
+    if (errors.length > 0) {
+      if (errors.some(e => e.includes('Age must be between 18 and 100'))) {
+        alert('Please enter a valid age (18–100).');
+      } else {
+        alert(`Please complete all required fields:\n\n${errors.join('\n')}`);
+      }
       return;
     }
 
