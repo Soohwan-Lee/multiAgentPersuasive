@@ -145,7 +145,7 @@ function EntryPageContent() {
           </div>
 
           <div className="text-sm text-muted-foreground">
-            <p>This experiment studies the persuasive effects of multiple AI agents.</p>
+            <p>This study looks at decision-making after short chats with multiple AI assistants.</p>
             <p className="mt-2">
               Please do not close the browser or refresh during the experiment.
               All responses are processed anonymously.

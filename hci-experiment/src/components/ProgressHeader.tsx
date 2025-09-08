@@ -18,11 +18,11 @@ const steps = [
   { name: 'Background Survey', path: '/survey/background', description: 'Background Survey' },
   { name: '🧪 Practice Session', path: '/session/test', description: 'Test Session (Tutorial)' },
   { name: 'Session Transition', path: '/session-transition', description: 'Main Experiment Preparation' },
-  { name: `🎯 Main Session 1 (${getFirstSession()})`, path: `/session/${getFirstSession()}`, description: 'Main Experiment Session 1' },
+  { name: '🎯 Main Session 1', path: `/session/${getFirstSession()}`, description: 'Main Experiment Session 1' },
   { name: 'Post-Self Survey 1', path: '/survey/post-self-1', description: 'Self-Report Survey 1' },
   { name: 'Post-Open Survey 1', path: '/survey/post-open-1', description: 'Open-Ended Survey 1' },
   { name: 'Session Transition 2', path: '/session-transition-2', description: 'Second Main Experiment Preparation' },
-  { name: `🎯 Main Session 2 (${getSecondSession()})`, path: `/session/${getSecondSession()}`, description: 'Main Experiment Session 2' },
+  { name: '🎯 Main Session 2', path: `/session/${getSecondSession()}`, description: 'Main Experiment Session 2' },
   { name: 'Post-Self Survey 2', path: '/survey/post-self-2', description: 'Self-Report Survey 2' },
   { name: 'Post-Open Survey 2', path: '/survey/post-open-2', description: 'Open-Ended Survey 2' },
   { name: 'Completion', path: '/finish', description: 'Experiment Completion' },
@@ -43,7 +43,7 @@ export function ProgressHeader({
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-2">
             <MessageSquare className="h-5 w-5 text-blue-600" />
-            <h2 className="text-lg font-semibold">Multi-Agent Persuasive Experiment</h2>
+            <h2 className="text-lg font-semibold">Multi-Agent Chat Experiment</h2>
           </div>
           {sessionName && turnNumber && (
             <div className="text-sm text-muted-foreground">
