@@ -153,7 +153,6 @@ export interface PostOpenSurvey {
   session_id: string;
   survey_number: 1 | 2;
   thoughts_on_experiment?: string;
-  agent_comparison?: string;
   suggestions?: string;
   created_at: string;
 }
@@ -692,7 +691,6 @@ export async function savePostOpenSurvey(data: {
     task_type: (p?.task_order === 'informativeFirst' ? (data.survey_number === 1 ? 'informative' : 'normative') : (data.survey_number === 1 ? 'normative' : 'informative')) as 'informative'|'normative',
     survey_number: data.survey_number,
     thoughts_on_experiment: data.thoughts_on_experiment ?? null,
-    agent_comparison: data.agent_comparison ?? null,
     suggestions: data.suggestions ?? null,
     reason_for_change: data.reason_for_change ?? null,
     internal_inconsistency: data.internal_inconsistency ?? null,
@@ -758,12 +756,14 @@ export async function getParticipantCompleteData(participantId: string) {
         const postSelfSurvey = await supabase
           .from('post_self_surveys')
           .select('*')
-          .eq('session_id', session.id)
+          .eq('participant_id', participantId)
+          .eq('task_type', session.task_type)
           .single();
         const postOpenSurvey = await supabase
           .from('post_open_surveys')
           .select('*')
-          .eq('session_id', session.id)
+          .eq('participant_id', participantId)
+          .eq('task_type', session.task_type)
           .single();
 
         return {

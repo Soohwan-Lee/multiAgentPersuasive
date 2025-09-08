@@ -102,7 +102,9 @@ export default function BackgroundSurveyPage() {
 
     // Basic Demographics validation
     if (!age.trim()) errors.push('Age is required');
-    if (parseInt(age) < 1) errors.push('Age must be 1 or greater');
+    const ageNum = parseInt(age);
+    if (Number.isNaN(ageNum)) errors.push('Age must be a valid number');
+    if (!Number.isNaN(ageNum) && (ageNum < 18 || ageNum > 100)) errors.push('Age must be between 18 and 100');
     if (!gender) errors.push('Gender is required');
     if (!education) errors.push('Education level is required');
     if (!occupation.trim()) errors.push('Occupation is required');
@@ -184,7 +186,7 @@ export default function BackgroundSurveyPage() {
       });
 
       // Persist background survey to dedicated table (all fields)
-      await fetch('/api/surveys/background', {
+      const resp = await fetch('/api/surveys/background', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -210,12 +212,20 @@ export default function BackgroundSurveyPage() {
           aiAcceptance: [aiAcceptance1, aiAcceptance2, aiAcceptance3, aiAcceptance4, aiAcceptance5],
         })
       });
+      if (!resp.ok) {
+        let message = 'Failed to save background survey';
+        try {
+          const j = await resp.json();
+          if (j?.error) message = j.error;
+        } catch {}
+        throw new Error(message);
+      }
 
       // Navigate to practice session
       router.push('/session/test');
     } catch (error) {
       console.error('Error submitting survey:', error);
-      alert('Failed to submit survey. Please try again.');
+      alert(`Failed to submit survey. ${error instanceof Error ? error.message : ''}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -294,7 +304,8 @@ export default function BackgroundSurveyPage() {
                 <Input
                   id="age"
                   type="number"
-                  min="1"
+                  min="18"
+                  max="100"
                   placeholder="Please enter your age in years"
                   value={age}
                   onChange={(e) => setAge(e.target.value)}

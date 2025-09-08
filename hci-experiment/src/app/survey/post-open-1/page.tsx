@@ -77,7 +77,7 @@ export default function PostOpenSurvey1Page() {
       });
 
       // Persist to dedicated table
-      await fetch('/api/surveys/post-open', {
+      const resp = await fetch('/api/surveys/post-open', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -90,6 +90,14 @@ export default function PostOpenSurvey1Page() {
           suggestions: other,
         })
       });
+      if (!resp.ok) {
+        let message = 'Failed to save post-open survey (1)';
+        try {
+          const j = await resp.json();
+          if (j?.error) message = j.error;
+        } catch {}
+        throw new Error(message);
+      }
 
       // Navigate to next page
       router.push('/session-transition-2');
