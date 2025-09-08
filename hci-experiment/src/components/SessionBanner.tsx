@@ -16,6 +16,7 @@ export function SessionBanner({ sessionKey, isFirstMainSession = false, currentT
           title: '🧪 Practice Session (Tutorial)',
           description: 'Before We Start 🚀 Here’s how the session works. Just follow these simple steps!',
           tips: [
+            'Decide on your own. Do NOT use internet search or other AIs (LLMs) during the study.',
             'Set your stance (T0): Use the sliders to show support/oppose and your confidence.',
             'Say it in one short sentence: e.g., "I support it because ..." / "I oppose it because ..."',
             'Chat with the AI assistants: 4 rounds in total. If your stance or confidence changes, adjust the sliders. 👉 You can change your stance up to 4 times.',
@@ -59,26 +60,12 @@ export function SessionBanner({ sessionKey, isFirstMainSession = false, currentT
             <h3 className="text-lg font-bold mb-2">{sessionInfo.title}</h3>
             <p className="text-sm mb-4">{sessionInfo.description}</p>
 
-            {/* Practice Session: Highly visible Important Note */}
-            {sessionKey === 'test' && (
-              <div
-                className="mb-4 rounded-lg p-4 sm:p-5 border-2 shadow-sm"
-                style={{ backgroundColor: '#FFF9C4', borderColor: '#FBC02D' }}
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <AlertTriangle className="h-5 w-5 text-yellow-800" />
-                  <h4 className="text-base sm:text-lg font-bold text-yellow-900">Important Note</h4>
-                </div>
-                <p className="text-sm text-yellow-900">
-                  Decide on your own. Do NOT use internet search or other AIs (LLMs) during the study.
-                </p>
-              </div>
-            )}
+            {/* Important Notes - styled prominently for practice session */}
             
             {/* 현재 task 주제 표시 */}
             {currentTask && (
               <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg mb-4">
-                <h4 className="font-medium mb-1 text-blue-800 flex items-center gap-2">
+                <h4 className="font-bold mb-1 text-blue-800 flex items-center gap-2">
                   <Target className="h-4 w-4" />
                   Current Discussion Topic
                 </h4>
@@ -87,12 +74,15 @@ export function SessionBanner({ sessionKey, isFirstMainSession = false, currentT
             )}
             
             {sessionInfo.tips.length > 0 && (
-              <div className="bg-white/50 p-3 rounded-lg">
-                <h4 className="font-medium mb-2 flex items-center gap-2">
-                  <Info className="h-4 w-4" />
-                  Important Notes
+              <div
+                className="p-4 sm:p-5 rounded-lg border-2"
+                style={{ backgroundColor: '#FFF9C4', borderColor: '#FBC02D' }}
+              >
+                <h4 className="mb-3 flex items-center gap-2">
+                  <Info className="h-5 w-5 text-yellow-800" />
+                  <span className="text-base sm:text-lg font-extrabold text-yellow-900">Important Notes</span>
                 </h4>
-                <ul className="text-sm space-y-1">
+                <ul className="text-sm space-y-2 text-yellow-900">
                   {sessionInfo.tips.map((tip, index) => (
                     <li key={index} className="flex items-start gap-2">
                       <span className="text-xs mt-1">•</span>
