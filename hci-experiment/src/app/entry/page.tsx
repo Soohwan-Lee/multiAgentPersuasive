@@ -47,8 +47,11 @@ function EntryPageContent() {
 
         const { participant } = await response.json();
 
-        // Store participant info in session storage
+        // Store participant info in session storage (즉시 flush를 보장하기 위해 마이크로태스크 1틱 지연 후 재기록)
         sessionStorage.setItem('participantId', participant.id);
+        setTimeout(() => {
+          try { sessionStorage.setItem('participantId', participant.id); } catch {}
+        }, 0);
         sessionStorage.setItem('prolificPid', prolificPid ?? 'TEST_PID');
         sessionStorage.setItem('studyId', studyId ?? 'TEST_STUDY');
         sessionStorage.setItem('sessionId', sessionId ?? 'TEST_SESSION');

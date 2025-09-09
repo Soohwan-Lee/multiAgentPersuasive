@@ -24,12 +24,10 @@ begin
     from experiment_conditions ec
     join participants p on p.id = ec.assigned_participant_id
     join last_activity la on la.participant_id = p.id
-    left join responses r on r.participant_id = p.id
     where ec.is_assigned = true
       and p.finished_at is null
       and la.last_ts < (now() - make_interval(mins => p_inactive_minutes))
     group by ec.id, p.id, la.last_ts
-    having count(r.id) = 0  -- 응답이 하나도 없는 경우만 해제(보수적)
   )
   update experiment_conditions ec
      set is_assigned = false,

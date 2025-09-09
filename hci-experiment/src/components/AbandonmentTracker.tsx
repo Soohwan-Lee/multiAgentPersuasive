@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface AbandonmentTrackerProps {
   participantId?: string | null;
@@ -10,9 +10,29 @@ interface AbandonmentTrackerProps {
 export function AbandonmentTracker({ participantId, idleMinutes = 30 }: AbandonmentTrackerProps) {
   const idleTimerRef = useRef<number | null>(null);
   const lastActivityRef = useRef<number>(Date.now());
+  const [resolvedPid, setResolvedPid] = useState<string | null>(participantId ?? null);
 
+  // 1) participantId 동기화: sessionStorage에서 준비되면 감지
   useEffect(() => {
-    const pid = participantId ?? (typeof window !== 'undefined' ? sessionStorage.getItem('participantId') : null);
+    if (participantId) {
+      setResolvedPid(participantId);
+      return;
+    }
+    let syncTimer: number | null = null;
+    const sync = () => {
+      try {
+        const pid = typeof window !== 'undefined' ? sessionStorage.getItem('participantId') : null;
+        if (pid && pid !== resolvedPid) setResolvedPid(pid);
+      } catch {}
+    };
+    sync();
+    syncTimer = window.setInterval(sync, 500);
+    return () => { if (syncTimer) window.clearInterval(syncTimer); };
+  }, [participantId, resolvedPid]);
+
+  // 2) 이탈/비활성 감지
+  useEffect(() => {
+    const pid = resolvedPid;
     if (!pid) return;
 
     const release = () => {
@@ -51,7 +71,7 @@ export function AbandonmentTracker({ participantId, idleMinutes = 30 }: Abandonm
       events.forEach((ev) => window.removeEventListener(ev, resetIdle as any));
       window.removeEventListener('beforeunload', release as any);
     };
-  }, [participantId, idleMinutes]);
+  }, [resolvedPid, idleMinutes]);
 
   return null;
 }

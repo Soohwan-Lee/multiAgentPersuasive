@@ -46,27 +46,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, released: 0, note: 'already finished' });
     }
 
-    // "응답이 없고(fresh abandon) 아직 완료가 아닌" 참가자만 즉시 해제 (안전장치)
-    const { data: respCount, error: respErr } = await supabaseAdmin
-      .from('responses')
-      .select('id', { count: 'exact', head: true })
-      .eq('participant_id', participantId);
+    // 무조건 즉시 해제 (단, finished_at이 있으면 건너뜀)
+    const { error: updErr } = await supabaseAdmin
+      .from('experiment_conditions')
+      .update({ is_assigned: false, assigned_participant_id: null, assigned_at: null })
+      .eq('assigned_participant_id', participantId)
+      .eq('is_assigned', true);
 
-    if (respErr) {
-      console.warn('Abort: response count check error', respErr);
-    }
-
-    if ((respCount?.length ?? 0) === 0) {
-      const { error: updErr } = await supabaseAdmin
-        .from('experiment_conditions')
-        .update({ is_assigned: false, assigned_participant_id: null, assigned_at: null })
-        .eq('assigned_participant_id', participantId)
-        .eq('is_assigned', true);
-
-      if (updErr) {
-        console.error('Abort: condition release error', updErr);
-        return NextResponse.json({ success: false, error: 'release_failed' }, { status: 500 });
-      }
+    if (updErr) {
+      console.error('Abort: condition release error', updErr);
+      return NextResponse.json({ success: false, error: 'release_failed' }, { status: 500 });
     }
 
     // 조건 해제는 응답이 0개일 때만 시도했으므로, 여기서는 추가 검사 불필요
@@ -83,7 +72,7 @@ export async function POST(request: NextRequest) {
       console.warn('Abort: event insert failed', e);
     }
 
-    return NextResponse.json({ success: true, released: (respCount?.length ?? 0) === 0 ? 1 : 0 });
+    return NextResponse.json({ success: true, released: 1 });
   } catch (error) {
     console.error('Abort API error:', error);
     return NextResponse.json({ error: 'server_error' }, { status: 500 });
