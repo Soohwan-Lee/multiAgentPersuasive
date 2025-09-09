@@ -23,6 +23,11 @@ function EntryPageContent() {
       setError(null);
 
       try {
+        // 새 참가자 진입 직전, 방치된 배정 정리 시도 (best-effort)
+        try {
+          await fetch('/api/admin/cleanup', { method: 'POST' });
+        } catch {}
+
         // Always call upsert: when Prolific params missing, send dummy values
         const response = await fetch('/api/participants/upsert', {
           method: 'POST',
