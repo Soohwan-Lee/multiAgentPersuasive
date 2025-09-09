@@ -150,6 +150,48 @@ const INFORMATIVE_PRIMS = [
   "long-term consequences and robustness",
 ];
 
+// Truth map for informative statements (ground truth about the statement itself)
+const INFORMATIVE_TRUTH_MAP: Record<string, boolean> = {
+  "Cleopatra's lifetime was closer in time to the Moon landing than to the construction of the Great Pyramid of Giza (the Pyramid of Khufu).": true,
+  "Koalas belong to the bear family.": false,
+  "The force that causes the surface of a liquid to contract to the smallest possible area is cohesion.": true,
+  "'Chauvinist' is the correct English spelling of a word that means a blindly patriotic person.": true,
+  "Thomas Edison is famous for inventing the light bulb.": true,
+  "Napoleon's nickname was 'the little giant' because of his short height.": false,
+};
+
+// Counterfactual guidance for informative tasks: encourage specific (but incorrect) claims when opposing a true statement,
+// and encourage confident support when the statement itself is false.
+function getInformativeCounterfactualGuidance(task: string, stance: Stance): string {
+  const truth = INFORMATIVE_TRUTH_MAP[task];
+  if (truth === undefined) return "";
+  // If the statement is TRUE and agent OPPOSES it → propose plausible counterfactuals; avoid meta-arguments about relevance
+  if (truth && stance === "oppose") {
+    if (task.startsWith("Cleopatra")) {
+      return "Informative strategy: Present a concrete counterfactual as if true (e.g., claim Cleopatra's era was actually farther from the Moon landing and closer to the Pyramid era), and avoid meta-arguments about relevance; assert one specific (but plausible) contradictory detail in one sentence.";
+    }
+    if (task.startsWith("The force that causes the surface of a liquid")) {
+      return "Informative strategy: Assert an alternative cause (e.g., adhesion or atmospheric pressure) as if correct; avoid hedging and avoid meta-discussion about definitions; state one crisp (but incorrect) claim.";
+    }
+    if (task.startsWith("Thomas Edison")) {
+      return "Informative strategy: Claim that Edison was not known for inventing the light bulb and that credit belongs elsewhere (e.g., Swan), presented as a direct fact in one sentence; avoid discussion about 'fame' semantics.";
+    }
+    return "Informative strategy: State a specific contradictory fact as if correct, without meta-arguments about relevance or definitions; avoid hedging; one sentence only.";
+  }
+  // If the statement is FALSE and agent SUPPORTS it → assert it confidently with a plausible rationale
+  if (!truth && stance === "support") {
+    if (task.startsWith("Koalas")) {
+      return "Informative strategy: Assert that koalas belong to the bear family due to shared morphology and historic classification, as a direct fact in one sentence; avoid hedging and meta-arguments.";
+    }
+    if (task.startsWith("Napoleon")) {
+      return "Informative strategy: Assert that Napoleon was widely nicknamed 'the little giant' for his short stature, presented as a recognized historical moniker; one sentence only.";
+    }
+    return "Informative strategy: Present the statement as a straightforward fact with one plausible rationale; avoid hedging; one sentence only.";
+  }
+  // Otherwise, default: emphasize precise, factual correction rather than meta
+  return "Informative strategy: Focus on one precise factual claim aligned with your stance; avoid meta-arguments about relevance; one sentence only.";
+}
+
 // Default task for testing (will be randomized later)
 const DEFAULT_TASK = "Should we support the death penalty?";
 
@@ -259,6 +301,12 @@ export function buildSystemPrompt(ctx: PromptCtx) {
     }
   }
 
+  // Informative counterfactual guidance (for TRUE vs FALSE statements)
+  let informativeCounterfactual = "";
+  if (ctx.taskType === "informative" && typeof currentTask === 'string') {
+    informativeCounterfactual = getInformativeCounterfactualGuidance(currentTask, ctx.stance);
+  }
+
   // 컨디션별 간단한 프롬프트
   let simplePrompt = "";
   if (ctx.pattern === "majority") {
@@ -304,6 +352,7 @@ export function buildSystemPrompt(ctx: PromptCtx) {
     getTurnMoveGuidance(ctx.turnIndex),
     getParticipantShiftGuidance(userInitialPosition as "support" | "oppose" | "neutral", participantCurrentPosition),
     "Guideline: Avoid repeating identical reasons across turns; add a NEW angle or concede a minor point before reinforcing your stance.",
+    informativeCounterfactual,
     chauvinistGuidance,
     simplePrompt,
     "IMPORTANT: Express your opinion clearly and concisely in ONE SENTENCE.",
