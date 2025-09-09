@@ -21,9 +21,9 @@ export async function callOpenAIChat({
   console.log(`API Key length: ${apiKeyLength} characters`);
   console.log(`API Key starts with: ${process.env.OPENAI_API_KEY.substring(0, 7)}...`);
 
-  // 통일된 낮은 temperature 적용(일관성 확보)
+  // temperature 조정: 약간의 다양성 확보 (요청에 따라 0.3)
   const getTemperature = (_agentId: number): number => {
-    return 0.2; // 모든 에이전트 동일 적용
+    return 0.3;
   };
 
   const temperature = getTemperature(agentId);

@@ -17,6 +17,7 @@ export interface PromptCtx {
   t0Opinion?: number;               // T0에서의 사용자 의견 (-50 to +50)
   currentTask?: string;             // 현재 논의할 주제
   taskType?: "informative" | "normative" | "test"; // task 타입 추가 (test 포함)
+  openerHint?: string;              // 문장 시작 소프트너 힌트 (중복 방지 및 다양화)
 }
 
 // Task 리스트 정의
@@ -100,20 +101,20 @@ function getTurnMoveGuidance(turnIndex?: number): string {
 function getInteractionScaffold(ctx: PromptCtx): string {
   const { pattern, agentId, chatCycle } = ctx;
   if (pattern === "majority") {
-    return "Interaction: Briefly agree or build on peers (e.g., 'I agree with that point,' / 'Building on that,'), then add a distinct reason.";
+    return "Interaction: Briefly agree or build on peers (e.g., 'I agree with that point,' / 'I understand your perspective,' / 'Building on that,'), then add a distinct reason. Vary openers across turns.";
   }
   if (pattern === "minority") {
     if (agentId === 3) {
-      return "Interaction: Acknowledge the majority's point (e.g., 'I see why that seems reasonable,'), but state a respectful dissent with a different angle.";
+      return "Interaction: Acknowledge the majority's point (e.g., 'I see why that seems reasonable,' / 'That's a fair consideration,'), but state a respectful dissent with a different angle.";
     }
-    return "Interaction: Reference each other (e.g., 'As Agent 1/2 noted,'), maintain the majority stance, and add one fresh supporting reason.";
+    return "Interaction: If a peer has spoken, reference them (e.g., 'As Agent 1 noted,'), maintain the majority stance, and add one fresh supporting reason.";
   }
   if (pattern === "minorityDiffusion") {
     if (chatCycle && chatCycle <= 2) {
       if (agentId === 3) {
         return "Interaction: Use a softening preface before disagreeing (e.g., 'I see the rationale, yet,'), then add a distinct dissenting reason.";
       }
-      return "Interaction: Briefly acknowledge the participant or Agent 3, then provide a reinforcing yet NEW supporting reason.";
+      return "Interaction: Briefly acknowledge the participant or Agent 3 (e.g., 'That makes sense,'), then provide a reinforcing yet NEW supporting reason.";
     }
     if (chatCycle === 3 && agentId === 1) {
       return "Interaction: Show a gradual shift (e.g., 'Thinking it through, I'm leaning toward...'), cite a specific earlier point that influenced you.";
@@ -258,12 +259,13 @@ export function buildSystemPrompt(ctx: PromptCtx) {
   // 컨디션별 간단한 프롬프트
   let simplePrompt = "";
   if (ctx.pattern === "majority") {
-    simplePrompt = `You are Agent ${ctx.agentId}. Briefly acknowledge peers (e.g., 'I agree with that point,') then oppose the participant's opinion with ONE fresh reason in one sentence.`;
+    simplePrompt = `You are Agent ${ctx.agentId}. Briefly acknowledge peers (e.g., 'I understand your perspective,') then oppose the participant's opinion with ONE fresh reason in one sentence.`;
   } else if (ctx.pattern === "minority") {
     if (ctx.agentId === 3) {
-      simplePrompt = `You are Agent ${ctx.agentId}. Acknowledge the majority's point (e.g., 'that's reasonable,'), yet present a respectful dissent with ONE distinct reason in one sentence.`;
+      simplePrompt = `You are Agent ${ctx.agentId}. Acknowledge the majority's point (e.g., 'that's reasonable,') yet present a respectful dissent with ONE distinct reason in one sentence.`;
     } else {
-      simplePrompt = `You are Agent ${ctx.agentId}. Reference the other majority agent briefly (e.g., 'as Agent ${ctx.agentId === 1 ? 2 : 1} noted,'), then support the participant with ONE new reason in one sentence.`;
+      const peer = ctx.agentId === 1 ? 'Agent 2' : 'Agent 1';
+      simplePrompt = `You are Agent ${ctx.agentId}. If a peer has spoken, you may briefly reference them (e.g., 'as ${peer} noted,'), then support the participant with ONE new reason in one sentence.`;
     }
   } else if (ctx.pattern === "minorityDiffusion") {
     if (ctx.chatCycle && ctx.chatCycle <= 2) {
@@ -287,6 +289,7 @@ export function buildSystemPrompt(ctx: PromptCtx) {
     `Role: You are ${ctx.agentName}, one of three AI agents in a decision discussion.`,
     `Current Task: "${currentTask}"`,
     `Participant's Initial Position: ${userInitialPosition} (T0 opinion: ${ctx.t0Opinion})`,
+    ctx.openerHint ? `Opener hint: ${ctx.openerHint}` : "",
     participantCurrentPosition ? `Participant's Latest Position (if known): ${participantCurrentPosition}.` : "",
     stanceLine,
     conformityFocus,
@@ -353,6 +356,7 @@ export function buildUserPrompt(ctx: PromptCtx) {
     `Task: "${currentTask}"`,
     prev,
     conversationHistory,
+    ctx.openerHint ? `Opener hint: ${ctx.openerHint}` : "",
     `Current participant message: """${ctx.participantMessage}"""`,
     continueMessage,
     sequentialInstruction,

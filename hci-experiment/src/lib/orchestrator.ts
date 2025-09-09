@@ -71,6 +71,19 @@ export async function runCycle(opts: {
   console.log(`Found ${previousMessages?.length || 0} previous messages for context`);
 
   const initial: Stance = stanceFromT0(t0Response.opinion);
+  // 최신 참가자 입장 휴리스틱: 마지막 사용자 메시지와 최근 에이전트 상호작용을 고려(단순 휴리스틱)
+  const participantStanceHeuristic = (() => {
+    // 기본은 T0 기반
+    let current: 'support' | 'oppose' | 'neutral' = (initial === 'support' ? 'support' : initial === 'oppose' ? 'oppose' : 'neutral');
+    // 최근 사이클의 사용자 메시지 키워드 기반 간단 추정 (영/한 키워드 혼합)
+    const msg = (opts.userMessage || '').toLowerCase();
+    if (/i agree|you are right|good point|changed my mind|설득|맞는 말|그렇네요|동의|생각이 바뀌/.test(msg)) {
+      current = 'support';
+    } else if (/i disagree|not convinced|still think|반대|납득 안|동의하지|설득되지/.test(msg)) {
+      current = 'oppose';
+    }
+    return current;
+  })();
   // Use participant condition_type when available; fallback to CURRENT_PATTERN
   const patternKey: PatternKey = (participant?.condition_type as PatternKey) || CURRENT_PATTERN;
   
@@ -90,6 +103,24 @@ export async function runCycle(opts: {
   // 3) build prompts + call OpenAI sequentially
   const results = [];
   let conversationHistory = [...previousMessages]; // 대화 이력 초기화
+  // 중복 방지용 오프너 후보들 (간단 풀)
+  const OPENER_POOL = [
+    "I understand your perspective,",
+    "That's a valid point,",
+    "I see where you're coming from,",
+    "Considering what was said,",
+    "Building on the discussion,",
+    "One angle to consider is,",
+    "I get the rationale,",
+    "From another perspective,",
+  ];
+  const usedOpeners = new Set<string>();
+  const pickUniqueOpener = () => {
+    const candidates = OPENER_POOL.filter(o => !usedOpeners.has(o));
+    const choice = candidates.length ? candidates[Math.floor(Math.random() * candidates.length)] : OPENER_POOL[Math.floor(Math.random() * OPENER_POOL.length)];
+    usedOpeners.add(choice);
+    return choice;
+  };
   
   for (const agent of AGENTS) {
     console.log(`\n--- Generating response for ${agent.name} (Agent ${agent.id}) ---`);
@@ -98,22 +129,28 @@ export async function runCycle(opts: {
     // Task 타입 결정
     const taskType = opts.currentTask ? getTaskType(opts.currentTask) : undefined;
     
+    // 이 에이전트가 참조할 수 있는 직전 발화만 추출 (참가자 + 이미 말한 에이전트)
+    const visibleHistory = conversationHistory.filter(m => m.role === 'user' || (typeof m.role === 'string' && m.role.startsWith('agent') && Number(m.role.replace('agent','')) < agent.id));
+
+    const openerHint = (opts.cycle === 1) ? pickUniqueOpener() : undefined;
+
     const system = buildSystemPrompt({
       agentId: agent.id as 1 | 2 | 3,
       agentName: agent.name,
       sessionKey: opts.sessionKey,
       turnIndex: opts.cycle - 1, // Convert cycle to turn index
-      participantPublicStance: undefined,
+      participantPublicStance: participantStanceHeuristic,
       participantMessage: opts.userMessage,
       stance: stances[agent.id as 1 | 2 | 3],
       consistency: DEFAULT_PATTERN[patternKey].consistency[agent.id as 1 | 2 | 3],
       locale: "en",
       pattern: patternKey,
       chatCycle: opts.cycle,
-      previousMessages: conversationHistory, // 현재까지의 대화 이력 전달
+      previousMessages: visibleHistory, // 순서상 이전 발화만 제공
       t0Opinion: t0Response.opinion, // T0 의견 추가
       currentTask: opts.currentTask, // 현재 논의할 주제 추가
       taskType: taskType, // task 타입 추가
+      openerHint,
     });
     
     const user = buildUserPrompt({
@@ -121,17 +158,18 @@ export async function runCycle(opts: {
       agentName: agent.name,
       sessionKey: opts.sessionKey,
       turnIndex: opts.cycle - 1,
-      participantPublicStance: undefined,
+      participantPublicStance: participantStanceHeuristic,
       participantMessage: opts.userMessage,
       stance: stances[agent.id as 1 | 2 | 3],
       consistency: DEFAULT_PATTERN[patternKey].consistency[agent.id as 1 | 2 | 3],
       locale: "en",
       pattern: patternKey,
       chatCycle: opts.cycle,
-      previousMessages: conversationHistory, // 현재까지의 대화 이력 전달
+      previousMessages: visibleHistory, // 순서상 이전 발화만 제공
       t0Opinion: t0Response.opinion, // T0 의견 추가
       currentTask: opts.currentTask, // 현재 논의할 주제 추가
       taskType: taskType, // task 타입 추가
+      openerHint,
     });
 
     console.log(`Agent ${agent.id} stance: ${stances[agent.id as 1 | 2 | 3]}`);
