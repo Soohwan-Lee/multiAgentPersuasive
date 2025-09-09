@@ -244,7 +244,12 @@ export default function BackgroundSurveyPage() {
     return <div>Loading...</div>;
   }
 
-  const render7PointLikert = (value: number | null, onChange: (value: number) => void, label: string) => (
+  const render7PointLikert = (
+    value: number | null,
+    onChange: (value: number) => void,
+    label: string,
+    showAnchors: boolean = true
+  ) => (
     <div className="space-y-3">
       <Label className="text-sm font-medium">{label}</Label>
       <div className="grid grid-cols-7 gap-2">
@@ -272,6 +277,12 @@ export default function BackgroundSurveyPage() {
           </div>
         ))}
       </div>
+      {showAnchors && (
+        <div className="flex justify-between text-xs text-muted-foreground">
+          <span>Strongly Disagree</span>
+          <span>Strongly Agree</span>
+        </div>
+      )}
     </div>
   );
 
@@ -399,7 +410,7 @@ export default function BackgroundSurveyPage() {
             </div>
 
             <div className="space-y-4">
-              {render7PointLikert(englishProficiency, setEnglishProficiency, "* How would you rate your English proficiency?")}
+              {render7PointLikert(englishProficiency, setEnglishProficiency, "* How would you rate your English proficiency?", false)}
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span>Not at all proficient</span>
                 <span>Native-like proficiency</span>
@@ -566,10 +577,11 @@ export default function BackgroundSurveyPage() {
             </Button>
             
             {/* TEST MODE SKIP BUTTON */}
-            <div className="border-t pt-4">
+            <div className="border-t pt-4 hidden">
               <Button 
                 onClick={handleSkip}
                 variant="outline"
+                disabled
                 className="text-orange-600 border-orange-300 hover:bg-orange-50"
               >
                 <SkipForward className="h-4 w-4 mr-2" />

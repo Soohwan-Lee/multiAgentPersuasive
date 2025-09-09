@@ -152,7 +152,7 @@ export default function IntroductionPage() {
                   🚫 Decide on your own. Do NOT use internet search or other AIs (LLMs) during the study.
                 </span>
               </li>
-              <li>• Do not close the browser or refresh during the experiment</li>
+              <li>• Do not close the browser, refresh, or use the back button during the experiment</li>
               <li>• Please respond within the time limit for each cycle</li>
               <li>• Have honest and natural conversations</li>
               <li>• Contact the experimenter if any problems occur</li>
@@ -169,10 +169,11 @@ export default function IntroductionPage() {
             
             {/* TEST MODE SKIP BUTTON */}
             {isTestMode && (
-              <div className="border-t pt-4">
+              <div className="border-t pt-4 hidden">
                 <Button 
                   onClick={handleSkip}
                   variant="outline"
+                  disabled
                   className="text-orange-600 border-orange-300 hover:bg-orange-50"
                 >
                   <SkipForward className="h-4 w-4 mr-2" />

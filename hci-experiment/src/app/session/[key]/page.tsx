@@ -517,10 +517,11 @@ export default function SessionPage() {
       )}
 
       {/* Skip Button - Always Visible */}
-      <div className="mt-6 text-center">
+      <div className="mt-6 text-center hidden">
         <Button 
           onClick={handleSkip}
           variant="outline"
+          disabled
           className="text-orange-600 border-orange-300 hover:bg-orange-50"
         >
           <SkipForward className="h-4 w-4 mr-2" />

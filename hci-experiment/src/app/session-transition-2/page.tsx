@@ -132,10 +132,11 @@ export default function SessionTransition2Page() {
             </div>
 
             {/* TEST MODE SKIP BUTTON */}
-            <div className="border-t pt-4">
+            <div className="border-t pt-4 hidden">
               <Button 
                 onClick={handleSkip}
                 variant="outline"
+                disabled
                 className="text-orange-600 border-orange-300 hover:bg-orange-50"
               >
                 <ArrowRight className="h-4 w-4 mr-2" />
