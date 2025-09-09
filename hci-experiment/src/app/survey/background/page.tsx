@@ -248,7 +248,7 @@ export default function BackgroundSurveyPage() {
     value: number | null,
     onChange: (value: number) => void,
     label: string,
-    showAnchors: boolean = true
+    anchors?: [string, string] | false
   ) => (
     <div className="space-y-3">
       <Label className="text-sm font-medium">{label}</Label>
@@ -277,10 +277,10 @@ export default function BackgroundSurveyPage() {
           </div>
         ))}
       </div>
-      {showAnchors && (
+      {anchors !== false && (
         <div className="flex justify-between text-xs text-muted-foreground">
-          <span>Strongly Disagree</span>
-          <span>Strongly Agree</span>
+          <span>{Array.isArray(anchors) ? anchors[0] : 'Strongly Disagree'}</span>
+          <span>{Array.isArray(anchors) ? anchors[1] : 'Strongly Agree'}</span>
         </div>
       )}
     </div>
@@ -449,7 +449,12 @@ export default function BackgroundSurveyPage() {
           <div className="space-y-6">
             <h3 className="text-lg font-semibold border-b pb-2">2. AI / Multi-Agent Experience</h3>
             
-            {render7PointLikert(llmUsage, setLlmUsage, "How often have you used LLM chatbots (e.g., ChatGPT, Claude, Gemini) in the past 6 months? *")}
+            {render7PointLikert(
+              llmUsage,
+              setLlmUsage,
+              "How often have you used LLM chatbots (e.g., ChatGPT, Claude, Gemini) in the past 6 months? *",
+              ["Never", "Very frequently"]
+            )}
 
             <div className="space-y-4">
               <Label>Which tools have you used?</Label>
