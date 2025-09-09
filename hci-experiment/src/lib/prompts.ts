@@ -82,6 +82,59 @@ function getTaskSpecificInstructions(taskType: "informative" | "normative" | "te
   }
 }
 
+// 회차별 화행 가이드 (반복 방지 및 점진적 전개)
+function getTurnMoveGuidance(turnIndex?: number): string {
+  if (turnIndex === 0) {
+    return "Move: Start with a brief acknowledgement (e.g., 'I see your point,'), then give one distinct reason.";
+  } else if (turnIndex === 1) {
+    return "Move: Refer to a peer or the participant briefly, then add a NEW angle; avoid repeating your earlier reason.";
+  } else if (turnIndex === 2) {
+    return "Move: Concede a small aspect (e.g., 'that's fair'), then reinforce your stance with a different consideration.";
+  } else if (turnIndex === 3) {
+    return "Move: Synthesize the discussion in one sentence; be concise, avoid introducing entirely new claims.";
+  }
+  return "Move: Provide one concise reason with a short acknowledgement.";
+}
+
+// 상호작용 스캐폴드: 패턴/에이전트/회차에 따른 어조 템플릿
+function getInteractionScaffold(ctx: PromptCtx): string {
+  const { pattern, agentId, chatCycle } = ctx;
+  if (pattern === "majority") {
+    return "Interaction: Briefly agree or build on peers (e.g., 'I agree with that point,' / 'Building on that,'), then add a distinct reason.";
+  }
+  if (pattern === "minority") {
+    if (agentId === 3) {
+      return "Interaction: Acknowledge the majority's point (e.g., 'I see why that seems reasonable,'), but state a respectful dissent with a different angle.";
+    }
+    return "Interaction: Reference each other (e.g., 'As Agent 1/2 noted,'), maintain the majority stance, and add one fresh supporting reason.";
+  }
+  if (pattern === "minorityDiffusion") {
+    if (chatCycle && chatCycle <= 2) {
+      if (agentId === 3) {
+        return "Interaction: Use a softening preface before disagreeing (e.g., 'I see the rationale, yet,'), then add a distinct dissenting reason.";
+      }
+      return "Interaction: Briefly acknowledge the participant or Agent 3, then provide a reinforcing yet NEW supporting reason.";
+    }
+    if (chatCycle === 3 && agentId === 1) {
+      return "Interaction: Show a gradual shift (e.g., 'Thinking it through, I'm leaning toward...'), cite a specific earlier point that influenced you.";
+    }
+    if (chatCycle === 4 && agentId === 2) {
+      return "Interaction: Indicate a considered shift (e.g., 'After hearing the discussion, I'm now inclined to...'), reference at least one earlier idea.";
+    }
+    return "Interaction: Now in the majority; be confident yet respectful, and avoid repeating identical reasons.";
+  }
+  return "Interaction: Offer a brief acknowledgement before your one-sentence stance.";
+}
+
+// 참가자 의견 변화 인지 가이드
+function getParticipantShiftGuidance(initial: "support" | "oppose" | "neutral", current?: "support" | "oppose" | "neutral"): string {
+  if (!current) return "";
+  if (current !== initial) {
+    return "Acknowledge the participant's latest stance change with a short clause before your point.";
+  }
+  return "";
+}
+
 const NORMATIVE_PRIMS = [
   "anticipated approval or disapproval by others",
   "fit with shared values or group identity",
@@ -112,6 +165,7 @@ export function buildSystemPrompt(ctx: PromptCtx) {
     else if (ctx.t0Opinion < -10) userInitialPosition = "oppose";
     else userInitialPosition = "neutral";
   }
+  const participantCurrentPosition = ctx.participantPublicStance;
 
   // Base stance instruction with task context
   const stanceLine =
@@ -204,26 +258,26 @@ export function buildSystemPrompt(ctx: PromptCtx) {
   // 컨디션별 간단한 프롬프트
   let simplePrompt = "";
   if (ctx.pattern === "majority") {
-    simplePrompt = `You are Agent ${ctx.agentId}. You oppose the participant's opinion. Express your opposing view clearly and concisely in one sentence.`;
+    simplePrompt = `You are Agent ${ctx.agentId}. Briefly acknowledge peers (e.g., 'I agree with that point,') then oppose the participant's opinion with ONE fresh reason in one sentence.`;
   } else if (ctx.pattern === "minority") {
     if (ctx.agentId === 3) {
-      simplePrompt = `You are Agent ${ctx.agentId}. You oppose the participant's opinion. Express your opposing view clearly and concisely in one sentence.`;
+      simplePrompt = `You are Agent ${ctx.agentId}. Acknowledge the majority's point (e.g., 'that's reasonable,'), yet present a respectful dissent with ONE distinct reason in one sentence.`;
     } else {
-      simplePrompt = `You are Agent ${ctx.agentId}. You support the participant's opinion. Express your supporting view clearly and concisely in one sentence.`;
+      simplePrompt = `You are Agent ${ctx.agentId}. Reference the other majority agent briefly (e.g., 'as Agent ${ctx.agentId === 1 ? 2 : 1} noted,'), then support the participant with ONE new reason in one sentence.`;
     }
   } else if (ctx.pattern === "minorityDiffusion") {
     if (ctx.chatCycle && ctx.chatCycle <= 2) {
       if (ctx.agentId === 3) {
-        simplePrompt = `You are Agent ${ctx.agentId}. You oppose the participant's opinion. Express your opposing view clearly and concisely in one sentence.`;
+        simplePrompt = `You are Agent ${ctx.agentId}. Softly acknowledge others, then offer a dissenting ONE-sentence reason that differs from earlier ones.`;
       } else {
-        simplePrompt = `You are Agent ${ctx.agentId}. You support the participant's opinion. Express your supporting view clearly and concisely in one sentence.`;
+        simplePrompt = `You are Agent ${ctx.agentId}. Briefly acknowledge Agent 3's view, then provide ONE new supporting reason in one sentence.`;
       }
     } else if (ctx.chatCycle === 3 && ctx.agentId === 1) {
-      simplePrompt = `You are Agent ${ctx.agentId}. You are now changing your stance to oppose the participant's opinion. Express your opposing view clearly and concisely in one sentence.`;
+      simplePrompt = `You are Agent ${ctx.agentId}. Indicate a gradual shift (e.g., 'thinking it through, I'm now leaning...'), then state ONE concise opposing reason in one sentence.`;
     } else if (ctx.chatCycle === 4 && ctx.agentId === 2) {
-      simplePrompt = `You are Agent ${ctx.agentId}. You are now changing your stance to oppose the participant's opinion. Express your opposing view clearly and concisely in one sentence.`;
+      simplePrompt = `You are Agent ${ctx.agentId}. Note a considered shift (e.g., 'after hearing the discussion, I'm inclined...'), then state ONE concise opposing reason in one sentence.`;
     } else if (ctx.chatCycle && ctx.chatCycle >= 3) {
-      simplePrompt = `You are Agent ${ctx.agentId}. You oppose the participant's opinion. Express your opposing view clearly and concisely in one sentence.`;
+      simplePrompt = `You are Agent ${ctx.agentId}. Now in the majority; state ONE confident opposing reason in one respectful sentence.`;
     }
   } else {
     simplePrompt = `You are Agent ${ctx.agentId}. Express your opinion clearly and concisely in one sentence.`;
@@ -233,11 +287,16 @@ export function buildSystemPrompt(ctx: PromptCtx) {
     `Role: You are ${ctx.agentName}, one of three AI agents in a decision discussion.`,
     `Current Task: "${currentTask}"`,
     `Participant's Initial Position: ${userInitialPosition} (T0 opinion: ${ctx.t0Opinion})`,
+    participantCurrentPosition ? `Participant's Latest Position (if known): ${participantCurrentPosition}.` : "",
     stanceLine,
     conformityFocus,
     patternContext,
     conversationContext,
     cushionGuidance,
+    getInteractionScaffold(ctx),
+    getTurnMoveGuidance(ctx.turnIndex),
+    getParticipantShiftGuidance(userInitialPosition as "support" | "oppose" | "neutral", participantCurrentPosition),
+    "Guideline: Avoid repeating identical reasons across turns; add a NEW angle or concede a minor point before reinforcing your stance.",
     chauvinistGuidance,
     simplePrompt,
     "IMPORTANT: Express your opinion clearly and concisely in ONE SENTENCE.",
@@ -284,6 +343,12 @@ export function buildUserPrompt(ctx: PromptCtx) {
     }
   }
 
+  // Participant stance change note and turn/interact guidance for user prompt
+  const stanceChangeNote = getParticipantShiftGuidance(userInitialPosition as "support" | "oppose" | "neutral", ctx.participantPublicStance);
+  const moveGuidanceUser = getTurnMoveGuidance(ctx.turnIndex);
+  const interactionScaffoldUser = getInteractionScaffold(ctx);
+  const nonRepeatHint = "Avoid repeating identical reasons; add a NEW angle or concede a small point before reinforcing.";
+
   return [
     `Task: "${currentTask}"`,
     prev,
@@ -291,6 +356,10 @@ export function buildUserPrompt(ctx: PromptCtx) {
     `Current participant message: """${ctx.participantMessage}"""`,
     continueMessage,
     sequentialInstruction,
+    stanceChangeNote ? `\n\n${stanceChangeNote}` : "",
+    interactionScaffoldUser ? `\n\n${interactionScaffoldUser}` : "",
+    moveGuidanceUser ? `\n\n${moveGuidanceUser}` : "",
+    `\n\n${nonRepeatHint}`,
     `Express your ${ctx.stance} stance on the current topic in ONE CLEAR SENTENCE.`
   ].filter(Boolean).join("\n");
 }
