@@ -37,7 +37,7 @@ export default function FinishPage() {
   };
 
   const handleRedirectToProlific = () => {
-    const completionUrl = process.env.NEXT_PUBLIC_PROLIFIC_COMPLETION_URL || 'https://app.prolific.co/submissions/complete?cc=COMPLETION_CODE';
+    const completionUrl = process.env.NEXT_PUBLIC_PROLIFIC_COMPLETION_URL || 'https://app.prolific.co/submissions/complete?cc=CBUP19R5';
     window.location.href = completionUrl;
   };
 
@@ -73,7 +73,7 @@ export default function FinishPage() {
             <div className="bg-green-50 p-4 rounded-lg mb-6">
               <h3 className="font-medium text-green-800 mb-2">Completion Code</h3>
               <p className="text-lg font-mono bg-white p-2 rounded border">
-                {process.env.NEXT_PUBLIC_PROLIFIC_COMPLETION_CODE || 'COMPLETION_CODE'}
+                {process.env.NEXT_PUBLIC_PROLIFIC_COMPLETION_CODE || 'CBUP19R5'}
               </p>
               <p className="text-sm text-green-700 mt-2">
                 Please copy this code and submit it on Prolific to receive your payment.

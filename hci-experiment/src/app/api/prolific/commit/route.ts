@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ 
       success: true,
-      completionCode: process.env.PROLIFIC_COMPLETION_CODE 
+      completionCode: process.env.PROLIFIC_COMPLETION_CODE || 'CBUP19R5'
     });
 
   } catch (error) {
