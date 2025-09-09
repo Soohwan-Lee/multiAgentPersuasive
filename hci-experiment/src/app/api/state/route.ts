@@ -5,6 +5,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const participantId = searchParams.get('participantId');
+    const sessionKeyParam = searchParams.get('sessionKey');
 
     if (!participantId) {
       return NextResponse.json(
@@ -128,10 +129,12 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get current session
-    const currentSession = sessions?.find((s: any) => !s.completed_at);
+    // Resolve target session
+    const currentSession = sessionKeyParam
+      ? (sessions?.find((s: any) => s.key === sessionKeyParam) ?? null)
+      : (sessions?.find((s: any) => !s.completed_at) ?? null);
 
-    // Get last completed turn
+    // Get last completed turn for target session
     let lastCompletedTurn = null;
     if (currentSession) {
       const { data: lastTurn } = await supabase
@@ -146,7 +149,7 @@ export async function GET(request: NextRequest) {
       lastCompletedTurn = lastTurn;
     }
 
-    // Get last messages
+    // Get last messages for target session
     let lastMessages: any[] = [];
     if (currentSession) {
       const { data: messages } = await supabase

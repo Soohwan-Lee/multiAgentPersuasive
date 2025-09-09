@@ -68,6 +68,13 @@ export default function SessionPage() {
         console.error('Failed to create session row (non-fatal):', e);
       }
 
+      // 세션 전환 시 클라이언트 메시지/응답 상태 초기화
+      setMessages([]);
+      setResponses([]);
+      setCurrentResponseIndex(0);
+      setCurrentCycle(1);
+      setCurrentState('t0');
+
       await loadSessionState(storedParticipantId);
     };
 
@@ -76,7 +83,7 @@ export default function SessionPage() {
 
   const loadSessionState = async (pid: string) => {
     try {
-      const response = await fetch(`/api/state?participantId=${pid}`);
+      const response = await fetch(`/api/state?participantId=${pid}&sessionKey=${sessionKey}`);
       if (response.ok) {
         const state = await response.json();
         setResponses(state.responses || []);
