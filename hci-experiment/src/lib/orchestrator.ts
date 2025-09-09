@@ -105,14 +105,21 @@ export async function runCycle(opts: {
   let conversationHistory = [...previousMessages]; // 대화 이력 초기화
   // 중복 방지용 오프너 후보들 (간단 풀)
   const OPENER_POOL = [
-    "I understand your perspective,",
     "That's a valid point,",
-    "I see where you're coming from,",
-    "Considering what was said,",
-    "Building on the discussion,",
-    "One angle to consider is,",
-    "I get the rationale,",
-    "From another perspective,",
+    "Fair point,",
+    "Good point,",
+    "Given what you said,",
+    "Considering the discussion so far,",
+    "With that in mind,",
+    "To build on that,",
+    "From another angle,",
+    "A related consideration is,",
+    "It's worth adding that,",
+    "Even so,",
+    "That said,",
+    "One practical angle is,",
+    "Stepping back,",
+    "Zooming out,",
   ];
   const usedOpeners = new Set<string>();
   const pickUniqueOpener = () => {
@@ -132,7 +139,7 @@ export async function runCycle(opts: {
     // 이 에이전트가 참조할 수 있는 직전 발화만 추출 (참가자 + 이미 말한 에이전트)
     const visibleHistory = conversationHistory.filter(m => m.role === 'user' || (typeof m.role === 'string' && m.role.startsWith('agent') && Number(m.role.replace('agent','')) < agent.id));
 
-    const openerHint = (opts.cycle === 1) ? pickUniqueOpener() : undefined;
+    const openerHint = pickUniqueOpener();
 
     const system = buildSystemPrompt({
       agentId: agent.id as 1 | 2 | 3,

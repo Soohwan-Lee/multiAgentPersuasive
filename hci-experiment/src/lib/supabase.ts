@@ -47,7 +47,7 @@ export interface BackgroundSurvey {
 export interface Session {
   id: string;
   participant_id: string;
-  session_key: 'test' | 'normative' | 'informative';
+  key: 'test' | 'normative' | 'informative';
   session_order: number;
   task_content: string;
   task_type: 'test' | 'normative' | 'informative';
@@ -358,7 +358,7 @@ export async function saveBackgroundSurvey(data: {
 // 3. Session Management
 export async function createSession(data: {
   participant_id: string;
-  session_key: 'test' | 'normative' | 'informative';
+  key: 'test' | 'normative' | 'informative';
   session_order: number;
   task_content: string;
   task_type: 'test' | 'normative' | 'informative';

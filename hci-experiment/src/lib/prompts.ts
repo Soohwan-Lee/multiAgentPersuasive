@@ -86,13 +86,13 @@ function getTaskSpecificInstructions(taskType: "informative" | "normative" | "te
 // 회차별 화행 가이드 (반복 방지 및 점진적 전개)
 function getTurnMoveGuidance(turnIndex?: number): string {
   if (turnIndex === 0) {
-    return "Move: Start with a brief acknowledgement (e.g., 'I see your point,'), then give one distinct reason.";
+    return "Move: Start with a brief acknowledgement (vary your opener), then give one distinct reason (avoid duplicating others).";
   } else if (turnIndex === 1) {
-    return "Move: Refer to a peer or the participant briefly, then add a NEW angle; avoid repeating your earlier reason.";
+    return "Move: Refer to a peer or the participant briefly, then add a NEW angle (evidence vs. social/long-term). Avoid repeating your earlier reason.";
   } else if (turnIndex === 2) {
-    return "Move: Concede a small aspect (e.g., 'that's fair'), then reinforce your stance with a different consideration.";
+    return "Move: Concede a small aspect (e.g., 'that's fair'), then reinforce with a different consideration (e.g., cost/feasibility/trust).";
   } else if (turnIndex === 3) {
-    return "Move: Synthesize the discussion in one sentence; be concise, avoid introducing entirely new claims.";
+    return "Move: Synthesize the discussion in one sentence; be concise, and avoid introducing entirely new claims.";
   }
   return "Move: Provide one concise reason with a short acknowledgement.";
 }
@@ -219,6 +219,9 @@ export function buildSystemPrompt(ctx: PromptCtx) {
     conversationContext = "This is an ongoing conversation. Build naturally on previous exchanges and acknowledge the conversation flow.";
   }
 
+  // Language policy
+  const languagePolicy = "Output strictly in English.";
+
   // Cushioning / tone guidance for more natural one-sentence answers
   let cushionGuidance = "";
   if (ctx.pattern === "minority") {
@@ -291,6 +294,7 @@ export function buildSystemPrompt(ctx: PromptCtx) {
     `Participant's Initial Position: ${userInitialPosition} (T0 opinion: ${ctx.t0Opinion})`,
     ctx.openerHint ? `Opener hint: ${ctx.openerHint}` : "",
     participantCurrentPosition ? `Participant's Latest Position (if known): ${participantCurrentPosition}.` : "",
+    languagePolicy,
     stanceLine,
     conformityFocus,
     patternContext,

@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     // Create session
     const session = await createSession({
       participant_id,
-      session_key,
+      key: session_key,
       session_order,
       task_content,
       task_type,
